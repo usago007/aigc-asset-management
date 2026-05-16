@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Customer, Brand, Project, KeyFrame, Shot, Asset, GenerationVersion, Brief, Task, Review, Role } from '@/types';
+import type { Customer, Brand, Project, KeyFrame, Shot, Asset, GenerationVersion, Brief, Task, Review, Role, Member } from '@/types';
 import type { ImageGenerationTask, ImageGenerationMode, TaskQueueStatus } from '@/types/generation';
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
@@ -15,6 +15,7 @@ import {
   generateTasks,
   generateReviews,
   generateImageTasks,
+  generateMembers,
 } from '@/utils/mockData';
 import { IMAGE_MODEL_NAMES, IMAGE_MODEL_VERSIONS, getImageReqKeyForMode, getImagePollInterval, getImageExpiryMs } from '@/services/imageGeneration';
 import { startPolling, stopPolling } from '@/services/poller';
@@ -32,6 +33,7 @@ interface AppState {
   tasks: Task[];
   reviews: Review[];
   roles: Role[];
+  members: Member[];
   imageTasks: ImageGenerationTask[];
   
   addCustomer: (data: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -74,6 +76,11 @@ interface AppState {
   updateRole: (id: string, data: Partial<Role>) => void;
   deleteRole: (id: string) => void;
 
+  addMember: (data: Omit<Member, 'id' | 'joinedAt'>) => void;
+  updateMember: (id: string, data: Partial<Member>) => void;
+  deleteMember: (id: string) => void;
+  toggleMemberStatus: (id: string) => void;
+
   createKeyFramesFromImages: (imageUrls: string[], frameType: 'Opening' | 'Ending', shotId: string | undefined, modelName: string, modelVersion: string, prompt: string) => string[];
   submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
   retryImageTask: (taskId: string) => Promise<void>;
@@ -103,6 +110,8 @@ const _roles = [
   { id: 'role-6', roleName: '访客', permissions: ['project:read', 'asset:read'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
 ];
 
+const _members = generateMembers(35, _roles.map(r => r.id));
+
 export const useAppStore = create<AppState>((set, get) => ({
   customers: _customers,
   brands: _brands,
@@ -115,6 +124,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   tasks: _tasks,
   reviews: _reviews,
   roles: _roles,
+  members: _members,
 
   addCustomer: (data) => set((state) => {
     const newItem: Customer = {
@@ -371,6 +381,50 @@ export const useAppStore = create<AppState>((set, get) => ({
     return { roles: state.roles.filter((r) => r.id !== id) };
   }),
 
+  addMember: (data) => set((state) => {
+    const newMember: Member = {
+      ...data,
+      id: generateUUID(),
+      joinedAt: new Date().toISOString(),
+    };
+    showToast('success', `成员 "${data.name}" 邀请成功`);
+    return { members: [...state.members, newMember] };
+  }),
+
+  updateMember: (id, data) => set((state) => {
+    const member = state.members.find(m => m.id === id);
+    if (member) {
+      showToast('success', `成员 "${data.name || member.name}" 更新成功`);
+    }
+    return {
+      members: state.members.map((m) =>
+        m.id === id ? { ...m, ...data } : m
+      ),
+    };
+  }),
+
+  deleteMember: (id) => set((state) => {
+    const member = state.members.find(m => m.id === id);
+    if (member) {
+      showToast('success', `成员 "${member.name}" 已移除`);
+    }
+    return { members: state.members.filter((m) => m.id !== id) };
+  }),
+
+  toggleMemberStatus: (id) => set((state) => {
+    const member = state.members.find(m => m.id === id);
+    if (member) {
+      const newStatus = member.status === 'active' ? 'disabled' : 'active';
+      showToast('success', `成员 "${member.name}" 已${newStatus === 'active' ? '启用' : '禁用'}`);
+      return {
+        members: state.members.map((m) =>
+          m.id === id ? { ...m, status: newStatus } : m
+        ),
+      };
+    }
+    return { members: state.members };
+  }),
+
   imageTasks: _imageTasks,
 
   updateImageTask: (taskId, data) => set((state) => ({
@@ -503,9 +557,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
         (result) => {
           const imageUrls = [
-            'https://picsum.photos/seed/' + tempId.slice(0, 6) + 'a/2048/2048',
-            'https://picsum.photos/seed/' + tempId.slice(0, 6) + 'b/2048/2048',
-            'https://picsum.photos/seed/' + tempId.slice(0, 6) + 'c/2048/2048',
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(200,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image A</text></svg>'),
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(280,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image B</text></svg>'),
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(120,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image C</text></svg>'),
           ].slice(0, params.forceSingle ? 1 : Math.floor(Math.random() * 2) + 1);
 
           const kfIds = get().createKeyFramesFromImages(
@@ -604,8 +658,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
         (result) => {
           const imageUrls = [
-            'https://picsum.photos/seed/' + taskId.slice(0, 6) + 'x/2048/2048',
-            'https://picsum.photos/seed/' + taskId.slice(0, 6) + 'y/2048/2048',
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(40,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image X</text></svg>'),
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(340,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image Y</text></svg>'),
           ].slice(0, task.forceSingle ? 1 : 2);
 
           const kfIds = get().createKeyFramesFromImages(

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { BarChart3, Layers, AlertCircle, UserCheck } from 'lucide-react'
 
@@ -42,6 +43,14 @@ const TASK_STATUS_COLORS: Record<string, string> = {
 
 export default function DashboardTasks() {
   const { tasks } = useAppStore()
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const now = new Date()
+    return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  })
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+  }, [tasks.length])
 
   const statusCounts: Record<string, number> = { Pending: 0, InProgress: 0, Completed: 0 }
   tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1 })
@@ -78,7 +87,10 @@ export default function DashboardTasks() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">任务</h1>
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">任务</h1>
+          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
+        </div>
         <p className="text-gray-500 mt-1">任务管理与人员工作负载</p>
       </div>
 

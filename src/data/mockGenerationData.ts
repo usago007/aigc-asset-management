@@ -14,7 +14,7 @@ export const mockGenerationTasks: VideoGenerationTask[] = [
     seed: 123456789,
     frames: 121,
     aspectRatio: '16:9',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    videoUrl: '',
     videoExpiresAt: new Date(now + 30 * 60 * 1000).toISOString(),
     status: 'done',
     aigcMetaTagged: true,

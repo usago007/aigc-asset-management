@@ -121,6 +121,22 @@ export interface Role {
   createdAt: string;
 }
 
+export type MemberStatus = 'active' | 'disabled' | 'pending';
+
+export interface Member {
+  id: UUID;
+  name: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  roleIds: string[];
+  department: string;
+  status: MemberStatus;
+  lastLoginAt: string;
+  joinedAt: string;
+  invitedBy: string;
+}
+
 export interface ToastMessage {
   id: UUID;
   type: 'success' | 'error' | 'warning' | 'info';

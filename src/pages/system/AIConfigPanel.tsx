@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, Video, Image, Upload, Download, RotateCcw, Check, AlertTriangle, Sparkles } from 'lucide-react'
+import { Settings, Video, Image, Upload, Download, RotateCcw, Check, AlertTriangle, Sparkles, Key, Copy, Eye as EyeIcon, EyeOff, Trash2 } from 'lucide-react'
 import { useAIConfigStore } from '@/store/aiConfigStore'
 import { AI_PRESETS, type AIPresetEnv } from '@/types/aiConfig'
 import { showToast } from '@/utils/toast'
@@ -91,6 +91,24 @@ export default function AIConfigPanel() {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importJson, setImportJson] = useState('')
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({})
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
+  const apiKeys = [
+    { id: 'volcengine', name: '火山引擎', value: config.general.apiKey, placeholder: 'sk-volcengine-••••••••', onUpdate: (v: string) => updateGeneral({ apiKey: v }) },
+    { id: 'deepseek', name: 'DeepSeek', value: config.deepseek.apiKey, placeholder: 'sk-deepseek-••••••••', onUpdate: (v: string) => updateDeepSeek({ apiKey: v }) },
+  ]
+
+  const toggleKeyVisibility = (id: string) => {
+    setVisibleKeys(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const copyKey = (id: string, value: string) => {
+    navigator.clipboard.writeText(value)
+    setCopiedKey(id)
+    showToast('success', '密钥已复制到剪贴板')
+    setTimeout(() => setCopiedKey(null), 2000)
+  }
 
   const handleExport = () => {
     const json = exportConfig()
@@ -441,6 +459,60 @@ export default function AIConfigPanel() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+          <Key size={18} className="text-primary-500" />
+          API 密钥管理
+        </h2>
+        <div className="space-y-4">
+          {apiKeys.map(key => (
+            <div key={key.id} className="rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{key.name}</h4>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => toggleKeyVisibility(key.id)}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title={visibleKeys[key.id] ? '隐藏' : '显示'}
+                  >
+                    {visibleKeys[key.id] ? <EyeOff size={14} className="text-gray-600 dark:text-gray-400" /> : <EyeIcon size={14} className="text-gray-600 dark:text-gray-400" />}
+                  </button>
+                  <button
+                    onClick={() => copyKey(key.id, key.value)}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="复制"
+                    disabled={!key.value}
+                  >
+                    <Copy size={14} className={copiedKey === key.id ? 'text-green-500' : 'text-gray-600 dark:text-gray-400'} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type={visibleKeys[key.id] ? 'text' : 'password'}
+                  value={key.value}
+                  onChange={(e) => key.onUpdate(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all font-mono"
+                  placeholder={key.placeholder}
+                />
+                {key.value && (
+                  <button
+                    onClick={() => key.onUpdate('')}
+                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    title="清除"
+                  >
+                    <Trash2 size={14} className="text-red-500" />
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                {key.id === 'volcengine' ? '火山引擎视觉智能 API 密钥，用于生图/生视频服务' : 'DeepSeek API 密钥，用于提示词优化'}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -65,6 +65,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       icon: <Settings size={20} />,
       label: '系统配置',
       children: [
+        { path: '/system/members', label: '成员管理' },
         { path: '/system/roles', label: '角色权限' },
         { path: '/system/settings', label: '系统设置' },
         { path: '/system/ai-config', label: 'AI 能力配置' },

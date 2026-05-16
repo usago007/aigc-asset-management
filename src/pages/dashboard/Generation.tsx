@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { Image, Video, Layers, PieChart, Zap, ZapOff } from 'lucide-react'
@@ -70,6 +71,14 @@ const GEN_STATUS_COLORS: Record<string, string> = {
 export default function Generation() {
   const { imageTasks, keyFrames, generationVersions } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const now = new Date()
+    return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  })
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+  }, [imageTasks.length, videoTasks.length, keyFrames.length, generationVersions.length])
 
   const imgStatusCounts: Record<string, number> = {}
   imageTasks.forEach(t => { imgStatusCounts[t.status] = (imgStatusCounts[t.status] || 0) + 1 })
@@ -124,7 +133,10 @@ export default function Generation() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成</h1>
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成</h1>
+          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
+        </div>
         <p className="text-gray-500 mt-1">图片与视频生成任务统计</p>
       </div>
 

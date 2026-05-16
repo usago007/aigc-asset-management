@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { Video, PieChart, CheckCircle, Activity, FileText, Image } from 'lucide-react'
 
@@ -43,6 +44,14 @@ function getRelativeTime(dateStr: string): string {
 
 export default function DashboardAssets() {
   const { assets } = useAppStore()
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const now = new Date()
+    return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  })
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+  }, [assets.length])
 
   const typeCounts: Record<string, number> = { Image: 0, Video: 0, Script: 0 }
   assets.forEach(a => { typeCounts[a.type] = (typeCounts[a.type] || 0) + 1 })
@@ -80,7 +89,10 @@ export default function DashboardAssets() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">资产</h1>
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">资产</h1>
+          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
+        </div>
         <p className="text-gray-500 mt-1">资产类型与状态分布</p>
       </div>
 

@@ -3,25 +3,47 @@ import { Search, Bell } from 'lucide-react'
 
 const breadcrumbs: Record<string, string[]> = {
   '/dashboard': ['仪表盘'],
+  '/dashboard/overview': ['仪表盘', '总览'],
+  '/dashboard/generation': ['仪表盘', '生成'],
+  '/dashboard/assets': ['仪表盘', '资产'],
+  '/dashboard/tasks': ['仪表盘', '任务'],
   '/content/keyframes': ['内容创作', '首图/尾图'],
   '/content/shots': ['内容创作', '镜头管理'],
   '/content/assets': ['内容创作', '资产管理'],
+  '/content/video-generation': ['内容创作', 'AI 生视频'],
+  '/content/generation-history': ['内容创作', '视频生成历史'],
+  '/content/image-generation': ['内容创作', 'AI 生图'],
+  '/content/image-generation-history': ['内容创作', '图片生成历史'],
   '/projects/customers': ['项目管理', '客户管理'],
   '/projects/brands': ['项目管理', '品牌管理'],
   '/projects/projects': ['项目管理', '项目列表'],
   '/projects/briefs': ['项目管理', '简报管理'],
   '/projects/tasks': ['项目管理', '任务管理'],
   '/projects/reviews': ['项目管理', '审核管理'],
+  '/system/members': ['系统配置', '成员管理'],
   '/system/roles': ['系统配置', '角色权限'],
   '/system/settings': ['系统配置', '系统设置'],
   '/system/ai-config': ['系统配置', 'AI 能力配置'],
   '/system/logs': ['系统配置', '全局日志'],
 }
 
+const dynamicRoutes: { prefix: string; crumbs: string[] }[] = [
+  { prefix: '/content/task/', crumbs: ['内容创作', '任务详情'] },
+]
+
 export default function Header() {
   const location = useLocation()
   const path = location.pathname
-  const crumbs = breadcrumbs[path] || ['页面']
+
+  const getBreadcrumbs = () => {
+    if (breadcrumbs[path]) return breadcrumbs[path]
+    for (const route of dynamicRoutes) {
+      if (path.startsWith(route.prefix)) return route.crumbs
+    }
+    return ['页面']
+  }
+
+  const crumbs = getBreadcrumbs()
 
   return (
     <header className="bg-white/80 dark:bg-primary-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800 px-6 py-4 transition-colors duration-300">

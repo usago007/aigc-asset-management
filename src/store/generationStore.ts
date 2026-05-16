@@ -108,7 +108,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(tempId, {
             status: 'done',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            videoUrl: '',
             videoExpiresAt: expiresAt,
             aigcMetaTagged: true,
             progress: 100,
@@ -191,7 +191,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(taskId, {
             status: 'done',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            videoUrl: '',
             videoExpiresAt: expiresAt,
             aigcMetaTagged: true,
             progress: 100,

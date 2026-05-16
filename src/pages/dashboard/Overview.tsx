@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { BarChart3, Clock, AlertTriangle, TrendingUp, FolderTree, FileText, ClipboardCheck, Users, Tags, Video, Image as ImageIcon, Loader2 } from 'lucide-react'
@@ -57,6 +58,14 @@ function ProgressBar({ value, max, label, colorClass }: { value: number; max: nu
 export default function Overview() {
   const { customers, brands, projects, shots, assets, reviews, imageTasks, tasks } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const now = new Date()
+    return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  })
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+  }, [customers.length, brands.length, projects.length, shots.length, assets.length, reviews.length, imageTasks.length, videoTasks.length])
 
   const pendingReviews = reviews.filter(r => r.status === 'Pending').length
   const generatingCount = [...imageTasks, ...videoTasks].filter(t => t.status === 'generating' || t.status === 'in_queue' || t.status === 'submitting').length
@@ -87,7 +96,10 @@ export default function Overview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">总览</h1>
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">总览</h1>
+          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
+        </div>
         <p className="text-gray-500 mt-1">AIGC数字资产管理系统概览</p>
       </div>
 

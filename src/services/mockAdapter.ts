@@ -108,7 +108,7 @@ export async function mockQueryTaskResult(taskId: string): Promise<TaskResultRes
     code: 200,
     data: {
       status: 'done',
-      video_url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      video_url: '',
       aigc_meta_tagged: true,
     },
     message: 'success',

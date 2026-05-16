@@ -1,44 +1,17 @@
 import type {
   Customer, Brand, Project, Brief, Task, Review,
-  KeyFrame, Shot, Asset, GenerationVersion, Role,
+  KeyFrame, Shot, Asset, GenerationVersion, Role, Member, MemberStatus,
   ProjectStage, RiskLevel, GenerationStatus, AssetStatus,
   TaskStatus, TaskType, ReviewStatus, ReviewType, Visibility,
 } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask, TaskQueueStatus, GenerationMode, ImageGenerationMode } from '@/types/generation'
 
-const COSMETIC_IMAGES = [
-  'https://images.unsplash.com/photo-1596462502278-27bfd94789203?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1571781926291-c477ebfd0255?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1612817288484-6f916006741a?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1590156546945-ce18b6b7e4b6?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae45?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1570194065650-d765ef3b8525?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1587671932754-c95c2b38dd57?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1596462502278-27bfd94789203?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1512496015851-a90fb38ba7c2?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1571875257727-256c32705685?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1556228720-4d6c02c34b25?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1571875257727-256c32705685?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1612817288484-6f916006741a?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1596462502278-27bfd94789203?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1590156546945-ce18b6b7e4b6?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1570194065650-d765ef3b8525?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1512496015851-a90fb38ba7c2?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1587671932754-c95c2b38dd57?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=300&fit=crop',
-]
+function makeColorImage(seed: number): string {
+  const hue = (seed * 37) % 360
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="hsl(${hue},70%,60%)"/><stop offset="100%" stop-color="hsl(${(hue+60)%360},70%,40%)"/></linearGradient></defs><rect width="400" height="300" fill="url(%23g${seed})"/><text x="200" y="155" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif">Asset Image ${seed}</text></svg>`)}`
+}
+
+const COSMETIC_IMAGES = Array.from({ length: 32 }, (_, i) => makeColorImage(i))
 
 const CUSTOMER_NAMES = [
   '华美集团', '星辰科技', '绿意生活', '美妆时代', '雅诗集团',
@@ -65,6 +38,39 @@ const ROLE_COMBOS = [
   ['项目经理', '创意人员'], ['创意人员', '审核人员'],
   ['项目经理', '审核人员'], ['项目经理', '创意人员', '审核人员'],
 ]
+
+const MEMBER_NAMES = [
+  '张明', '李华', '王芳', '赵强', '刘洋',
+  '陈晨', '周杰', '吴敏', '郑浩', '孙丽',
+  '马磊', '朱婷', '胡军', '郭静', '何勇',
+  '高翔', '罗琳', '梁博', '宋雨', '谢鹏',
+  '唐欣', '许峰', '韩雪', '冯涛', '曹颖',
+  '邓辉', '萧然', '程璐', '蔡明', '贾静',
+  '潘磊', '董洁', '袁浩', '杨柳', '马超',
+]
+
+const MEMBER_EMAILS = MEMBER_NAMES.map(n => `${n.toLowerCase().replace(/\s/g, '.')}@aigc-demo.com`)
+const MEMBER_PHONES = Array.from({ length: 35 }, (_, i) => `1${3 + (i % 7)}${String(10000000 + (i * 7919) % 90000000).slice(0, 9)}`)
+const DEPARTMENTS = ['内容创作部', '项目管理部', '审核部', '技术支持部', '市场部', '运营部']
+const MEMBER_STATUSES: MemberStatus[] = ['active', 'active', 'active', 'active', 'active', 'active', 'active', 'disabled', 'pending']
+const AVATAR_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+
+export function generateMembers(count: number = 35, roleIds: string[] = []): Member[] {
+  const defaultRoles = roleIds.length > 0 ? roleIds : ['role-1']
+  return Array.from({ length: count }, (_, i) => ({
+    id: `member-${i + 1}`,
+    name: MEMBER_NAMES[i % MEMBER_NAMES.length],
+    email: MEMBER_EMAILS[i % MEMBER_EMAILS.length],
+    phone: MEMBER_PHONES[i % MEMBER_PHONES.length],
+    avatarUrl: '',
+    roleIds: i === 0 ? ['role-1'] : i < 4 ? defaultRoles.slice(0, 2) : defaultRoles.slice(i % defaultRoles.length, (i % defaultRoles.length) + 2),
+    department: DEPARTMENTS[i % DEPARTMENTS.length],
+    status: MEMBER_STATUSES[i % MEMBER_STATUSES.length],
+    lastLoginAt: randomDate(30),
+    joinedAt: randomDate(365),
+    invitedBy: i === 0 ? '' : `member-${(i % 5) + 1}`,
+  }))
+}
 
 const BRAND_NAMES = [
   '雅诗兰黛', '兰蔻', '迪奥', '香奈儿', 'SK-II',
@@ -414,7 +420,7 @@ export function generateImageTasks(count: number = 35): ImageGenerationTask[] {
 }
 
 export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
-  const TEST_VIDEO_URL = 'https://www.w3schools.com/html/mov_bbb.mp4'
+  const TEST_VIDEO_URL = ''
   return Array.from({ length: count }, (_, i) => ({
     ...baseEntity(),
     taskId: `video-task-${i}`,

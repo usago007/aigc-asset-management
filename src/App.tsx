@@ -23,6 +23,7 @@ import Roles from './pages/system/Roles'
 import Settings from './pages/system/Settings'
 import AIConfigPanel from './pages/system/AIConfigPanel'
 import SystemLogs from './pages/system/SystemLogs'
+import Members from './pages/system/Members'
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="projects/briefs" element={<Briefs />} />
         <Route path="projects/tasks" element={<Tasks />} />
         <Route path="projects/reviews" element={<Reviews />} />
+        <Route path="system/members" element={<Members />} />
         <Route path="system/roles" element={<Roles />} />
         <Route path="system/settings" element={<Settings />} />
         <Route path="system/ai-config" element={<AIConfigPanel />} />

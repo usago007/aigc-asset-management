@@ -13,12 +13,12 @@ interface MockImageTask {
 const mockImageStore = new Map<string, MockImageTask>();
 
 const MOCK_IMAGE_URLS = [
-  'https://picsum.photos/seed/aigc1/1024/1024',
-  'https://picsum.photos/seed/aigc2/1024/1024',
-  'https://picsum.photos/seed/aigc3/1024/1024',
-  'https://picsum.photos/seed/aigc4/1024/1024',
-  'https://picsum.photos/seed/aigc5/1024/1024',
-  'https://picsum.photos/seed/aigc6/1024/1024',
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(200,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 1</text></svg>'),
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(280,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 2</text></svg>'),
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(120,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 3</text></svg>'),
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(40,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 4</text></svg>'),
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(340,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 5</text></svg>'),
+  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(180,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 6</text></svg>'),
 ];
 
 export function generateMockImageTaskId(): string {
