@@ -1,5 +1,5 @@
 import type { TaskResultResponse, ImageTaskResultResponse } from '@/types/generation';
-import { queryTaskResult, VIDEO_API_CONFIG } from './videoGeneration';
+import { queryTaskResult, getPollInterval } from './videoGeneration';
 import { queryImageTaskResult } from './imageGeneration';
 
 export interface PollingTask {
@@ -7,7 +7,7 @@ export interface PollingTask {
   reqKey: string;
   intervalId: number;
   onUpdate: (result: TaskResultResponse | ImageTaskResultResponse) => void;
-  onComplete: () => void;
+  onComplete: (result: TaskResultResponse | ImageTaskResultResponse) => void;
   onError: (error: string) => void;
 }
 
@@ -17,7 +17,7 @@ export function startPolling(
   taskId: string,
   reqKey: string,
   onUpdate: (result: TaskResultResponse | ImageTaskResultResponse) => void,
-  onComplete: () => void,
+  onComplete: (result: TaskResultResponse | ImageTaskResultResponse) => void,
   onError: (error: string) => void,
   isImage: boolean = false
 ): void {
@@ -30,7 +30,7 @@ export function startPolling(
       switch (result.data.status) {
         case 'done':
           onUpdate(result);
-          onComplete();
+          onComplete(result);
           stopPolling(taskId);
           break;
         case 'failed':
@@ -54,7 +54,7 @@ export function startPolling(
       onError(error instanceof Error ? error.message : 'Unknown error');
       stopPolling(taskId);
     }
-  }, VIDEO_API_CONFIG.POLL_INTERVAL);
+  }, getPollInterval());
 
   activePollers.set(taskId, {
     taskId,

@@ -59,6 +59,7 @@ export async function mockImageSubmitTask(
     message: 'Success',
     request_id: requestId,
     time_elapsed: '105.234ms',
+    usage: { total_tokens: 0 },
   };
 }
 
@@ -117,5 +118,6 @@ export async function mockImageQueryTaskResult(taskId: string): Promise<ImageTas
     message: 'Success',
     request_id: 'IMG-DONE-' + Date.now(),
     time_elapsed: elapsed.toFixed(3) + 'ms',
+    usage: { total_tokens: Math.floor(12000 + Math.random() * 13000) },
   };
 }

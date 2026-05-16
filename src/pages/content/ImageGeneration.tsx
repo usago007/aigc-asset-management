@@ -3,8 +3,7 @@ import { useAppStore } from '@/store/appStore'
 import { showToast } from '@/utils/toast'
 import type { ImageGenerationMode } from '@/types/generation'
 import type { TaskQueueStatus } from '@/types/generation'
-import { IMAGE_API_CONFIG } from '@/services/imageGeneration'
-import { Palette, Image, Wand2, Zap, Eraser, Download, Maximize2 } from 'lucide-react'
+import { Palette, Image, Wand2, Zap, Eraser, Download, Maximize2, Cpu } from 'lucide-react'
 
 const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Palette }[] = [
   { value: 'text-to-image', label: '文生图', icon: Palette },
@@ -355,7 +354,15 @@ export default function ImageGeneration() {
 
       {latestDone && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">生成结果</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
+            <span>生成结果</span>
+            {latestDone.tokensUsed != null && latestDone.tokensUsed > 0 && (
+              <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                <Cpu size={14} />
+                消耗 Token: {latestDone.tokensUsed.toLocaleString()}
+              </span>
+            )}
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {latestDone.outputImageUrls.map((url, idx) => (
               <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">

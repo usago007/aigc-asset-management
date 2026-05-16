@@ -28,6 +28,7 @@ export interface VideoGenerationTask extends BaseEntity {
   errorMessage?: string;
   timeElapsed?: string;
   completedAt?: string;
+  tokensUsed?: number;
 }
 
 export interface SubmitTaskParams {
@@ -48,6 +49,7 @@ export interface SubmitTaskResponse {
   message: string;
   request_id: string;
   time_elapsed?: string;
+  usage?: { total_tokens: number; prompt_tokens?: number; completion_tokens?: number };
 }
 
 export interface TaskResultResponse {
@@ -60,6 +62,7 @@ export interface TaskResultResponse {
   message: string;
   request_id: string;
   time_elapsed?: string;
+  usage?: { total_tokens: number; prompt_tokens?: number; completion_tokens?: number };
 }
 
 export type ImageGenerationMode =
@@ -96,6 +99,7 @@ export interface ImageGenerationTask extends BaseEntity {
   errorMessage?: string;
   timeElapsed?: string;
   completedAt?: string;
+  tokensUsed?: number;
 }
 
 export interface ImageSubmitTaskParams {
@@ -122,6 +126,7 @@ export interface ImageSubmitTaskResponse {
   message: string;
   request_id: string;
   time_elapsed?: string;
+  usage?: { total_tokens: number; prompt_tokens?: number; completion_tokens?: number };
 }
 
 export interface ImageTaskResultResponse {
@@ -134,6 +139,7 @@ export interface ImageTaskResultResponse {
   message: string;
   request_id: string;
   time_elapsed?: string;
+  usage?: { total_tokens: number; prompt_tokens?: number; completion_tokens?: number };
 }
 
 export interface ImageValidationResult {

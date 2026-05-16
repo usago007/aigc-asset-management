@@ -47,6 +47,7 @@ export async function mockSubmitTask(
     message: 'success',
     request_id: `req-${generateMockTaskId()}`,
     time_elapsed: '1.2s',
+    usage: { total_tokens: 0 },
   };
 }
 
@@ -113,5 +114,6 @@ export async function mockQueryTaskResult(taskId: string): Promise<TaskResultRes
     message: 'success',
     request_id: `req-${generateMockTaskId()}`,
     time_elapsed: `${(elapsed / 1000).toFixed(1)}s`,
+    usage: { total_tokens: Math.floor(1000 + Math.random() * 4000) },
   };
 }

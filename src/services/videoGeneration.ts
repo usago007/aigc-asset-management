@@ -5,20 +5,10 @@ import type {
   TaskResultResponse,
 } from '@/types/generation';
 import { mockSubmitTask, mockQueryTaskResult } from './mockAdapter';
-
-export const VIDEO_API_CONFIG = {
-  req_keys: {
-    'text-to-video': 'jimeng_t2v_v30_1080',
-    'image-to-video-first': 'jimeng_i2v_first_v30_1080',
-    'image-to-video-first-tail': 'jimeng_i2v_first_tail_v30_1080',
-  },
-  BASE_URL: 'https://visual.volcengineapi.com',
-  POLL_INTERVAL: 5000,
-  VIDEO_EXPIRY_MS: 3600000,
-};
+import { getVideoReqKey, getAIConfig } from './aiConfigService';
 
 export function getReqKeyForMode(mode: GenerationMode): string {
-  return VIDEO_API_CONFIG.req_keys[mode];
+  return getVideoReqKey(mode);
 }
 
 export async function submitVideoTask(
@@ -34,4 +24,12 @@ export async function queryTaskResult(
   reqKey: string
 ): Promise<TaskResultResponse> {
   return mockQueryTaskResult(taskId);
+}
+
+export function getPollInterval(): number {
+  return getAIConfig().general.pollInterval;
+}
+
+export function getVideoExpiryMs(): number {
+  return getAIConfig().general.videoExpiryMs;
 }

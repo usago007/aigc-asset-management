@@ -409,10 +409,12 @@ export function generateImageTasks(count: number = 35): ImageGenerationTask[] {
     progress: Math.random() > 0.3 ? Math.floor(Math.random() * 100) : undefined,
     timeElapsed: `${Math.floor(Math.random() * 30)}s`,
     completedAt: Math.random() > 0.4 ? randomDate(7) : undefined,
+    tokensUsed: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS) === 'done' ? Math.floor(12000 + Math.random() * 13000) : undefined,
   }))
 }
 
 export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
+  const TEST_VIDEO_URL = 'https://www.w3schools.com/html/mov_bbb.mp4'
   return Array.from({ length: count }, (_, i) => ({
     ...baseEntity(),
     taskId: `video-task-${i}`,
@@ -431,10 +433,11 @@ export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
     projectId: `project-${i % 10}`,
     status: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS),
     progress: Math.random() > 0.3 ? Math.floor(Math.random() * 100) : undefined,
-    videoUrl: Math.random() > 0.4 ? 'https://example.com/video.mp4' : undefined,
+    videoUrl: Math.random() > 0.4 ? TEST_VIDEO_URL : undefined,
     videoExpiresAt: Math.random() > 0.4 ? randomDate(7) : undefined,
     aigcMetaTagged: i % 2 === 0,
     timeElapsed: `${Math.floor(Math.random() * 120)}s`,
     completedAt: Math.random() > 0.4 ? randomDate(7) : undefined,
+    tokensUsed: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS) === 'done' ? Math.floor(1000 + Math.random() * 4000) : undefined,
   }))
 }

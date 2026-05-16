@@ -1,0 +1,6 @@
+- [x] Overview.tsx、Generation.tsx、DashboardAssets.tsx、DashboardTasks.tsx四个子页面文件创建完成
+- [x] App.tsx中新增4个子路由，/dashboard重定向到/dashboard/overview
+- [x] 侧边栏导航中仪表盘展开为4个子菜单项，点击跳转对应路由
+- [x] 原Dashboard.tsx中Tabs结构已移除或简化
+- [x] 所有页面深色/浅色主题适配正常
+- [x] 路由高亮与URL同步正常

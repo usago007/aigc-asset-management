@@ -1,4 +1,4 @@
-import { Play, Download, Eye, AlertCircle, RefreshCw } from 'lucide-react'
+import { Play, Download, Eye, AlertCircle, RefreshCw, Zap } from 'lucide-react'
 import type { VideoGenerationTask } from '@/types/generation'
 import { formatDate } from '@/utils/date'
 
@@ -73,6 +73,13 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
           <p className="text-xs text-error flex items-center gap-1">
             <AlertCircle size={12} />
             {task.errorMessage}
+          </p>
+        )}
+
+        {task.status === 'done' && task.tokensUsed != null && task.tokensUsed > 0 && (
+          <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+            <Zap size={12} />
+            消耗 Token: {task.tokensUsed.toLocaleString()}
           </p>
         )}
 

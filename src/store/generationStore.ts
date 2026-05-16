@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { VideoGenerationTask, TaskQueueStatus, SubmitTaskParams, GenerationMode } from '@/types/generation';
-import { VIDEO_API_CONFIG, getReqKeyForMode } from '@/services/videoGeneration';
+import { getReqKeyForMode, getVideoExpiryMs } from '@/services/videoGeneration';
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import { startPolling, stopPolling } from '@/services/poller';
@@ -103,9 +103,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const mappedStatus = statusMap[result.data.status] || result.data.status as TaskQueueStatus;
           get().updateTask(tempId, { status: mappedStatus });
         },
-        () => {
+        (result) => {
           const completedTime = new Date().toISOString();
-          const expiresAt = new Date(Date.now() + VIDEO_API_CONFIG.VIDEO_EXPIRY_MS).toISOString();
+          const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(tempId, {
             status: 'done',
             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
@@ -114,6 +114,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             progress: 100,
             completedAt: completedTime,
             updatedAt: completedTime,
+            tokensUsed: result.usage?.total_tokens ?? 0,
           });
           showToast('success', '视频生成完成');
         },
@@ -185,9 +186,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           const mappedStatus = statusMap[result.data.status] || result.data.status as TaskQueueStatus;
           get().updateTask(taskId, { status: mappedStatus });
         },
-        () => {
+        (result) => {
           const completedTime = new Date().toISOString();
-          const expiresAt = new Date(Date.now() + VIDEO_API_CONFIG.VIDEO_EXPIRY_MS).toISOString();
+          const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(taskId, {
             status: 'done',
             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
@@ -196,6 +197,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             progress: 100,
             completedAt: completedTime,
             updatedAt: completedTime,
+            tokensUsed: result.usage?.total_tokens ?? 0,
           });
           showToast('success', '视频生成完成');
         },

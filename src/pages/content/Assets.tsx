@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit2, Trash2, Search } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, FileText, Play, Image as ImageIcon, Maximize2, X } from 'lucide-react'
 import type { Asset, AssetStatus } from '@/types'
 
 const statusMap: Record<AssetStatus, { label: string; variant: 'info' | 'warning' | 'success' }> = {
@@ -19,6 +19,16 @@ const statusMap: Record<AssetStatus, { label: string; variant: 'info' | 'warning
   Approved: { label: '已审核', variant: 'success' },
 }
 
+const ASSET_PLACEHOLDER_IMAGES = [
+  'https://images.unsplash.com/photo-1596462502278-27bfd9478920?w=100&h=100&fit=crop',
+  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=100&h=100&fit=crop',
+  'https://images.unsplash.com/photo-1571781926291-c477ebfd0255?w=100&h=100&fit=crop',
+  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=100&h=100&fit=crop',
+  'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=100&h=100&fit=crop',
+]
+
+const VIDEO_PLACEHOLDER = 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=100&h=100&fit=crop'
+
 export default function Assets() {
   const { assets, shots, addAsset, updateAsset, deleteAsset } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -26,6 +36,7 @@ export default function Assets() {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<AssetStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const pageSize = 10
 
   const [formData, setFormData] = useState({
@@ -50,6 +61,22 @@ export default function Assets() {
 
   const handleDelete = (id: string) => { if (window.confirm('确定要删除吗？')) { deleteAsset(id); showToast('success', '删除成功') } }
   const getShotName = (shotId: string) => shots.find(s => s.id === shotId)?.shotName || '-'
+
+  const getAssetThumbnail = (asset: Asset) => {
+    if (asset.fileUrl) {
+      if (asset.fileUrl.startsWith('http')) return asset.fileUrl
+      if (asset.type === 'Video') return VIDEO_PLACEHOLDER
+      if (asset.type === 'Image') {
+        const hash = asset.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+        return ASSET_PLACEHOLDER_IMAGES[hash % ASSET_PLACEHOLDER_IMAGES.length]
+      }
+    }
+    if (asset.type === 'Video') return VIDEO_PLACEHOLDER
+    const hash = asset.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    return ASSET_PLACEHOLDER_IMAGES[hash % ASSET_PLACEHOLDER_IMAGES.length]
+  }
+
+  const isClickableMedia = (asset: Asset) => asset.type === 'Image' || asset.type === 'Video'
 
   return (
     <div className="space-y-6">
@@ -76,26 +103,61 @@ export default function Assets() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="table-header">资产名称</th><th className="table-header">类型</th><th className="table-header">所属镜头</th><th className="table-header">AI模型</th><th className="table-header">状态</th><th className="table-header">创建时间</th><th className="table-header">操作</th>
+              <th className="table-header">缩略图</th>
+              <th className="table-header">资产名称</th>
+              <th className="table-header">类型</th>
+              <th className="table-header">所属镜头</th>
+              <th className="table-header">AI模型</th>
+              <th className="table-header">状态</th>
+              <th className="table-header">创建时间</th>
+              <th className="table-header">操作</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(asset => (
-              <tr key={asset.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{asset.assetName}</td>
-                <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{asset.type === 'Image' ? '图片' : asset.type === 'Video' ? '视频' : '脚本'}</Badge></td>
-                <td className="table-cell">{getShotName(asset.shotId)}</td>
-                <td className="table-cell">{asset.modelName} {asset.modelVersion}</td>
-                <td className="table-cell"><Badge variant={statusMap[asset.status].variant}>{statusMap[asset.status].label}</Badge></td>
-                <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(asset.createdAt)}</td>
-                <td className="table-cell">
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)}><Edit2 size={14} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)}><Trash2 size={14} className="text-error" /></Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {paginatedItems.map(asset => {
+              const thumbnail = getAssetThumbnail(asset)
+              const clickable = isClickableMedia(asset)
+
+              return (
+                <tr key={asset.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+                  <td className="table-cell">
+                    <div
+                      className={`relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 ${clickable ? 'cursor-pointer' : ''}`}
+                      onClick={() => { if (clickable && thumbnail) setPreviewUrl(thumbnail) }}
+                    >
+                      <img
+                        src={thumbnail}
+                        alt={asset.assetName}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {asset.type === 'Video' && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Play size={12} className="text-white" />
+                        </div>
+                      )}
+                      {asset.type === 'Script' && (
+                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <FileText size={16} className="text-gray-500 dark:text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{asset.assetName}</td>
+                  <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{asset.type === 'Image' ? '图片' : asset.type === 'Video' ? '视频' : '脚本'}</Badge></td>
+                  <td className="table-cell">{getShotName(asset.shotId)}</td>
+                  <td className="table-cell">{asset.modelName} {asset.modelVersion}</td>
+                  <td className="table-cell"><Badge variant={statusMap[asset.status].variant}>{statusMap[asset.status].label}</Badge></td>
+                  <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(asset.createdAt)}</td>
+                  <td className="table-cell">
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)}><Edit2 size={14} /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)}><Trash2 size={14} className="text-error" /></Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>}
@@ -118,6 +180,27 @@ export default function Assets() {
           <div className="space-y-2"><Label>文件路径/URL</Label><Input value={formData.fileUrl} onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })} placeholder="如：/assets/video.mp4" /></div>
         </div>
       </Modal>
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={previewUrl}
+              alt="预览"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+            <button
+              className="absolute -top-3 -right-3 p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full shadow-lg transition-colors"
+              onClick={() => setPreviewUrl(null)}
+            >
+              <X size={16} className="text-gray-600 dark:text-gray-300" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

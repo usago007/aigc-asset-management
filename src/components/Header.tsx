@@ -14,6 +14,8 @@ const breadcrumbs: Record<string, string[]> = {
   '/projects/reviews': ['项目管理', '审核管理'],
   '/system/roles': ['系统配置', '角色权限'],
   '/system/settings': ['系统配置', '系统设置'],
+  '/system/ai-config': ['系统配置', 'AI 能力配置'],
+  '/system/logs': ['系统配置', '全局日志'],
 }
 
 export default function Header() {

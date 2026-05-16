@@ -16,7 +16,7 @@ import {
   generateReviews,
   generateImageTasks,
 } from '@/utils/mockData';
-import { IMAGE_API_CONFIG, getReqKeyForMode } from '@/services/imageGeneration';
+import { IMAGE_MODEL_NAMES, IMAGE_MODEL_VERSIONS, getImageReqKeyForMode, getImagePollInterval, getImageExpiryMs } from '@/services/imageGeneration';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockImageSubmitTask } from '@/services/imageMockAdapter';
 
@@ -69,6 +69,10 @@ interface AppState {
   addReview: (data: Omit<Review, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateReview: (id: string, data: Partial<Review>) => void;
   deleteReview: (id: string) => void;
+
+  addRole: (data: Omit<Role, 'id' | 'createdAt'>) => void;
+  updateRole: (id: string, data: Partial<Role>) => void;
+  deleteRole: (id: string) => void;
 
   createKeyFramesFromImages: (imageUrls: string[], frameType: 'Opening' | 'Ending', shotId: string | undefined, modelName: string, modelVersion: string, prompt: string) => string[];
   submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
@@ -337,6 +341,36 @@ export const useAppStore = create<AppState>((set, get) => ({
     return { reviews: state.reviews.filter((r) => r.id !== id) };
   }),
 
+  addRole: (data) => set((state) => {
+    const newRole: Role = {
+      ...data,
+      id: generateUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    showToast('success', `角色 "${data.roleName}" 创建成功`);
+    return { roles: [...state.roles, newRole] };
+  }),
+
+  updateRole: (id, data) => set((state) => {
+    const role = state.roles.find(r => r.id === id);
+    if (role) {
+      showToast('success', `角色 "${data.roleName || role.roleName}" 更新成功`);
+    }
+    return {
+      roles: state.roles.map((r) =>
+        r.id === id ? { ...r, ...data } : r
+      ),
+    };
+  }),
+
+  deleteRole: (id) => set((state) => {
+    const role = state.roles.find(r => r.id === id);
+    if (role) {
+      showToast('success', `角色 "${role.roleName}" 删除成功`);
+    }
+    return { roles: state.roles.filter((r) => r.id !== id) };
+  }),
+
   imageTasks: _imageTasks,
 
   updateImageTask: (taskId, data) => set((state) => ({
@@ -399,9 +433,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   submitImageTask: async (mode, params) => {
-    const reqKey = getReqKeyForMode(mode);
-    const modelName = IMAGE_API_CONFIG.model_names[mode as ImageGenerationMode];
-    const modelVersion = IMAGE_API_CONFIG.model_versions[mode as ImageGenerationMode];
+    const reqKey = getImageReqKeyForMode(mode);
+    const modelName = IMAGE_MODEL_NAMES[mode as ImageGenerationMode];
+    const modelVersion = IMAGE_MODEL_VERSIONS[mode as ImageGenerationMode];
     const tempId = generateUUID();
     const now = new Date().toISOString();
 
@@ -467,7 +501,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const mappedStatus = statusMap[result.data.status] || result.data.status as TaskQueueStatus;
           get().updateImageTask(tempId, { status: mappedStatus });
         },
-        () => {
+        (result) => {
           const imageUrls = [
             'https://picsum.photos/seed/' + tempId.slice(0, 6) + 'a/2048/2048',
             'https://picsum.photos/seed/' + tempId.slice(0, 6) + 'b/2048/2048',
@@ -490,6 +524,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             keyFrameIds: kfIds,
             progress: 100,
             completedAt: completedTime,
+            tokensUsed: result.usage?.total_tokens ?? 0,
           });
           showToast('success', '图片生成完成');
         },
@@ -522,8 +557,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    const modelName = IMAGE_API_CONFIG.model_names[task.mode as ImageGenerationMode];
-    const modelVersion = IMAGE_API_CONFIG.model_versions[task.mode as ImageGenerationMode];
+    const modelName = IMAGE_MODEL_NAMES[task.mode as ImageGenerationMode];
+    const modelVersion = IMAGE_MODEL_VERSIONS[task.mode as ImageGenerationMode];
 
     get().updateImageTask(taskId, {
       status: 'submitting',
@@ -567,7 +602,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const mappedStatus = statusMap[result.data.status] || result.data.status as TaskQueueStatus;
           get().updateImageTask(taskId, { status: mappedStatus });
         },
-        () => {
+        (result) => {
           const imageUrls = [
             'https://picsum.photos/seed/' + taskId.slice(0, 6) + 'x/2048/2048',
             'https://picsum.photos/seed/' + taskId.slice(0, 6) + 'y/2048/2048',
@@ -588,6 +623,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             keyFrameIds: kfIds,
             progress: 100,
             completedAt: new Date().toISOString(),
+            tokensUsed: result.usage?.total_tokens ?? 0,
           });
           showToast('success', '图片生成完成');
         },

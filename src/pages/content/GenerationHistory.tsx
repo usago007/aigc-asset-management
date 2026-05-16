@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import Pagination from '@/components/Pagination'
-import { Search, Download, Eye, RefreshCw } from 'lucide-react'
+import { Search, Download, Eye, RefreshCw, Play, Loader2, AlertCircle, X } from 'lucide-react'
 import type { TaskQueueStatus, GenerationMode, VideoGenerationTask } from '@/types/generation'
 
 const statusMap: Record<TaskQueueStatus, { label: string; className: string }> = {
@@ -42,6 +42,225 @@ const MODE_OPTIONS: { value: string; label: string }[] = [
   { value: 'image-to-video-first-tail', label: '首尾帧图生' },
 ]
 
+const ACTIVE_STATUSES: TaskQueueStatus[] = ['submitting', 'in_queue', 'generating']
+
+const PLACEHOLDER_IMAGES = [
+  'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=640&h=360&fit=crop',
+  'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=640&h=360&fit=crop',
+  'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=640&h=360&fit=crop',
+  'https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=640&h=360&fit=crop',
+  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=640&h=360&fit=crop',
+]
+
+function VideoThumbnailCard({
+  task,
+  onPlay,
+  onViewDetail,
+  onDownload,
+  onRetry,
+}: {
+  task: VideoGenerationTask
+  onPlay: () => void
+  onViewDetail: () => void
+  onDownload: () => void
+  onRetry: () => void
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isHovered, setIsHovered] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const isActive = ACTIVE_STATUSES.includes(task.status)
+  const isDone = task.status === 'done'
+  const isFailed = task.status === 'failed'
+
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true)
+    if (videoRef.current && task.videoUrl) {
+      videoRef.current.currentTime = 0
+      videoRef.current.play().catch(() => {})
+    }
+  }, [task.videoUrl])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false)
+    if (videoRef.current) {
+      videoRef.current.pause()
+    }
+  }, [])
+
+  const thumbnailUrl = task.firstFrameUrl || PLACEHOLDER_IMAGES[task.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % PLACEHOLDER_IMAGES.length]
+
+  return (
+    <div
+      className="card p-0 overflow-hidden group hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div
+        className="relative w-full bg-gray-900 cursor-pointer"
+        style={{ aspectRatio: task.aspectRatio?.replace(':', '/') || '16/9' }}
+        onClick={() => { if (isDone && task.videoUrl) onPlay() }}
+      >
+        {isDone && task.videoUrl && !hasError ? (
+          <>
+            <video
+              ref={videoRef}
+              src={task.videoUrl}
+              className="w-full h-full object-cover"
+              muted
+              loop
+              preload="metadata"
+              playsInline
+              onError={() => setHasError(true)}
+            />
+            {!isHovered && (
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-all">
+                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/50">
+                  <Play size={24} className="text-white ml-1" />
+                </div>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none">
+              <div className="pointer-events-auto flex items-center gap-2">
+                <button
+                  className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-colors"
+                  title="查看"
+                  onClick={(e) => { e.stopPropagation(); onViewDetail() }}
+                >
+                  <Eye size={16} className="text-white" />
+                </button>
+                <button
+                  className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-colors"
+                  title="下载"
+                  onClick={(e) => { e.stopPropagation(); onDownload() }}
+                >
+                  <Download size={16} className="text-white" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : isDone && (!task.videoUrl || hasError) ? (
+          <>
+            <img
+              src={thumbnailUrl}
+              alt={task.prompt}
+              className="w-full h-full object-cover opacity-60"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="badge badge-warning">视频不可用</span>
+            </div>
+          </>
+        ) : isActive ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-900">
+            <Loader2 size={32} className="text-primary-500 animate-spin" />
+            <span className="text-sm text-gray-400">
+              {statusMap[task.status].label}
+              {task.progress != null ? ` ${task.progress}%` : ''}
+            </span>
+            <div className="w-3/4 bg-gray-700 rounded-full h-1.5">
+              <div
+                className="h-1.5 rounded-full bg-primary-500 transition-all"
+                style={{ width: `${task.progress || 20}%` }}
+              />
+            </div>
+          </div>
+        ) : isFailed ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-red-950/50">
+            <AlertCircle size={32} className="text-error" />
+            <span className="text-xs text-error px-2 text-center">{task.errorMessage || '生成失败'}</span>
+          </div>
+        ) : (
+          <>
+            <img
+              src={thumbnailUrl}
+              alt={task.prompt}
+              className="w-full h-full object-cover opacity-40"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-gray-400 text-sm">{statusMap[task.status].label}</span>
+            </div>
+          </>
+        )}
+
+        <div className="absolute top-2 left-2 flex gap-1">
+          <span className={`badge ${statusMap[task.status].className} text-[10px] px-2 py-0.5`}>
+            {statusMap[task.status].label}
+          </span>
+        </div>
+        <div className="absolute top-2 right-2 flex gap-1">
+          <span className="badge badge-secondary text-[10px] px-2 py-0.5 bg-black/50 text-white border-0">
+            {modeMap[task.mode]}
+          </span>
+          <span className="badge badge-secondary text-[10px] px-2 py-0.5 bg-black/50 text-white border-0">
+            {task.aspectRatio}
+          </span>
+        </div>
+
+        {isDone && task.videoUrl && (
+          <div className="absolute bottom-2 right-2">
+            <span className="badge badge-info text-[10px] px-2 py-0.5 bg-black/50 text-white border-0">
+              {task.frames}帧
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-3 space-y-2">
+        <p className="text-xs text-gray-800 dark:text-gray-200 line-clamp-2 leading-relaxed" title={task.prompt}>
+          {task.prompt}
+        </p>
+        <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
+          <span>{formatDate(task.createdAt)}</span>
+          {task.timeElapsed && <span>{task.timeElapsed}</span>}
+        </div>
+        <div className="flex items-center gap-1 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+          {isDone && task.videoUrl && (
+            <button
+              className="flex-1 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center gap-1"
+              title="查看"
+              onClick={onViewDetail}
+            >
+              <Eye size={12} />
+              查看
+            </button>
+          )}
+          {isDone && task.videoUrl && (
+            <button
+              className="flex-1 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center gap-1"
+              title="下载"
+              onClick={onDownload}
+            >
+              <Download size={12} />
+              下载
+            </button>
+          )}
+          {isFailed && (
+            <button
+              className="flex-1 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center gap-1"
+              title="重试"
+              onClick={onRetry}
+            >
+              <RefreshCw size={12} />
+              重试
+            </button>
+          )}
+          {!isDone && !isFailed && (
+            <button
+              className="flex-1 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center gap-1"
+              title="查看详情"
+              onClick={onViewDetail}
+            >
+              <Eye size={12} />
+              详情
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GenerationHistory() {
   const navigate = useNavigate()
   const { tasks, retryTask } = useGenerationStore()
@@ -50,7 +269,8 @@ export default function GenerationHistory() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [modeFilter, setModeFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 10
+  const [playVideoUrl, setPlayVideoUrl] = useState<string | null>(null)
+  const pageSize = 12
 
   const filteredItems = useMemo(() => {
     return tasks.filter((task) => {
@@ -85,118 +305,70 @@ export default function GenerationHistory() {
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成历史</h1>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-          <input
-            type="text"
-            placeholder="搜索提示词..."
-            className="input-field pl-10"
-            value={searchQuery}
+      <div className="card">
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <input
+              type="text"
+              placeholder="搜索提示词..."
+              className="input-field pl-10"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
+            />
+          </div>
+          <select
+            className="input-field w-40"
+            value={statusFilter}
             onChange={(e) => {
-              setSearchQuery(e.target.value)
+              setStatusFilter(e.target.value)
               setCurrentPage(1)
             }}
-          />
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input-field w-40"
+            value={modeFilter}
+            onChange={(e) => {
+              setModeFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+          >
+            {MODE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          className="input-field max-w-[160px]"
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
-            setCurrentPage(1)
-          }}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input-field max-w-[180px]"
-          value={modeFilter}
-          onChange={(e) => {
-            setModeFilter(e.target.value)
-            setCurrentPage(1)
-          }}
-        >
-          {MODE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
       </div>
 
-      <div className="card overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="table-header">Prompt</th>
-              <th className="table-header">模式</th>
-              <th className="table-header">状态</th>
-              <th className="table-header">参数</th>
-              <th className="table-header">创建时间</th>
-              <th className="table-header">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedItems.map((task) => (
-              <tr
-                key={task.id}
-                className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors"
-              >
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200 max-w-xs truncate">
-                  {truncate(task.prompt)}
-                </td>
-                <td className="table-cell">{modeMap[task.mode]}</td>
-                <td className="table-cell">
-                  <span className={`badge ${statusMap[task.status].className}`}>
-                    {statusMap[task.status].label}
-                  </span>
-                </td>
-                <td className="table-cell text-sm text-gray-800 dark:text-gray-300">
-                  {task.frames}帧 / {task.aspectRatio}
-                </td>
-                <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(task.createdAt)}</td>
-                <td className="table-cell">
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      onClick={() => navigate(`/content/task/${task.id}`)}
-                      title="查看详情"
-                    >
-                      <Eye size={14} className="text-gray-600 dark:text-gray-400" />
-                    </button>
-                    {task.status === 'done' && (
-                      <button
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                        onClick={() => handleDownload(task)}
-                        title="下载"
-                      >
-                        <Download size={14} className="text-success" />
-                      </button>
-                    )}
-                    {task.status === 'failed' && (
-                      <button
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                        onClick={() => retryTask(task.id)}
-                        title="重试"
-                      >
-                        <RefreshCw size={14} className="text-warning" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {paginatedItems.length === 0 && (
-          <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>
-        )}
-      </div>
+      {paginatedItems.length === 0 ? (
+        <div className="card text-center py-16">
+          <p className="text-gray-600 dark:text-gray-500">暂无数据</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {paginatedItems.map((task) => (
+            <VideoThumbnailCard
+              key={task.id}
+              task={task}
+              onPlay={() => task.videoUrl && setPlayVideoUrl(task.videoUrl)}
+              onViewDetail={() => navigate(`/content/task/${task.id}`)}
+              onDownload={() => handleDownload(task)}
+              onRetry={() => retryTask(task.id)}
+            />
+          ))}
+        </div>
+      )}
 
       <Pagination
         currentPage={currentPage}
@@ -204,6 +376,29 @@ export default function GenerationHistory() {
         totalItems={filteredItems.length}
         onPageChange={setCurrentPage}
       />
+
+      {playVideoUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPlayVideoUrl(null)}
+        >
+          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+            <video
+              src={playVideoUrl}
+              controls
+              autoPlay
+              className="w-full rounded-lg shadow-2xl"
+              style={{ maxHeight: '80vh' }}
+            />
+            <button
+              className="absolute -top-3 -right-3 p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full shadow-lg transition-colors"
+              onClick={() => setPlayVideoUrl(null)}
+            >
+              <X size={16} className="text-gray-600 dark:text-gray-300" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

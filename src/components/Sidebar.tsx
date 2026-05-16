@@ -22,7 +22,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const currentPath = location.pathname
 
   const menuItems: MenuItem[] = [
-    { path: '/dashboard', icon: <LayoutDashboard size={20} />, label: '仪表盘' },
+    {
+      path: '/dashboard',
+      icon: <LayoutDashboard size={20} />,
+      label: '仪表盘',
+      children: [
+        { path: '/dashboard/overview', label: '总览' },
+        { path: '/dashboard/generation', label: '生成' },
+        { path: '/dashboard/assets', label: '资产' },
+        { path: '/dashboard/tasks', label: '任务' },
+      ]
+    },
     {
       path: '/content',
       icon: <Image size={20} />,
@@ -57,26 +67,28 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       children: [
         { path: '/system/roles', label: '角色权限' },
         { path: '/system/settings', label: '系统设置' },
+        { path: '/system/ai-config', label: 'AI 能力配置' },
+        { path: '/system/logs', label: '全局日志' },
       ]
     },
   ]
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') return currentPath === '/dashboard'
+    if (path === '/dashboard') return currentPath.startsWith('/dashboard')
     return currentPath.startsWith(path)
   }
 
   const isChildActive = (childPath: string) => currentPath === childPath
 
   return (
-    <div className={`bg-white dark:bg-primary-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+    <div className={`bg-primary-900 border-r border-gray-800 transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
+      <div className="flex items-center justify-between p-4 border-b border-gray-800">
         {!collapsed && (
           <h1 className="text-xl font-display font-bold text-accent-500">AIGC管理</h1>
         )}
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
@@ -89,8 +101,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               to={item.children ? item.children[0].path : item.path}
               className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'bg-accent-500/20 text-accent-500 dark:bg-accent-500/20'
-                  : 'text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                  ? 'bg-accent-500/20 text-accent-500'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
               }`}
             >
               {item.icon}
@@ -105,8 +117,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     to={child.path}
                     className={`block px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                       isChildActive(child.path)
-                        ? 'bg-gray-100 dark:bg-gray-800 text-accent-500'
-                        : 'text-gray-600 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'
+                        ? 'bg-gray-800 text-accent-500'
+                        : 'text-gray-500 hover:text-gray-300'
                     }`}
                   >
                     {child.label}
@@ -118,15 +130,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+      <div className="p-4 border-t border-gray-800">
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-accent-500/20 flex items-center justify-center text-accent-500">
               <Users size={16} />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">管理员</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">项目经理</p>
+              <p className="text-sm font-medium text-gray-300">管理员</p>
+              <p className="text-xs text-gray-500">项目经理</p>
             </div>
           </div>
         )}
