@@ -12,6 +12,7 @@ const statusMap: Record<TaskQueueStatus, { label: string; className: string }> =
   generating: { label: '生成中', className: 'badge-info' },
   done: { label: '已完成', className: 'badge-success' },
   failed: { label: '失败', className: 'badge-error' },
+  cancelled: { label: '已取消', className: 'badge-secondary' },
   expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
 }
@@ -81,12 +82,12 @@ export default function GenerationHistory() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">生成历史</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成历史</h1>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
           <input
             type="text"
             placeholder="搜索提示词..."
@@ -131,7 +132,7 @@ export default function GenerationHistory() {
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">Prompt</th>
               <th className="table-header">模式</th>
               <th className="table-header">状态</th>
@@ -144,9 +145,9 @@ export default function GenerationHistory() {
             {paginatedItems.map((task) => (
               <tr
                 key={task.id}
-                className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors"
               >
-                <td className="table-cell font-medium text-gray-200 max-w-xs truncate">
+                <td className="table-cell font-medium text-gray-800 dark:text-gray-200 max-w-xs truncate">
                   {truncate(task.prompt)}
                 </td>
                 <td className="table-cell">{modeMap[task.mode]}</td>
@@ -155,22 +156,22 @@ export default function GenerationHistory() {
                     {statusMap[task.status].label}
                   </span>
                 </td>
-                <td className="table-cell text-sm text-gray-400">
+                <td className="table-cell text-sm text-gray-800 dark:text-gray-300">
                   {task.frames}帧 / {task.aspectRatio}
                 </td>
-                <td className="table-cell text-gray-500">{formatDate(task.createdAt)}</td>
+                <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(task.createdAt)}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
                     <button
-                      className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                       onClick={() => navigate(`/content/task/${task.id}`)}
                       title="查看详情"
                     >
-                      <Eye size={14} className="text-gray-400" />
+                      <Eye size={14} className="text-gray-600 dark:text-gray-400" />
                     </button>
                     {task.status === 'done' && (
                       <button
-                        className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                         onClick={() => handleDownload(task)}
                         title="下载"
                       >
@@ -179,7 +180,7 @@ export default function GenerationHistory() {
                     )}
                     {task.status === 'failed' && (
                       <button
-                        className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                         onClick={() => retryTask(task.id)}
                         title="重试"
                       >
@@ -193,7 +194,7 @@ export default function GenerationHistory() {
           </tbody>
         </table>
         {paginatedItems.length === 0 && (
-          <div className="py-12 text-center text-gray-500">暂无数据</div>
+          <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>
         )}
       </div>
 

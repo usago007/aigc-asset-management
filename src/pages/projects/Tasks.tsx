@@ -1,15 +1,22 @@
 import { useState, useMemo } from 'react'
 import { useAppStore } from '@/store/appStore'
+import { showToast } from '@/utils/toast'
 import { formatDate } from '@/utils/date'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Plus, Edit2, Trash2, Search } from 'lucide-react'
 import type { Task, TaskStatus } from '@/types'
 
-const statusMap: Record<TaskStatus, { label: string; className: string }> = {
-  Pending: { label: '待处理', className: 'badge-warning' },
-  InProgress: { label: '进行中', className: 'badge-info' },
-  Completed: { label: '已完成', className: 'badge-success' },
+const statusMap: Record<TaskStatus, { label: string; variant: 'warning' | 'info' | 'success' }> = {
+  Pending: { label: '待处理', variant: 'warning' },
+  InProgress: { label: '进行中', variant: 'info' },
+  Completed: { label: '已完成', variant: 'success' },
 }
 
 export default function Tasks() {
@@ -61,11 +68,16 @@ export default function Tasks() {
   }
 
   const handleSave = () => {
-    if (!formData.taskName) return
+    if (!formData.taskName) {
+      showToast('error', '请输入任务名称')
+      return
+    }
     if (editingItem) {
       updateTask(editingItem.id, { ...formData, deadline: formData.deadline ? new Date(formData.deadline).toISOString() : '' })
+      showToast('success', '任务更新成功')
     } else {
       addTask({ ...formData, deadline: formData.deadline ? new Date(formData.deadline).toISOString() : '' } as Omit<Task, 'id' | 'createdAt' | 'updatedAt'>)
+      showToast('success', '任务创建成功')
     }
     setIsModalOpen(false)
   }
@@ -73,6 +85,7 @@ export default function Tasks() {
   const handleDelete = (id: string) => {
     if (window.confirm('确定要删除吗？')) {
       deleteTask(id)
+      showToast('success', '任务删除成功')
     }
   }
 
@@ -81,29 +94,37 @@ export default function Tasks() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">任务管理</h1>
-        <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">任务管理</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-500 mt-1">管理所有项目任务</p>
+        </div>
+        <Button onClick={() => handleOpenModal()} className="gap-2">
           <Plus size={16} /> 创建任务
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input type="text" placeholder="搜索任务名称..." className="input-field pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          <Input type="text" placeholder="搜索任务名称..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
-        <select className="input-field max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as any); setCurrentPage(1) }}>
-          <option value="all">全部状态</option>
-          <option value="Pending">待处理</option>
-          <option value="InProgress">进行中</option>
-          <option value="Completed">已完成</option>
-        </select>
+        <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val as any); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="全部状态" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="Pending">待处理</SelectItem>
+            <SelectItem value="InProgress">进行中</SelectItem>
+            <SelectItem value="Completed">已完成</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="card overflow-x-auto p-0">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">任务名称</th>
               <th className="table-header">所属项目</th>
               <th className="table-header">负责人</th>
@@ -115,21 +136,21 @@ export default function Tasks() {
           </thead>
           <tbody>
             {paginatedItems.map(task => (
-              <tr key={task.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                <td className="table-cell font-medium text-gray-200">{task.taskName}</td>
+              <tr key={task.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{task.taskName}</td>
                 <td className="table-cell">{getProjectName(task.projectId)}</td>
                 <td className="table-cell">{task.assignedTo}</td>
                 <td className="table-cell">
-                  <span className="badge badge-info">{task.type}</span>
+                  <Badge variant="info">{task.type}</Badge>
                 </td>
                 <td className="table-cell">
-                  <span className={`badge ${statusMap[task.status].className}`}>{statusMap[task.status].label}</span>
+                  <Badge variant={statusMap[task.status].variant}>{statusMap[task.status].label}</Badge>
                 </td>
                 <td className="table-cell text-gray-500">{formatDate(task.deadline, 'date')}</td>
                 <td className="table-cell">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(task)}><Edit2 size={14} className="text-gray-400" /></button>
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(task.id)}><Trash2 size={14} className="text-error" /></button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenModal(task)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 size={14} className="text-error" /></Button>
                   </div>
                 </td>
               </tr>
@@ -142,49 +163,64 @@ export default function Tasks() {
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
 
       <Modal title={editingItem ? '编辑任务' : '创建任务'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
-        <div className="space-y-4">
-          <div>
-            <label className="label-field">任务名称 *</label>
-            <input type="text" className="input-field" value={formData.taskName} onChange={(e) => setFormData({ ...formData, taskName: e.target.value })} placeholder="输入任务名称" />
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="taskName">任务名称 *</Label>
+            <Input id="taskName" value={formData.taskName} onChange={(e) => setFormData({ ...formData, taskName: e.target.value })} placeholder="输入任务名称" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">所属项目</label>
-              <select className="input-field" value={formData.projectId} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}>
-                <option value="">选择项目</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.projectName}</option>)}
-              </select>
+            <div className="space-y-2">
+              <Label>所属项目</Label>
+              <Select value={formData.projectId || 'none'} onValueChange={(val) => setFormData({ ...formData, projectId: val === 'none' ? '' : val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择项目" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">未选择</SelectItem>
+                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.projectName}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="label-field">负责人</label>
-              <input type="text" className="input-field" value={formData.assignedTo} onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })} placeholder="输入负责人" />
+            <div className="space-y-2">
+              <Label htmlFor="assignedTo">负责人</Label>
+              <Input id="assignedTo" value={formData.assignedTo} onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })} placeholder="输入负责人" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">类型</label>
-              <select className="input-field" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}>
-                <option value="生成">生成</option>
-                <option value="审核">审核</option>
-                <option value="交付">交付</option>
-              </select>
+            <div className="space-y-2">
+              <Label>类型</Label>
+              <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val as any })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="生成">生成</SelectItem>
+                  <SelectItem value="审核">审核</SelectItem>
+                  <SelectItem value="交付">交付</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="label-field">状态</label>
-              <select className="input-field" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}>
-                <option value="Pending">待处理</option>
-                <option value="InProgress">进行中</option>
-                <option value="Completed">已完成</option>
-              </select>
+            <div className="space-y-2">
+              <Label>状态</Label>
+              <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val as TaskStatus })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">待处理</SelectItem>
+                  <SelectItem value="InProgress">进行中</SelectItem>
+                  <SelectItem value="Completed">已完成</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div>
-            <label className="label-field">截止日期</label>
-            <input type="date" className="input-field" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+          <div className="space-y-2">
+            <Label htmlFor="deadline">截止日期</Label>
+            <Input id="deadline" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
           </div>
-          <div>
-            <label className="label-field">备注</label>
-            <textarea className="input-field min-h-[80px]" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入备注信息" />
+          <div className="space-y-2">
+            <Label htmlFor="notes">备注</Label>
+            <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入备注信息" className="min-h-[80px]" />
           </div>
         </div>
       </Modal>

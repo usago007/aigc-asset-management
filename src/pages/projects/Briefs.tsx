@@ -72,7 +72,7 @@ export default function Briefs() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">简报管理</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">简报管理</h1>
         <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
           <Plus size={16} /> 创建简报
         </button>
@@ -86,7 +86,7 @@ export default function Briefs() {
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">简报标题</th>
               <th className="table-header">所属项目</th>
               <th className="table-header">目标受众</th>
@@ -97,16 +97,16 @@ export default function Briefs() {
           </thead>
           <tbody>
             {paginatedItems.map(brief => (
-              <tr key={brief.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                <td className="table-cell font-medium text-gray-200">{brief.briefTitle}</td>
+              <tr key={brief.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{brief.briefTitle}</td>
                 <td className="table-cell">{getProjectName(brief.projectId)}</td>
                 <td className="table-cell">{brief.targetAudience}</td>
                 <td className="table-cell">{brief.platform}</td>
                 <td className="table-cell text-gray-500">{formatDate(brief.deadline, 'date')}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(brief)}><Edit2 size={14} className="text-gray-400" /></button>
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(brief.id)}><Trash2 size={14} className="text-error" /></button>
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(brief)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(brief.id)}><Trash2 size={14} className="text-error" /></button>
                   </div>
                 </td>
               </tr>

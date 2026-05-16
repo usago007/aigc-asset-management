@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { UploadCloud, X } from 'lucide-react'
 import { showToast } from '@/utils/toast'
 
@@ -38,7 +38,6 @@ function formatAspectRatio(ratio: number): string {
 export default function ImageUploader({ label, value, onChange, aspectRatio, onAspectRatioChange }: ImageUploaderProps) {
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   const processFile = useCallback(
     (file: File) => {
@@ -79,10 +78,6 @@ export default function ImageUploader({ label, value, onChange, aspectRatio, onA
     },
     [onChange, onAspectRatioChange],
   )
-
-  const handleClick = () => {
-    inputRef.current?.click()
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -128,15 +123,15 @@ export default function ImageUploader({ label, value, onChange, aspectRatio, onA
           <img src={value} alt={label} className="w-full h-auto rounded-lg" />
           {aspectRatio && (
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500">
                 宽高比: {formatAspectRatio(aspectRatio)}
               </span>
             </div>
           )}
         </div>
       ) : (
-        <div
-          onClick={handleClick}
+        <label
+          htmlFor={`file-input-${label}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -144,16 +139,16 @@ export default function ImageUploader({ label, value, onChange, aspectRatio, onA
             dragOver ? 'border-accent-500 bg-accent-500/10' : 'hover:border-gray-600'
           }`}
         >
-          <UploadCloud size={32} className="text-gray-400 mb-3" />
+          <UploadCloud size={32} className="text-gray-500 mb-3" />
           <p className="text-sm text-gray-300 mb-1">点击或拖拽上传图片</p>
           <p className="text-xs text-gray-500">支持 JPEG/PNG，最大 4.7MB</p>
-        </div>
+        </label>
       )}
 
       {error && <p className="text-error text-xs">{error}</p>}
 
       <input
-        ref={inputRef}
+        id={`file-input-${label}`}
         type="file"
         accept=".jpg,.jpeg,.png"
         onChange={handleChange}

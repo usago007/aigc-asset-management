@@ -1,6 +1,6 @@
 import { BaseEntity, UUID } from './index';
 
-export type TaskQueueStatus = 'submitting' | 'in_queue' | 'generating' | 'done' | 'failed' | 'expired' | 'not_found';
+export type TaskQueueStatus = 'submitting' | 'in_queue' | 'generating' | 'done' | 'failed' | 'cancelled' | 'expired' | 'not_found';
 
 export type GenerationMode = 'text-to-video' | 'image-to-video-first' | 'image-to-video-first-tail';
 

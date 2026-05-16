@@ -12,6 +12,7 @@ const statusMap: Record<TaskQueueStatus, { label: string; className: string }> =
   generating: { label: '生成中', className: 'badge-info' },
   done: { label: '已完成', className: 'badge-success' },
   failed: { label: '失败', className: 'badge-error' },
+  cancelled: { label: '已取消', className: 'badge-secondary' },
   expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
 }
@@ -76,13 +77,13 @@ export default function ImageGenerationHistory() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">图片生成历史</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">图片生成历史</h1>
       </div>
 
       <div className="card">
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" size={16} />
             <input
               className="input-field pl-10"
               placeholder="搜索Prompt..."
@@ -125,13 +126,13 @@ export default function ImageGenerationHistory() {
             <tbody>
               {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="table-cell text-center py-8 text-gray-500">
+                  <td colSpan={6} className="table-cell text-center py-8 text-gray-600 dark:text-gray-500">
                     暂无数据
                   </td>
                 </tr>
               ) : (
                 pageData.map((task) => (
-                  <tr key={task.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={task.id} className="hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                     <td className="table-cell max-w-[200px] truncate" title={task.prompt}>
                       {task.prompt.slice(0, 30)}{task.prompt.length > 30 ? '...' : ''}
                     </td>
@@ -141,7 +142,7 @@ export default function ImageGenerationHistory() {
                         {statusMap[task.status].label}
                       </span>
                     </td>
-                    <td className="table-cell text-xs text-gray-500">
+                    <td className="table-cell text-xs text-gray-800 dark:text-gray-300">
                       {task.seed !== undefined && `Seed: ${task.seed}`}
                       {task.frameType && ` · ${task.frameType === 'Opening' ? '首图' : '尾图'}`}
                     </td>
@@ -150,7 +151,7 @@ export default function ImageGenerationHistory() {
                       <div className="flex items-center gap-1">
                         {task.status === 'done' && task.outputImageUrls.length > 0 && (
                           <button
-                            className="p-1 text-gray-400 hover:text-primary-400 transition-colors"
+                            className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary-400 transition-colors"
                             title="预览"
                             onClick={() => setPreviewUrl(task.outputImageUrls[0])}
                           >
@@ -159,7 +160,7 @@ export default function ImageGenerationHistory() {
                         )}
                         {task.status === 'done' && task.outputImageUrls.length > 0 && (
                           <button
-                            className="p-1 text-gray-400 hover:text-primary-400 transition-colors"
+                            className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary-400 transition-colors"
                             title="下载"
                             onClick={() => handleDownload(task.outputImageUrls[0])}
                           >
@@ -168,7 +169,7 @@ export default function ImageGenerationHistory() {
                         )}
                         {task.status === 'failed' && (
                           <button
-                            className="p-1 text-gray-400 hover:text-primary-400 transition-colors"
+                            className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary-400 transition-colors"
                             title="重试"
                             onClick={() => retryImageTask(task.id)}
                           >
@@ -176,7 +177,7 @@ export default function ImageGenerationHistory() {
                           </button>
                         )}
                         <button
-                          className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                          className="p-1 text-gray-600 dark:text-gray-400 hover:text-red-400 transition-colors"
                           title="删除"
                           onClick={() => deleteImageTask(task.id)}
                         >
@@ -192,7 +193,7 @@ export default function ImageGenerationHistory() {
         </div>
 
         <div className="flex justify-between items-center mt-4">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-700 dark:text-gray-400">
             共 {filtered.length} 条，第 {page}/{totalPages} 页
           </div>
           <div className="flex gap-2">

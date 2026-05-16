@@ -16,10 +16,11 @@ function getStatusBadge(status: VideoGenerationTask['status']) {
     generating: { label: '生成中', className: 'badge-info', icon: <Play size={12} /> },
     done: { label: '完成', className: 'badge-success', icon: null },
     failed: { label: '失败', className: 'badge-error', icon: <AlertCircle size={12} /> },
+    cancelled: { label: '已取消', className: 'badge-secondary', icon: null },
     expired: { label: '已过期', className: 'badge-error', icon: null },
     submitting: { label: '提交中', className: 'badge-info', icon: null },
     not_found: { label: '未找到', className: 'badge-error', icon: <AlertCircle size={12} /> },
-  }
+  } as const
 
   const { label, className, icon } = config[status] || config.not_found
 
@@ -65,7 +66,7 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
         )}
 
         {task.status === 'generating' && task.progress != null && (
-          <p className="text-xs text-gray-400">{task.progress}%</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{task.progress}%</p>
         )}
 
         {task.status === 'failed' && task.errorMessage && (

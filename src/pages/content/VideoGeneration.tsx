@@ -88,12 +88,12 @@ export default function VideoGeneration() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">视频生成</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">视频生成</h1>
       </div>
 
       <div className="card space-y-6">
         <div>
-          <h2 className="font-display font-bold text-gray-100 mb-3">生成模式</h2>
+          <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">生成模式</h2>
           <div className="flex gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -104,8 +104,8 @@ export default function VideoGeneration() {
                 onChange={() => handleModeChange('text-to-video')}
                 className="accent-accent-500"
               />
-              <Film size={16} className="text-gray-400" />
-              <span className="text-sm text-gray-300">文生视频</span>
+              <Film size={16} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">文生视频</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -116,8 +116,8 @@ export default function VideoGeneration() {
                 onChange={() => handleModeChange('image-to-video-first')}
                 className="accent-accent-500"
               />
-              <Image size={16} className="text-gray-400" />
-              <span className="text-sm text-gray-300">首帧图生视频</span>
+              <Image size={16} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">首帧图生视频</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -128,15 +128,15 @@ export default function VideoGeneration() {
                 onChange={() => handleModeChange('image-to-video-first-tail')}
                 className="accent-accent-500"
               />
-              <ImagePlus size={16} className="text-gray-400" />
-              <span className="text-sm text-gray-300">首尾帧图生视频</span>
+              <ImagePlus size={16} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">首尾帧图生视频</span>
             </label>
           </div>
         </div>
 
         {(mode === 'image-to-video-first' || mode === 'image-to-video-first-tail') && (
           <div>
-            <h2 className="font-display font-bold text-gray-100 mb-3">参考图像</h2>
+            <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">参考图像</h2>
             {mode === 'image-to-video-first-tail' ? (
               <div className="grid grid-cols-2 gap-4">
                 <ImageUploader
@@ -172,13 +172,13 @@ export default function VideoGeneration() {
         )}
 
         <div>
-          <h2 className="font-display font-bold text-gray-100 mb-3">提示词</h2>
+          <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">提示词</h2>
           <PromptInput value={prompt} onChange={setPrompt} />
         </div>
 
         <div className="grid grid-cols-3 gap-6">
           <div>
-            <h2 className="font-display font-bold text-gray-100 mb-3">时长</h2>
+            <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">时长</h2>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -189,7 +189,7 @@ export default function VideoGeneration() {
                   onChange={() => setFrames(121)}
                   className="accent-accent-500"
                 />
-                <span className="text-sm text-gray-300">5秒(121帧)</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">5秒(121帧)</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -200,13 +200,13 @@ export default function VideoGeneration() {
                   onChange={() => setFrames(241)}
                   className="accent-accent-500"
                 />
-                <span className="text-sm text-gray-300">10秒(241帧)</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">10秒(241帧)</span>
               </label>
             </div>
           </div>
 
           <div>
-            <h2 className="font-display font-bold text-gray-100 mb-3">宽高比</h2>
+            <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">宽高比</h2>
             <div className="flex flex-wrap gap-2">
               {ASPECT_RATIOS.map((ratio) => (
                 <button
@@ -215,7 +215,7 @@ export default function VideoGeneration() {
                   className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
                     aspectRatio === ratio
                       ? 'bg-accent-500 text-white'
-                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                      : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-400'
                   }`}
                 >
                   {ratio}
@@ -225,7 +225,7 @@ export default function VideoGeneration() {
           </div>
 
           <div>
-            <h2 className="font-display font-bold text-gray-100 mb-3">Seed</h2>
+            <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-3">Seed</h2>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -236,7 +236,7 @@ export default function VideoGeneration() {
                   onChange={() => setUseCustomSeed(false)}
                   className="accent-accent-500"
                 />
-                <span className="text-sm text-gray-300">随机</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">随机</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -247,7 +247,7 @@ export default function VideoGeneration() {
                   onChange={() => setUseCustomSeed(true)}
                   className="accent-accent-500"
                 />
-                <span className="text-sm text-gray-300">自定义</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">自定义</span>
               </label>
             </div>
             {useCustomSeed && (
@@ -262,7 +262,7 @@ export default function VideoGeneration() {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-700/50">
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700/50">
           <button
             onClick={handleSubmit}
             disabled={!isFormValid()}
@@ -275,7 +275,7 @@ export default function VideoGeneration() {
 
       {activeTasks.length > 0 && (
         <div>
-          <h2 className="font-display font-bold text-gray-100 mb-4">
+          <h2 className="font-display font-bold text-gray-900 dark:text-gray-100 mb-4">
             活跃任务 ({activeTasks.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

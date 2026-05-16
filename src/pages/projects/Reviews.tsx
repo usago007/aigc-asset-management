@@ -77,7 +77,7 @@ export default function Reviews() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">审核管理</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">审核管理</h1>
         <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
           <Plus size={16} /> 创建审核
         </button>
@@ -99,7 +99,7 @@ export default function Reviews() {
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">审核对象</th>
               <th className="table-header">审核人</th>
               <th className="table-header">审核类型</th>
@@ -111,7 +111,7 @@ export default function Reviews() {
           </thead>
           <tbody>
             {paginatedItems.map(review => (
-              <tr key={review.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+              <tr key={review.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
                 <td className="table-cell">
                   <span className="badge badge-info">{review.targetType}</span>
                 </td>
@@ -124,8 +124,8 @@ export default function Reviews() {
                 <td className="table-cell text-gray-500">{formatDate(review.createdAt)}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(review)}><Edit2 size={14} className="text-gray-400" /></button>
-                    <button className="p-1 hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(review.id)}><Trash2 size={14} className="text-error" /></button>
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(review)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(review.id)}><Trash2 size={14} className="text-error" /></button>
                   </div>
                 </td>
               </tr>

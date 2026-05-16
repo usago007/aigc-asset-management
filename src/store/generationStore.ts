@@ -5,6 +5,9 @@ import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockSubmitTask } from '@/services/mockAdapter';
+import { generateVideoTasks } from '@/utils/mockData';
+
+const _videoTasks = generateVideoTasks(35);
 
 interface GenerationState {
   tasks: VideoGenerationTask[];
@@ -20,7 +23,7 @@ interface GenerationState {
 const EXPIRY_WARNING_MS = 600000;
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
-  tasks: [],
+  tasks: _videoTasks,
 
   addTask: (task) =>
     set((state) => {

@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 interface PaginationProps {
   currentPage: number
   pageSize: number
@@ -25,14 +27,14 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
   if (totalPages > 1) pages.push(totalPages)
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-800">
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <span>共 {totalItems} 条</span>
+    <div className="flex items-center justify-between px-2 py-4">
+      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-500">
+        <span>共 {totalItems} 条记录</span>
         {onPageSizeChange && (
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+            className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-gray-100"
           >
             <option value={10}>10条/页</option>
             <option value={20}>20条/页</option>
@@ -40,23 +42,26 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
           </select>
         )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-3 py-1 rounded text-sm disabled:opacity-40 hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-gray-700 dark:text-gray-300"
         >
-          上一页
+          <ChevronLeft size={16} />
+          <span className="hidden sm:inline">上一页</span>
         </button>
         {pages.map((page, index) => (
           typeof page === 'string' ? (
-            <span key={`ellipsis-${index}`} className="px-2 text-gray-600">...</span>
+            <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
           ) : (
             <button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`w-8 h-8 rounded text-sm transition-colors ${
-                page === currentPage ? 'bg-accent-500 text-white' : 'hover:bg-gray-800'
+              className={`w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200 ${
+                page === currentPage 
+                  ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' 
+                  : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
               {page}
@@ -66,9 +71,10 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded text-sm disabled:opacity-40 hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-gray-700 dark:text-gray-300"
         >
-          下一页
+          <span className="hidden sm:inline">下一页</span>
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

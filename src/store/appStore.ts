@@ -4,18 +4,18 @@ import type { ImageGenerationTask, ImageGenerationMode, TaskQueueStatus } from '
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import {
-  mockCustomers,
-  mockBrands,
-  mockProjects,
-  mockKeyFrames,
-  mockShots,
-  mockAssets,
-  mockGenerationVersions,
-  mockBriefs,
-  mockTasks,
-  mockReviews,
-  mockRoles,
-} from '@/data/mockData';
+  generateCustomers,
+  generateBrands,
+  generateProjects,
+  generateKeyFrames,
+  generateShots,
+  generateAssets,
+  generateGenerationVersions,
+  generateBriefs,
+  generateTasks,
+  generateReviews,
+  generateImageTasks,
+} from '@/utils/mockData';
 import { IMAGE_API_CONFIG, getReqKeyForMode } from '@/services/imageGeneration';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockImageSubmitTask } from '@/services/imageMockAdapter';
@@ -78,18 +78,39 @@ interface AppState {
   updateImageTask: (taskId: string, data: Partial<ImageGenerationTask>) => void;
 }
 
+// Generate mock data
+const _customers = generateCustomers(35);
+const _brands = generateBrands(35, _customers);
+const _projects = generateProjects(35, _brands);
+const _shots = generateShots(35, _projects);
+const _keyFrames = generateKeyFrames(35, _shots);
+const _assets = generateAssets(35, _shots);
+const _generationVersions = generateGenerationVersions(35, _keyFrames.map(kf => kf.id));
+const _briefs = generateBriefs(35, _projects);
+const _tasks = generateTasks(35, _projects);
+const _reviews = generateReviews(35);
+const _imageTasks = generateImageTasks(35);
+const _roles = [
+  { id: 'role-1', roleName: '超级管理员', permissions: ['*'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  { id: 'role-2', roleName: '项目经理', permissions: ['project:*', 'task:*', 'brief:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  { id: 'role-3', roleName: '创意人员', permissions: ['project:read', 'task:*', 'asset:*', 'shot:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  { id: 'role-4', roleName: '审核人员', permissions: ['project:read', 'review:*', 'asset:read'], visibility: 'internal-only' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  { id: 'role-5', roleName: '客户', permissions: ['project:read', 'brief:read', 'review:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+  { id: 'role-6', roleName: '访客', permissions: ['project:read', 'asset:read'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
+];
+
 export const useAppStore = create<AppState>((set, get) => ({
-  customers: mockCustomers,
-  brands: mockBrands,
-  projects: mockProjects,
-  keyFrames: mockKeyFrames,
-  shots: mockShots,
-  assets: mockAssets,
-  generationVersions: mockGenerationVersions,
-  briefs: mockBriefs,
-  tasks: mockTasks,
-  reviews: mockReviews,
-  roles: mockRoles,
+  customers: _customers,
+  brands: _brands,
+  projects: _projects,
+  keyFrames: _keyFrames,
+  shots: _shots,
+  assets: _assets,
+  generationVersions: _generationVersions,
+  briefs: _briefs,
+  tasks: _tasks,
+  reviews: _reviews,
+  roles: _roles,
 
   addCustomer: (data) => set((state) => {
     const newItem: Customer = {
@@ -316,7 +337,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     return { reviews: state.reviews.filter((r) => r.id !== id) };
   }),
 
-  imageTasks: [],
+  imageTasks: _imageTasks,
 
   updateImageTask: (taskId, data) => set((state) => ({
     imageTasks: state.imageTasks.map((t) =>
@@ -591,7 +612,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   cancelImageTask: (taskId) => {
     stopPolling(taskId);
     get().updateImageTask(taskId, {
-      status: 'failed',
+      status: 'cancelled',
       errorMessage: '已取消',
     });
     showToast('info', '任务已取消');

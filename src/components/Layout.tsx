@@ -7,14 +7,13 @@ import {
 } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Header from './Header'
-import ToastContainer from './ToastContainer'
 
 export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const location = useLocation()
 
   return (
-    <div className="flex h-screen bg-primary-950">
+    <div className="flex h-screen bg-gray-50 dark:bg-primary-950 transition-colors duration-300">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
@@ -22,7 +21,6 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
-      <ToastContainer />
     </div>
   )
 }

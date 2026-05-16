@@ -19,7 +19,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-gray-100">仪表盘</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">仪表盘</h1>
         <p className="text-gray-500 mt-1">AIGC数字资产管理系统概览</p>
       </div>
 
@@ -33,8 +33,8 @@ export default function Dashboard() {
                   <Icon size={24} className={stat.color} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-100">{stat.value}</p>
-                  <p className="text-sm text-gray-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-500">{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -44,15 +44,15 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-100 mb-4">项目进度</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">项目进度</h2>
           <div className="space-y-3">
             {projects.slice(0, 5).map(project => (
               <div key={project.id}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-300">{project.projectName}</span>
-                  <span className="text-gray-500">{project.progress}%</span>
+                  <span className="text-gray-800 dark:text-gray-300">{project.projectName}</span>
+                  <span className="text-gray-600 dark:text-gray-500">{project.progress}%</span>
                 </div>
-                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-accent-500 rounded-full transition-all duration-300"
                     style={{ width: `${project.progress}%` }}
@@ -64,13 +64,13 @@ export default function Dashboard() {
         </div>
 
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-100 mb-4">近期审核</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">近期审核</h2>
           <div className="space-y-3">
             {reviews.slice(0, 5).map(review => (
-              <div key={review.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
+              <div key={review.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 last:border-0">
                 <div>
-                  <p className="text-sm text-gray-300">{review.reviewer}</p>
-                  <p className="text-xs text-gray-500">{review.reviewType === 'Internal' ? '内部审核' : '客户审核'}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-300">{review.reviewer}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-500">{review.reviewType === 'Internal' ? '内部审核' : '客户审核'}</p>
                 </div>
                 <span className={`badge ${
                   review.status === 'Approved' ? 'badge-success' :

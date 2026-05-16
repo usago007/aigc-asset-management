@@ -20,6 +20,7 @@ const statusMap: Record<TaskQueueStatus, { label: string; className: string }> =
   generating: { label: '生成中', className: 'badge-info' },
   done: { label: '已完成', className: 'badge-success' },
   failed: { label: '失败', className: 'badge-error' },
+  cancelled: { label: '已取消', className: 'badge-secondary' },
   expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
 }
@@ -136,7 +137,7 @@ export default function ImageGeneration() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">图片生成工作台</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">图片生成工作台</h1>
       </div>
 
       <div className="card space-y-6">
@@ -151,7 +152,7 @@ export default function ImageGeneration() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                     mode === opt.value
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                   onClick={() => { setMode(opt.value); setUploadedImages([]) }}
                 >
@@ -169,7 +170,7 @@ export default function ImageGeneration() {
             <div className="flex gap-2">
               <button
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  frameType === 'Opening' ? 'bg-primary-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  frameType === 'Opening' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => setFrameType('Opening')}
               >
@@ -177,7 +178,7 @@ export default function ImageGeneration() {
               </button>
               <button
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  frameType === 'Ending' ? 'bg-primary-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  frameType === 'Ending' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => setFrameType('Ending')}
               >
@@ -205,7 +206,7 @@ export default function ImageGeneration() {
             <label className="label-field">上传图片 {uploadedImages.length}/{maxImages}</label>
             <div className="flex flex-wrap gap-3">
               {uploadedImages.map((img, idx) => (
-                <div key={idx} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-700 group">
+                <div key={idx} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 group">
                   <img src={img.url} alt="" className="w-full h-full object-cover" />
                   <button
                     className="absolute top-0 right-0 bg-red-600 text-white rounded-bl p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -216,7 +217,7 @@ export default function ImageGeneration() {
                 </div>
               ))}
               {uploadedImages.length < maxImages && (
-                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-700 hover:border-primary-500 flex items-center justify-center cursor-pointer transition-colors">
+                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary-500 flex items-center justify-center cursor-pointer transition-colors">
                   <input
                     type="file"
                     accept="image/jpeg,image/png"
@@ -224,7 +225,7 @@ export default function ImageGeneration() {
                     onChange={(e) => handleImageUpload(e.target.files)}
                     multiple={maxImages > 1}
                   />
-                  <span className="text-gray-500 text-2xl">+</span>
+                  <span className="text-gray-600 dark:text-gray-500 text-2xl">+</span>
                 </label>
               )}
             </div>
@@ -240,23 +241,23 @@ export default function ImageGeneration() {
             onChange={(e) => setPrompt(e.target.value)}
             maxLength={800}
           />
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
             {prompt.length}/800 {prompt.length > 400 && prompt.length <= 800 && '(较长，可能影响生成效果)'}
             {prompt.length > 800 && '(超出最大长度)'}
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-4">
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
           <label className="label-field">高级参数</label>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="label-field text-xs text-gray-500">分辨率</label>
+              <label className="label-field text-xs text-gray-600 dark:text-gray-400">分辨率</label>
               <div className="flex gap-2">
                 {RESOLUTION_OPTIONS.map((opt) => (
                   <button
                     key={opt.label}
                     className={`flex-1 py-1.5 rounded text-xs transition-all ${
-                      resolution === opt.size ? 'bg-primary-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      resolution === opt.size ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                     onClick={() => setResolution(opt.size)}
                   >
@@ -266,13 +267,13 @@ export default function ImageGeneration() {
               </div>
             </div>
             <div>
-              <label className="label-field text-xs text-gray-500">宽高比</label>
+              <label className="label-field text-xs text-gray-600 dark:text-gray-400">宽高比</label>
               <div className="flex flex-wrap gap-1">
                 {ASPECT_RATIOS.map((ar) => (
                   <button
                     key={ar}
                     className={`px-2 py-1 rounded text-xs transition-all ${
-                      aspectRatio === ar ? 'bg-primary-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      aspectRatio === ar ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                     onClick={() => setAspectRatio(ar)}
                   >
@@ -282,12 +283,12 @@ export default function ImageGeneration() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="label-field text-xs text-gray-500">其他</label>
-              <label className="flex items-center gap-2 text-xs text-gray-400">
+              <label className="label-field text-xs text-gray-600 dark:text-gray-400">其他</label>
+              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
                 <input type="checkbox" checked={forceSingle} onChange={(e) => setForceSingle(e.target.checked)} />
                 强制单图
               </label>
-              <label className="flex items-center gap-2 text-xs text-gray-400">
+              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
                 <input type="checkbox" checked={useCustomSeed} onChange={(e) => setUseCustomSeed(e.target.checked)} />
                 自定义Seed
               </label>
@@ -303,7 +304,7 @@ export default function ImageGeneration() {
             />
           )}
           <div className="mt-2">
-            <label className="label-field text-xs text-gray-500">文本影响程度 (Scale): {scale}</label>
+            <label className="label-field text-xs text-gray-600 dark:text-gray-400">文本影响程度 (Scale): {scale}</label>
             <input
               type="range"
               min="0"
@@ -326,14 +327,14 @@ export default function ImageGeneration() {
 
       {activeTasks.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-100 mb-4">生成中的任务</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">生成中的任务</h3>
           <div className="space-y-3">
             {activeTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+              <div key={task.id} className="flex items-center justify-between p-3 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-200">{task.prompt.slice(0, 40)}</div>
-                  <div className="text-xs text-gray-500">{modeOptions.find(m => m.value === task.mode)?.label} · {statusMap[task.status].label}</div>
-                  <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{task.prompt.slice(0, 40)}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{modeOptions.find(m => m.value === task.mode)?.label} · {statusMap[task.status].label}</div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                     <div
                       className={`h-1.5 rounded-full transition-all ${task.status === 'generating' ? 'bg-primary-500' : 'bg-yellow-500'}`}
                       style={{ width: task.status === 'generating' ? `${task.progress || 50}%` : '20%' }}
@@ -341,7 +342,7 @@ export default function ImageGeneration() {
                   </div>
                 </div>
                 <button
-                  className="ml-3 px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                  className="ml-3 px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
                   onClick={() => cancelImageTask(task.id)}
                 >
                   取消
@@ -354,10 +355,10 @@ export default function ImageGeneration() {
 
       {latestDone && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-100 mb-4">生成结果</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">生成结果</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {latestDone.outputImageUrls.map((url, idx) => (
-              <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-700">
+              <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
                 <img src={url} alt="" className="w-full aspect-square object-cover" />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
