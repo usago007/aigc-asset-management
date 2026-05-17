@@ -53,6 +53,11 @@ type FrameLookup = {
   sourceTask: ImageGenerationTask | null
 }
 
+type VideoLookup = {
+  task: VideoGenerationTask | null
+  previewUrl: string | null
+}
+
 const summarizeText = (value: string, max = 96) => {
   if (!value) return '-'
   return value.length > max ? `${value.slice(0, max)}...` : value
@@ -104,6 +109,55 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
         <div className="text-gray-600 dark:text-gray-400">
           <span className="font-medium text-gray-700 dark:text-gray-300">来源任务：</span>
           {lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
+  if (!lookup.task || !lookup.previewUrl) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
+        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">当前镜头还没有可播放的视频预览。</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
+          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
+        </div>
+        <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
+          {lookup.task.status}
+        </Badge>
+      </div>
+      <video
+        src={lookup.previewUrl}
+        controls
+        preload="metadata"
+        className="mt-4 h-56 w-full rounded-lg bg-black object-cover"
+      />
+      <div className="mt-4 space-y-2 text-sm">
+        <div className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
+          {summarizeText(lookup.task.prompt, 120)}
+        </div>
+        <div className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-700 dark:text-gray-300">任务模型：</span>
+          {lookup.task.reqKey}
+        </div>
+        <div className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-700 dark:text-gray-300">生成时间：</span>
+          {formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}
+        </div>
+        <div className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-700 dark:text-gray-300">Tokens：</span>
+          {lookup.task.tokensUsed ?? '-'}
         </div>
       </div>
     </div>
@@ -205,6 +259,29 @@ export default function ProjectDetail() {
 
   const shotById = useMemo(() => new Map(projectShots.map((shot) => [shot.id, shot])), [projectShots])
   const keyFrameById = useMemo(() => new Map(keyFrames.map((frame) => [frame.id, frame])), [keyFrames])
+  const latestVideoTaskByShotId = useMemo(() => {
+    const grouped = new Map<string, VideoGenerationTask[]>()
+    relatedVideoTasks.forEach((task) => {
+      if (!task.shotId) return
+      const current = grouped.get(task.shotId) || []
+      current.push(task)
+      grouped.set(task.shotId, current)
+    })
+
+    const latest = new Map<string, VideoGenerationTask>()
+    grouped.forEach((tasks, shotId) => {
+      const selected = [...tasks].sort((a, b) => {
+        const aTime = new Date(a.completedAt || a.updatedAt || a.createdAt).getTime()
+        const bTime = new Date(b.completedAt || b.updatedAt || b.createdAt).getTime()
+        if (a.status === 'done' && b.status !== 'done') return -1
+        if (a.status !== 'done' && b.status === 'done') return 1
+        return bTime - aTime
+      })[0]
+      if (selected) latest.set(shotId, selected)
+    })
+
+    return latest
+  }, [relatedVideoTasks])
 
   const getFrameLookup = (frameId: string | null): FrameLookup => {
     if (!frameId) {
@@ -217,6 +294,14 @@ export default function ProjectDetail() {
     const previewUrl = sourceTask && resultIndex >= 0 ? sourceTask.outputImageUrls[resultIndex] || null : null
 
     return { frame, previewUrl, sourceTask }
+  }
+
+  const getVideoLookup = (shotId: string): VideoLookup => {
+    const task = latestVideoTaskByShotId.get(shotId) || null
+    return {
+      task,
+      previewUrl: task?.videoUrl || null,
+    }
   }
 
   const processRecords = useMemo<ProcessRecord[]>(() => {
@@ -515,6 +600,7 @@ export default function ProjectDetail() {
             {projectShots.map((shot) => {
               const opening = getFrameLookup(shot.firstFrameId)
               const ending = getFrameLookup(shot.lastFrameId)
+              const video = getVideoLookup(shot.id)
 
               return (
                 <div key={shot.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-primary-900/40 p-5 space-y-5">
@@ -557,7 +643,8 @@ export default function ProjectDetail() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="grid gap-4 xl:grid-cols-3">
+                    <ShotVideoCard lookup={video} />
                     <FrameTraceCard label="首图" lookup={opening} />
                     <FrameTraceCard label="尾图" lookup={ending} />
                   </div>

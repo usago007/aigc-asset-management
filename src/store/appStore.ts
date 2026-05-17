@@ -4,16 +4,7 @@ import type { ImageGenerationTask, ImageGenerationMode, TaskQueueStatus } from '
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import {
-  generateCustomers,
-  generateBrands,
-  generateProjects,
-  generateKeyFrames,
-  generateShots,
-  generateAssets,
-  generateGenerationVersions,
-  generateBriefs,
-  generateTasks,
-  generateReviews,
+  DEMO_DATASET,
   MOCK_IMAGE_TASKS,
   MOCK_VIDEO_TASKS,
   generateMembers,
@@ -91,17 +82,17 @@ interface AppState {
 }
 
 // Generate mock data
-const _customers = generateCustomers(35);
-const _brands = generateBrands(35, _customers);
-const _projects = generateProjects(35, _brands);
-const _shots = generateShots(35, _projects);
-const _keyFrames = generateKeyFrames(35, _shots);
+const _customers = DEMO_DATASET.customers;
+const _brands = DEMO_DATASET.brands;
+const _projects = DEMO_DATASET.projects;
+const _shots = DEMO_DATASET.shots;
+const _keyFrames = DEMO_DATASET.keyFrames;
 const _imageTasks = MOCK_IMAGE_TASKS;
-const _assets = generateAssets(35, _shots, _imageTasks, MOCK_VIDEO_TASKS);
-const _generationVersions = generateGenerationVersions(35, _keyFrames.map(kf => kf.id));
-const _briefs = generateBriefs(35, _projects);
-const _tasks = generateTasks(35, _projects);
-const _reviews = generateReviews(35);
+const _assets = DEMO_DATASET.assets;
+const _generationVersions = DEMO_DATASET.generationVersions;
+const _briefs = DEMO_DATASET.briefs;
+const _tasks = DEMO_DATASET.tasks;
+const _reviews = DEMO_DATASET.reviews;
 const _roles = [
   { id: 'role-1', roleName: '超级管理员', permissions: ['*'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
   { id: 'role-2', roleName: '项目经理', permissions: ['project:*', 'task:*', 'brief:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },

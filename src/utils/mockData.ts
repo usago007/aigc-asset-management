@@ -278,209 +278,392 @@ export function generateBrands(count: number = 35, customers: Customer[] = []): 
   }))
 }
 
-export function generateProjects(count: number = 35, brands: Brand[] = []): Project[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    projectName: PROJECT_NAMES[i % PROJECT_NAMES.length],
-    brandId: brands[i % brands.length]?.id || '',
-    projectOwner: BRAND_OWNERS[(i + 5) % BRAND_OWNERS.length],
-    progress: Math.min(100, Math.max(0, Math.round((i / count) * 100 + Math.random() * 20))),
-    stage: PROJECT_STAGES[i % PROJECT_STAGES.length],
-    riskLevel: RISK_LEVELS[i % RISK_LEVELS.length],
-    pendingReviews: Math.floor(Math.random() * 5),
-  }))
+const DEMO_PROJECT_COUNT = 12
+const SHOT_COUNT_PATTERN = [5, 6, 7]
+const TEST_VIDEO_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+
+interface DemoDataset {
+  customers: Customer[]
+  brands: Brand[]
+  projects: Project[]
+  shots: Shot[]
+  keyFrames: KeyFrame[]
+  assets: Asset[]
+  generationVersions: GenerationVersion[]
+  briefs: Brief[]
+  tasks: Task[]
+  reviews: Review[]
+  imageTasks: ImageGenerationTask[]
+  videoTasks: VideoGenerationTask[]
 }
 
-export function generateShots(count: number = 35, projects: Project[] = []): Shot[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    shotName: SHOT_NAMES[i % SHOT_NAMES.length],
-    projectId: projects[i % projects.length]?.id || '',
-    firstFrameId: Math.random() > 0.3 ? `kf-${i * 2}` : null,
-    lastFrameId: Math.random() > 0.3 ? `kf-${i * 2 + 1}` : null,
-    promptId: `prompt-${i}`,
-    modelName: pick(MODEL_NAMES),
-    modelVersion: pick(MODEL_VERSIONS),
-  }))
+function isoOffset(dayOffset: number, minuteOffset: number = 0): string {
+  const base = new Date('2026-04-01T09:00:00.000Z').getTime()
+  return new Date(base + dayOffset * 86400000 + minuteOffset * 60000).toISOString()
 }
 
-export function generateKeyFrames(count: number = 35, shots: Shot[] = []): KeyFrame[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    name: KEYFRAME_NAMES[i % KEYFRAME_NAMES.length],
-    type: i % 2 === 0 ? 'Opening' : 'Ending',
-    promptText: PROMPT_TEXTS[i % PROMPT_TEXTS.length],
-    modelName: pick(MODEL_NAMES),
-    modelVersion: pick(MODEL_VERSIONS),
-    status: pick<GenerationStatus>(['Pending', 'Completed', 'Failed']),
-    parentShotId: shots[i % shots.length]?.id || '',
-  }))
+function demoEntity(id: string, createdAt: string, updatedAt: string = createdAt) {
+  return { id, createdAt, updatedAt }
+}
+
+function buildDemoDataset(): DemoDataset {
+  const customers = generateCustomers(DEMO_PROJECT_COUNT)
+  const brands = generateBrands(DEMO_PROJECT_COUNT, customers)
+  const projects: Project[] = []
+  const shots: Shot[] = []
+  const keyFrames: KeyFrame[] = []
+  const imageTasks: ImageGenerationTask[] = []
+  const videoTasks: VideoGenerationTask[] = []
+  const generationVersions: GenerationVersion[] = []
+  const briefs: Brief[] = []
+  const tasks: Task[] = []
+  const reviews: Review[] = []
+  const assets: Asset[] = []
+
+  let globalShotIndex = 0
+  let globalAssetIndex = 0
+  let globalTaskIndex = 0
+  let globalReviewIndex = 0
+
+  for (let projectIndex = 0; projectIndex < DEMO_PROJECT_COUNT; projectIndex++) {
+    const projectId = `project-${projectIndex + 1}`
+    const projectCreatedAt = isoOffset(projectIndex * 2, 30)
+    const shotCount = SHOT_COUNT_PATTERN[projectIndex % SHOT_COUNT_PATTERN.length]
+    const pendingReviews = 1 + (projectIndex % 4)
+    const project: Project = {
+      ...demoEntity(projectId, projectCreatedAt, isoOffset(projectIndex * 2 + 7, 40)),
+      projectName: PROJECT_NAMES[projectIndex % PROJECT_NAMES.length],
+      brandId: brands[projectIndex % brands.length]?.id || '',
+      projectOwner: BRAND_OWNERS[(projectIndex + 5) % BRAND_OWNERS.length],
+      progress: 18 + projectIndex * 6,
+      stage: PROJECT_STAGES[projectIndex % PROJECT_STAGES.length],
+      riskLevel: RISK_LEVELS[projectIndex % RISK_LEVELS.length],
+      pendingReviews,
+    }
+    projects.push(project)
+
+    const firstProjectVersionId = `version-${projectIndex + 1}-1-1`
+    briefs.push({
+      ...demoEntity(`brief-${projectIndex + 1}`, isoOffset(projectIndex * 2, 80), isoOffset(projectIndex * 2 + 6, 90)),
+      briefTitle: BRIEF_TITLES[projectIndex % BRIEF_TITLES.length],
+      projectId,
+      description: BRIEF_DESCRIPTIONS[projectIndex % BRIEF_DESCRIPTIONS.length],
+      targetAudience: TARGET_AUDIENCES[projectIndex % TARGET_AUDIENCES.length],
+      platform: PLATFORMS[projectIndex % PLATFORMS.length],
+      deadline: isoOffset(projectIndex * 2 + 12, 0),
+      fileUrl: `https://example.com/brief/${projectId}`,
+      currentVersionId: projectIndex % 2 === 0 ? firstProjectVersionId : null,
+    })
+
+    tasks.push(
+      {
+        ...demoEntity(`task-${projectIndex + 1}-1`, isoOffset(projectIndex * 2 + 1, 120), isoOffset(projectIndex * 2 + 3, 130)),
+        taskName: TASK_NAMES[(projectIndex * 2) % TASK_NAMES.length],
+        projectId,
+        assignedTo: ASSIGNEES[projectIndex % ASSIGNEES.length],
+        status: TASK_STATUSES[projectIndex % TASK_STATUSES.length],
+        type: TASK_TYPES[projectIndex % TASK_TYPES.length],
+        deadline: isoOffset(projectIndex * 2 + 10, 0),
+        notes: `${project.projectName} 的关键制作任务`,
+      },
+      {
+        ...demoEntity(`task-${projectIndex + 1}-2`, isoOffset(projectIndex * 2 + 2, 160), isoOffset(projectIndex * 2 + 5, 180)),
+        taskName: TASK_NAMES[(projectIndex * 2 + 1) % TASK_NAMES.length],
+        projectId,
+        assignedTo: ASSIGNEES[(projectIndex + 3) % ASSIGNEES.length],
+        status: TASK_STATUSES[(projectIndex + 1) % TASK_STATUSES.length],
+        type: TASK_TYPES[(projectIndex + 1) % TASK_TYPES.length],
+        deadline: isoOffset(projectIndex * 2 + 12, 0),
+        notes: `${project.projectName} 的交付前复核任务`,
+      },
+    )
+
+    for (let reviewIndex = 0; reviewIndex < pendingReviews; reviewIndex++) {
+      reviews.push({
+        ...demoEntity(`review-${projectIndex + 1}-${reviewIndex + 1}`, isoOffset(projectIndex * 2 + 5, 45 + reviewIndex * 20)),
+        targetId: projectId,
+        targetType: reviewIndex % 2 === 0 ? 'Brief' : 'Shot',
+        reviewer: REVIEWERS[(projectIndex + reviewIndex) % REVIEWERS.length],
+        reviewType: REVIEW_TYPES_ARR[(projectIndex + reviewIndex) % REVIEW_TYPES_ARR.length],
+        status: REVIEW_STATUSES_ARR[(projectIndex + reviewIndex) % REVIEW_STATUSES_ARR.length],
+        notes: `项目审核记录 ${globalReviewIndex + 1}：${['需要补充镜头细节', '内容通过，可继续制作', '客户建议优化结尾收束'][reviewIndex % 3]}`,
+      })
+      globalReviewIndex += 1
+    }
+
+    for (let shotIndex = 0; shotIndex < shotCount; shotIndex++) {
+      globalShotIndex += 1
+      const shotId = `shot-${projectIndex + 1}-${shotIndex + 1}`
+      const promptId = `prompt-${projectIndex + 1}-${shotIndex + 1}`
+      const modelName = MODEL_NAMES[(projectIndex + shotIndex) % MODEL_NAMES.length]
+      const modelVersion = MODEL_VERSIONS[(projectIndex * 2 + shotIndex) % MODEL_VERSIONS.length]
+      const basePrompt = PROMPT_TEXTS[(projectIndex * 3 + shotIndex) % PROMPT_TEXTS.length]
+      const shotCreatedAt = isoOffset(projectIndex * 3 + shotIndex, 120 + shotIndex * 12)
+      const shotLabel = SHOT_NAMES[(projectIndex * 5 + shotIndex) % SHOT_NAMES.length]
+      const shotName = `${project.projectName} · ${shotLabel}`
+      const openingFrameId = `keyframe-${projectIndex + 1}-${shotIndex + 1}-opening`
+      const endingFrameId = `keyframe-${projectIndex + 1}-${shotIndex + 1}-ending`
+      const openingPrompt = `${basePrompt}，开场镜头，建立产品与人物关系，画面干净，主体明确。`
+      const endingPrompt = `${basePrompt}，收尾镜头，品牌资产回收，光线更集中，氛围更完整。`
+      const videoPrompt = `${basePrompt}，镜头推进自然，适合 8-10 秒品牌短视频，节奏克制。`
+      const openingImage = COSMETIC_IMAGES[(projectIndex * 7 + shotIndex * 2) % COSMETIC_IMAGES.length]
+      const endingImage = COSMETIC_IMAGES[(projectIndex * 7 + shotIndex * 2 + 1) % COSMETIC_IMAGES.length]
+
+      shots.push({
+        ...demoEntity(shotId, shotCreatedAt, isoOffset(projectIndex * 3 + shotIndex + 2, 210)),
+        shotName,
+        projectId,
+        firstFrameId: openingFrameId,
+        lastFrameId: endingFrameId,
+        promptId,
+        modelName,
+        modelVersion,
+      })
+
+      keyFrames.push(
+        {
+          ...demoEntity(openingFrameId, isoOffset(projectIndex * 3 + shotIndex, 150), isoOffset(projectIndex * 3 + shotIndex, 210)),
+          name: `${KEYFRAME_NAMES[(globalShotIndex * 2) % KEYFRAME_NAMES.length]} · 开场`,
+          type: 'Opening',
+          promptText: openingPrompt,
+          modelName,
+          modelVersion,
+          status: 'Completed',
+          parentShotId: shotId,
+        },
+        {
+          ...demoEntity(endingFrameId, isoOffset(projectIndex * 3 + shotIndex, 180), isoOffset(projectIndex * 3 + shotIndex, 240)),
+          name: `${KEYFRAME_NAMES[(globalShotIndex * 2 + 1) % KEYFRAME_NAMES.length]} · 收尾`,
+          type: 'Ending',
+          promptText: endingPrompt,
+          modelName,
+          modelVersion,
+          status: 'Completed',
+          parentShotId: shotId,
+        },
+      )
+
+      const openingImageTaskId = `image-task-${projectIndex + 1}-${shotIndex + 1}-opening`
+      const endingImageTaskId = `image-task-${projectIndex + 1}-${shotIndex + 1}-ending`
+      const videoTaskId = `video-task-${projectIndex + 1}-${shotIndex + 1}`
+
+      imageTasks.push(
+        {
+          ...demoEntity(openingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 145), isoOffset(projectIndex * 3 + shotIndex, 215)),
+          taskId: `img-task-${projectIndex + 1}-${shotIndex + 1}-opening`,
+          requestId: `req-img-${projectIndex + 1}-${shotIndex + 1}-opening`,
+          mode: IMAGE_MODES[(projectIndex + shotIndex) % IMAGE_MODES.length],
+          reqKey: `text-to-image-${modelVersion.toLowerCase().replace(/\s+/g, '-')}`,
+          prompt: openingPrompt,
+          inputImageUrls: [],
+          inputImageBase64: [],
+          size: 1024,
+          width: 1024,
+          height: 1024,
+          scale: 2,
+          seed: 1000 + globalShotIndex,
+          forceSingle: true,
+          resolution: shotIndex % 2 === 0 ? '4k' : '8k',
+          outputImageUrls: [openingImage],
+          outputImageBase64: [],
+          keyFrameIds: [openingFrameId],
+          projectId,
+          shotId,
+          frameType: 'Opening',
+          status: 'done',
+          progress: 100,
+          timeElapsed: `${12 + shotIndex}s`,
+          completedAt: isoOffset(projectIndex * 3 + shotIndex, 215),
+          tokensUsed: 12000 + projectIndex * 400 + shotIndex * 130,
+        },
+        {
+          ...demoEntity(endingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 175), isoOffset(projectIndex * 3 + shotIndex, 255)),
+          taskId: `img-task-${projectIndex + 1}-${shotIndex + 1}-ending`,
+          requestId: `req-img-${projectIndex + 1}-${shotIndex + 1}-ending`,
+          mode: IMAGE_MODES[(projectIndex + shotIndex + 1) % IMAGE_MODES.length],
+          reqKey: `text-to-image-${modelVersion.toLowerCase().replace(/\s+/g, '-')}-ending`,
+          prompt: endingPrompt,
+          inputImageUrls: [],
+          inputImageBase64: [],
+          size: 1024,
+          width: 1024,
+          height: 1024,
+          scale: 2,
+          seed: 2000 + globalShotIndex,
+          forceSingle: true,
+          resolution: shotIndex % 2 === 0 ? '8k' : '4k',
+          outputImageUrls: [endingImage],
+          outputImageBase64: [],
+          keyFrameIds: [endingFrameId],
+          projectId,
+          shotId,
+          frameType: 'Ending',
+          status: 'done',
+          progress: 100,
+          timeElapsed: `${15 + shotIndex}s`,
+          completedAt: isoOffset(projectIndex * 3 + shotIndex, 255),
+          tokensUsed: 12600 + projectIndex * 420 + shotIndex * 140,
+        },
+      )
+
+      videoTasks.push({
+        ...demoEntity(videoTaskId, isoOffset(projectIndex * 3 + shotIndex, 205), isoOffset(projectIndex * 3 + shotIndex, 320)),
+        taskId: `video-task-remote-${projectIndex + 1}-${shotIndex + 1}`,
+        requestId: `req-video-${projectIndex + 1}-${shotIndex + 1}`,
+        mode: VIDEO_MODES[(projectIndex + shotIndex) % VIDEO_MODES.length],
+        reqKey: `seedance-1.5-pro-${['16x9', '9x16', '1x1'][(projectIndex + shotIndex) % 3]}`,
+        prompt: videoPrompt,
+        firstFrameUrl: openingImage,
+        firstFrameBase64: '',
+        lastFrameUrl: endingImage,
+        lastFrameBase64: '',
+        seed: 3000 + globalShotIndex,
+        frames: [48, 72, 96][(projectIndex + shotIndex) % 3],
+        aspectRatio: ['16:9', '9:16', '1:1'][(projectIndex + shotIndex) % 3],
+        shotId,
+        projectId,
+        status: 'done',
+        progress: 100,
+        videoUrl: TEST_VIDEO_URL,
+        videoExpiresAt: isoOffset(projectIndex * 3 + shotIndex + 20, 0),
+        aigcMetaTagged: true,
+        timeElapsed: `${38 + shotIndex * 3}s`,
+        completedAt: isoOffset(projectIndex * 3 + shotIndex, 320),
+        tokensUsed: 1800 + projectIndex * 120 + shotIndex * 90,
+      })
+
+      const versionSpecs = [
+        { frameId: openingFrameId, total: 2 },
+        { frameId: endingFrameId, total: shotIndex % 2 === 0 ? 2 : 1 },
+      ]
+
+      versionSpecs.forEach(({ frameId, total }) => {
+        for (let versionIndex = 0; versionIndex < total; versionIndex++) {
+          generationVersions.push({
+            ...demoEntity(
+              `version-${projectIndex + 1}-${shotIndex + 1}-${generationVersions.length + 1}`,
+              isoOffset(projectIndex * 3 + shotIndex, 160 + versionIndex * 18),
+            ),
+            keyFrameId: frameId,
+            modelName: MODEL_NAMES[(projectIndex + shotIndex + versionIndex) % MODEL_NAMES.length],
+            modelVersion: MODEL_VERSIONS[(projectIndex + shotIndex + versionIndex) % MODEL_VERSIONS.length],
+            versionNumber: versionIndex + 1,
+            status: 'Completed',
+            isSelected: versionIndex === total - 1,
+            generatedAt: isoOffset(projectIndex * 3 + shotIndex, 160 + versionIndex * 18),
+          })
+        }
+      })
+
+      assets.push(
+        {
+          ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 216)),
+          assetName: `${ASSET_NAMES[(globalShotIndex * 2) % ASSET_NAMES.length]} · 首图`,
+          type: 'Image',
+          projectId,
+          shotId,
+          sourceType: 'image-task',
+          sourceTaskId: openingImageTaskId,
+          sourceResultIndex: 0,
+          promptId,
+          modelName,
+          modelVersion,
+          parentAssetIds: [],
+          fileUrl: openingImage,
+        },
+        {
+          ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 321)),
+          assetName: `${ASSET_NAMES[(globalShotIndex * 2 + 1) % ASSET_NAMES.length]} · 视频`,
+          type: 'Video',
+          projectId,
+          shotId,
+          sourceType: 'video-task',
+          sourceTaskId: videoTaskId,
+          promptId,
+          modelName: 'Seedance',
+          modelVersion: '1.5 Pro',
+          parentAssetIds: [],
+          fileUrl: TEST_VIDEO_URL,
+        },
+      )
+    }
+
+    assets.push({
+      ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + 1, 90)),
+      assetName: `${ASSET_NAMES[(projectIndex + 5) % ASSET_NAMES.length]} · 提案脚本`,
+      type: 'Script',
+      projectId,
+      sourceType: 'script',
+      promptId: `brief-prompt-${projectIndex + 1}`,
+      modelName: MODEL_NAMES[projectIndex % MODEL_NAMES.length],
+      modelVersion: MODEL_VERSIONS[(projectIndex + 2) % MODEL_VERSIONS.length],
+      parentAssetIds: [],
+      fileUrl: `https://example.com/script/${projectId}.pdf`,
+    })
+  }
+
+  return {
+    customers,
+    brands,
+    projects,
+    shots,
+    keyFrames,
+    assets,
+    generationVersions,
+    briefs,
+    tasks,
+    reviews,
+    imageTasks,
+    videoTasks,
+  }
+}
+
+export const DEMO_DATASET = buildDemoDataset()
+
+export function generateProjects(count: number = DEMO_PROJECT_COUNT, _brands: Brand[] = []): Project[] {
+  return DEMO_DATASET.projects.slice(0, count)
+}
+
+export function generateShots(count: number = DEMO_DATASET.shots.length, _projects: Project[] = []): Shot[] {
+  return DEMO_DATASET.shots.slice(0, count)
+}
+
+export function generateKeyFrames(count: number = DEMO_DATASET.keyFrames.length, _shots: Shot[] = []): KeyFrame[] {
+  return DEMO_DATASET.keyFrames.slice(0, count)
 }
 
 export function generateAssets(
-  count: number = 35,
-  shots: Shot[] = [],
-  imageTasks: ImageGenerationTask[] = [],
-  videoTasks: VideoGenerationTask[] = [],
+  count: number = DEMO_DATASET.assets.length,
+  _shots: Shot[] = [],
+  _imageTasks: ImageGenerationTask[] = [],
+  _videoTasks: VideoGenerationTask[] = [],
 ): Asset[] {
-  return Array.from({ length: count }, (_, i) => {
-    const type = ASSET_TYPES[i % ASSET_TYPES.length]
-    const imageTask = imageTasks.length > 0 ? imageTasks[i % imageTasks.length] : undefined
-    const videoTask = videoTasks.length > 0 ? videoTasks[i % videoTasks.length] : undefined
-    const shot = shots[i % shots.length]
-    const resolvedProjectId = type === 'Image'
-      ? imageTask?.projectId || shot?.projectId || ''
-      : type === 'Video'
-        ? videoTask?.projectId || shot?.projectId || ''
-        : shot?.projectId || ''
-    const resolvedShotId = type === 'Image'
-      ? imageTask?.shotId || shot?.id || ''
-      : type === 'Video'
-        ? videoTask?.shotId || shot?.id || ''
-        : shot?.id || ''
-    const resolvedFileUrl = type === 'Image'
-      ? imageTask?.outputImageUrls?.[0] || COSMETIC_IMAGES[i % COSMETIC_IMAGES.length]
-      : type === 'Video'
-        ? videoTask?.videoUrl || ''
-        : ''
-    const sourceType = type === 'Image' ? 'image-task' : type === 'Video' ? 'video-task' : 'script'
-    return {
-      ...baseEntity(),
-      assetName: ASSET_NAMES[i % ASSET_NAMES.length],
-      type,
-      projectId: resolvedProjectId,
-      shotId: resolvedShotId,
-      sourceType,
-      sourceTaskId: type === 'Image' ? imageTask?.id : type === 'Video' ? videoTask?.id : undefined,
-      sourceResultIndex: type === 'Image' ? 0 : undefined,
-      promptId: `prompt-${i}`,
-      modelName: type === 'Image'
-        ? imageTask?.mode || 'text-to-image'
-        : type === 'Video'
-          ? 'Seedsance 1.5 Pro'
-          : pick(MODEL_NAMES),
-      modelVersion: type === 'Image'
-        ? imageTask?.resolution || '4k'
-        : type === 'Video'
-          ? '1.0'
-          : pick(MODEL_VERSIONS),
-      parentAssetIds: [],
-      fileUrl: resolvedFileUrl,
-    }
-  })
+  return DEMO_DATASET.assets.slice(0, count)
 }
 
-export function generateBriefs(count: number = 35, projects: Project[] = []): Brief[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    briefTitle: BRIEF_TITLES[i % BRIEF_TITLES.length],
-    projectId: projects[i % projects.length]?.id || '',
-    description: BRIEF_DESCRIPTIONS[i % BRIEF_DESCRIPTIONS.length],
-    targetAudience: TARGET_AUDIENCES[i % TARGET_AUDIENCES.length],
-    platform: PLATFORMS[i % PLATFORMS.length],
-    deadline: randomDate(30),
-    fileUrl: '',
-    currentVersionId: null,
-  }))
+export function generateBriefs(count: number = DEMO_DATASET.briefs.length, _projects: Project[] = []): Brief[] {
+  return DEMO_DATASET.briefs.slice(0, count)
 }
 
-export function generateTasks(count: number = 35, projects: Project[] = []): Task[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    taskName: TASK_NAMES[i % TASK_NAMES.length],
-    projectId: projects[i % projects.length]?.id || '',
-    assignedTo: ASSIGNEES[i % ASSIGNEES.length],
-    status: TASK_STATUSES[i % TASK_STATUSES.length],
-    type: TASK_TYPES[i % TASK_TYPES.length],
-    deadline: randomDate(30),
-    notes: `任务${i + 1}的备注信息`,
-  }))
+export function generateTasks(count: number = DEMO_DATASET.tasks.length, _projects: Project[] = []): Task[] {
+  return DEMO_DATASET.tasks.slice(0, count)
 }
 
-export function generateReviews(count: number = 35): Review[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    targetId: `target-${i}`,
-    targetType: pick(['Asset', 'Shot', 'Brief'] as const),
-    reviewer: REVIEWERS[i % REVIEWERS.length],
-    reviewType: REVIEW_TYPES_ARR[i % REVIEW_TYPES_ARR.length],
-    status: REVIEW_STATUSES_ARR[i % REVIEW_STATUSES_ARR.length],
-    notes: `审核意见${i + 1}：${pick(['符合要求', '需要修改细节', '色彩需调整', '内容需要补充', '通过审核', '需要重新提交'])[i % 6]}`,
-  }))
+export function generateReviews(count: number = DEMO_DATASET.reviews.length): Review[] {
+  return DEMO_DATASET.reviews.slice(0, count)
 }
 
-export function generateGenerationVersions(count: number = 35, keyFrameIds: string[] = []): GenerationVersion[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    keyFrameId: keyFrameIds[i % keyFrameIds.length] || `kf-${i}`,
-    modelName: pick(MODEL_NAMES),
-    modelVersion: pick(MODEL_VERSIONS),
-    versionNumber: (i % 5) + 1,
-    status: pick<GenerationStatus>(['Pending', 'Completed', 'Failed']),
-    isSelected: i % 5 === 0,
-    generatedAt: randomDate(90),
-  }))
+export function generateGenerationVersions(count: number = DEMO_DATASET.generationVersions.length, _keyFrameIds: string[] = []): GenerationVersion[] {
+  return DEMO_DATASET.generationVersions.slice(0, count)
 }
 
-export function generateImageTasks(count: number = 35): ImageGenerationTask[] {
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    taskId: `img-task-${i}`,
-    requestId: `req-img-${i}`,
-    mode: IMAGE_MODES[i % IMAGE_MODES.length],
-    reqKey: `img-key-${i}`,
-    prompt: PROMPT_TEXTS[i % PROMPT_TEXTS.length],
-    inputImageUrls: [COSMETIC_IMAGES[i % COSMETIC_IMAGES.length]],
-    inputImageBase64: [],
-    size: [512, 1024, 2048][i % 3],
-    width: [1024, 768, 1920][i % 3],
-    height: [1024, 1024, 1080][i % 3],
-    scale: i % 3 === 0 ? 2 : undefined,
-    seed: Math.floor(Math.random() * 100000),
-    forceSingle: i % 2 === 0,
-    resolution: i % 2 === 0 ? '4k' : '8k',
-    outputImageUrls: [COSMETIC_IMAGES[(i + 10) % COSMETIC_IMAGES.length]],
-    outputImageBase64: [],
-    keyFrameIds: [`kf-${i}`],
-    projectId: `project-${i % 10}`,
-    shotId: `shot-${i % 10}`,
-    frameType: i % 2 === 0 ? 'Opening' : 'Ending',
-    status: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS),
-    progress: Math.random() > 0.3 ? Math.floor(Math.random() * 100) : undefined,
-    timeElapsed: `${Math.floor(Math.random() * 30)}s`,
-    completedAt: Math.random() > 0.4 ? randomDate(7) : undefined,
-    tokensUsed: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS) === 'done' ? Math.floor(12000 + Math.random() * 13000) : undefined,
-  }))
+export function generateImageTasks(count: number = DEMO_DATASET.imageTasks.length): ImageGenerationTask[] {
+  return DEMO_DATASET.imageTasks.slice(0, count)
 }
 
-export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
-  const TEST_VIDEO_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
-  return Array.from({ length: count }, (_, i) => ({
-    ...baseEntity(),
-    taskId: `video-task-${i}`,
-    requestId: `req-video-${i}`,
-    mode: VIDEO_MODES[i % VIDEO_MODES.length],
-    reqKey: `video-key-${i}`,
-    prompt: PROMPT_TEXTS[i % PROMPT_TEXTS.length],
-    firstFrameUrl: COSMETIC_IMAGES[i % COSMETIC_IMAGES.length],
-    firstFrameBase64: '',
-    lastFrameUrl: Math.random() > 0.5 ? COSMETIC_IMAGES[(i + 15) % COSMETIC_IMAGES.length] : undefined,
-    lastFrameBase64: '',
-    seed: Math.floor(Math.random() * 100000),
-    frames: [24, 48, 96][i % 3],
-    aspectRatio: ['16:9', '9:16', '1:1'][i % 3],
-    shotId: `shot-${i % 10}`,
-    projectId: `project-${i % 10}`,
-    status: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS),
-    progress: Math.random() > 0.3 ? Math.floor(Math.random() * 100) : undefined,
-    videoUrl: Math.random() > 0.4 ? TEST_VIDEO_URL : undefined,
-    videoExpiresAt: Math.random() > 0.4 ? randomDate(7) : undefined,
-    aigcMetaTagged: i % 2 === 0,
-    timeElapsed: `${Math.floor(Math.random() * 120)}s`,
-    completedAt: Math.random() > 0.4 ? randomDate(7) : undefined,
-    tokensUsed: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS) === 'done' ? Math.floor(1000 + Math.random() * 4000) : undefined,
-  }))
+export function generateVideoTasks(count: number = DEMO_DATASET.videoTasks.length): VideoGenerationTask[] {
+  return DEMO_DATASET.videoTasks.slice(0, count)
 }
 
-export const MOCK_IMAGE_TASKS = generateImageTasks(35)
-export const MOCK_VIDEO_TASKS = generateVideoTasks(35)
+export const MOCK_IMAGE_TASKS = DEMO_DATASET.imageTasks
+export const MOCK_VIDEO_TASKS = DEMO_DATASET.videoTasks
