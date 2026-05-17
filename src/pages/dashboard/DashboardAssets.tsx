@@ -69,9 +69,9 @@ export default function DashboardAssets() {
   }
 
   const TYPE_COLORS: Record<string, string> = {
-    Image: 'text-blue-400',
-    Video: 'text-purple-400',
-    Script: 'text-green-400',
+    Image: 'text-blue-600 dark:text-blue-400',
+    Video: 'text-purple-600 dark:text-purple-400',
+    Script: 'text-green-600 dark:text-green-400',
   }
 
   const STATUS_LABELS_ASSET: Record<string, string> = {
@@ -106,7 +106,7 @@ export default function DashboardAssets() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <PieChart size={18} className="text-blue-400" />
+            <PieChart size={18} className="text-blue-600 dark:text-blue-400" />
             资产类型分布
           </h2>
           <div className="space-y-3">
@@ -129,7 +129,7 @@ export default function DashboardAssets() {
 
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-400" />
+            <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
             资产状态分布
           </h2>
           <div className="space-y-1">

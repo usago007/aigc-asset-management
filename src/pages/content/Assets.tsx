@@ -20,14 +20,14 @@ const statusMap: Record<AssetStatus, { label: string; variant: 'info' | 'warning
 }
 
 const ASSET_PLACEHOLDER_IMAGES = [
-  'https://images.unsplash.com/photo-1596462502278-27bfd9478920?w=100&h=100&fit=crop',
-  'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=100&h=100&fit=crop',
-  'https://images.unsplash.com/photo-1571781926291-c477ebfd0255?w=100&h=100&fit=crop',
-  'https://images.unsplash.com/photo-1583209814683-c023dd293cc5?w=100&h=100&fit=crop',
-  'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=100&h=100&fit=crop',
+  'https://picsum.photos/seed/asset1/100/100',
+  'https://picsum.photos/seed/asset2/100/100',
+  'https://picsum.photos/seed/asset3/100/100',
+  'https://picsum.photos/seed/asset4/100/100',
+  'https://picsum.photos/seed/asset5/100/100',
 ]
 
-const VIDEO_PLACEHOLDER = 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=100&h=100&fit=crop'
+const VIDEO_PLACEHOLDER = 'https://picsum.photos/seed/video/100/100'
 
 export default function Assets() {
   const { assets, shots, addAsset, updateAsset, deleteAsset } = useAppStore()

@@ -104,7 +104,7 @@ export default function DashboardTasks() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-blue-400" />
+            <BarChart3 size={18} className="text-blue-600 dark:text-blue-400" />
             任务状态分布
           </h2>
           <div className="space-y-1">
@@ -122,7 +122,7 @@ export default function DashboardTasks() {
 
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Layers size={18} className="text-purple-400" />
+            <Layers size={18} className="text-purple-600 dark:text-purple-400" />
             任务类型分布
           </h2>
           <div className="space-y-3">
@@ -174,7 +174,7 @@ export default function DashboardTasks() {
 
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <UserCheck size={18} className="text-green-400" />
+            <UserCheck size={18} className="text-green-600 dark:text-green-400" />
             人员工作负载
           </h2>
           <div className="space-y-3 max-h-60 overflow-y-auto">

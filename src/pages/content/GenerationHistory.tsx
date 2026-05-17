@@ -69,9 +69,9 @@ const VIDEO_MODE_OPTIONS: { value: string; label: string }[] = [
 ]
 
 const PLACEHOLDER_IMAGES = [
-  'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=640&h=360&fit=crop',
-  'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=640&h=360&fit=crop',
-  'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=640&h=360&fit=crop',
+  'https://picsum.photos/seed/history1/640/360',
+  'https://picsum.photos/seed/history2/640/360',
+  'https://picsum.photos/seed/history3/640/360',
 ]
 
 const TABS = [
@@ -569,7 +569,7 @@ export default function GenerationHistory() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-100">作品库</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">作品库</h1>
       </div>
 
       <div className="flex gap-2">
@@ -579,7 +579,7 @@ export default function GenerationHistory() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === tab.key
                 ? 'bg-accent-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'
             }`}
             onClick={() => setActiveTab(tab.key)}
           >

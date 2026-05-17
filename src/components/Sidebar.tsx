@@ -23,23 +23,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const menuItems: MenuItem[] = [
     {
-      path: '/dashboard',
-      icon: <LayoutDashboard size={20} />,
-      label: '仪表盘',
-      children: [
-        { path: '/dashboard/overview', label: '总览' },
-        { path: '/dashboard/generation', label: '生成' },
-        { path: '/dashboard/assets', label: '资产' },
-        { path: '/dashboard/tasks', label: '任务' },
-      ]
-    },
-    {
       path: '/content',
       icon: <Image size={20} />,
       label: '内容创作',
       children: [
-        { path: '/content/image-generation', label: 'AI创作' },
-        { path: '/content/video-generation', label: 'AI视频' },
+        { path: '/content/image-generation', label: '图片创作' },
+        { path: '/content/video-generation', label: '视频创作' },
         { path: '/content/generation-history', label: '作品库' },
         { path: '/content/assets', label: '资产库' },
         { path: '/content/shots', label: '镜头' },
@@ -57,6 +46,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { path: '/projects/briefs', label: '简报管理' },
         { path: '/projects/tasks', label: '任务管理' },
         { path: '/projects/reviews', label: '审核管理' },
+      ]
+    },
+    {
+      path: '/dashboard',
+      icon: <LayoutDashboard size={20} />,
+      label: '数据中心',
+      children: [
+        { path: '/dashboard/overview', label: '总览' },
+        { path: '/dashboard/generation', label: '生成' },
+        { path: '/dashboard/assets', label: '资产' },
+        { path: '/dashboard/tasks', label: '任务' },
       ]
     },
     {

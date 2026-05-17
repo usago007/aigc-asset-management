@@ -319,20 +319,6 @@ export default function ImageGeneration() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2 py-4">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">
-          开启你的 <span className="text-accent-500">Agent 模式</span> · 即刻造梦！
-        </h1>
-        <div className="flex justify-center">
-          <CreationTypeMenu
-            options={creationTypeOptions}
-            value="image-gen"
-            onChange={() => {}}
-          />
-        </div>
-      </div>
-
       {/* Agent Input */}
       <JimengInput
         value={prompt}

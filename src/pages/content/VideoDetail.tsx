@@ -101,7 +101,7 @@ export default function VideoDetail() {
         >
           <ArrowLeft size={20} className="text-accent-500" />
         </button>
-        <h1 className="text-xl font-display font-bold text-gray-100">视频详情</h1>
+        <h1 className="text-xl font-display font-bold text-gray-900 dark:text-gray-100">视频详情</h1>
       </div>
 
       {/* Split Layout */}

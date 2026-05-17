@@ -58,14 +58,14 @@ const GEN_STATUS_LABELS: Record<string, string> = {
 }
 
 const GEN_STATUS_COLORS: Record<string, string> = {
-  done: 'text-green-500',
-  generating: 'text-blue-500',
-  in_queue: 'text-yellow-500',
-  failed: 'text-red-500',
-  cancelled: 'text-gray-500',
-  expired: 'text-gray-400',
-  submitting: 'text-purple-500',
-  not_found: 'text-gray-500',
+  done: 'bg-green-500',
+  generating: 'bg-blue-500',
+  in_queue: 'bg-yellow-500',
+  failed: 'bg-red-500',
+  cancelled: 'bg-gray-400',
+  expired: 'bg-gray-300',
+  submitting: 'bg-purple-500',
+  not_found: 'bg-gray-400',
 }
 
 export default function Generation() {
@@ -164,7 +164,7 @@ export default function Generation() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Image size={18} className="text-blue-400" />
+            <Image size={18} className="text-blue-600 dark:text-blue-400" />
             图片生成任务状态
           </h2>
           <div className="space-y-1">
@@ -186,7 +186,7 @@ export default function Generation() {
 
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Video size={18} className="text-purple-400" />
+            <Video size={18} className="text-purple-600 dark:text-purple-400" />
             视频生成任务状态
           </h2>
           <div className="space-y-1">
@@ -228,7 +228,7 @@ export default function Generation() {
 
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <PieChart size={18} className="text-green-400" />
+            <PieChart size={18} className="text-green-600 dark:text-green-400" />
             生成成功率概览
           </h2>
           <div className="flex items-center justify-center py-6">
