@@ -1,16 +1,34 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
-import { showToast } from '@/utils/toast'
-import type { ImageGenerationMode } from '@/types/generation'
-import type { TaskQueueStatus } from '@/types/generation'
-import { Palette, Image, Wand2, Zap, Eraser, Download, Maximize2, Cpu } from 'lucide-react'
+import { useAIConfigStore } from '@/store/aiConfigStore'
+import { submitImageTask, getImageReqKeyForMode } from '@/services/imageGeneration'
+import { fileToBase64 } from '@/utils/file'
+import { formatDate } from '@/utils/date'
+import JimengInput from '@/components/JimengInput'
+import ParamPanel from '@/components/ParamPanel'
+import CreationTypeMenu from '@/components/CreationTypeMenu'
+import { Sparkles, Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Maximize2, Loader2, AlertCircle, X, ImagePlus } from 'lucide-react'
+import type { ImageGenerationMode, TaskQueueStatus } from '@/types/generation'
 
-const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Palette }[] = [
-  { value: 'text-to-image', label: '文生图', icon: Palette },
-  { value: 'image-to-image', label: '图生图', icon: Image },
-  { value: 'stylization-edit', label: '风格化编辑', icon: Wand2 },
-  { value: 'super-resolution', label: '智能超清', icon: Zap },
-  { value: 'inpainting', label: '局部重绘', icon: Eraser },
+const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Palette; desc: string }[] = [
+  { value: 'text-to-image', label: '图片4.0', icon: Palette, desc: '最新一代，文生图/图生图一体化' },
+  { value: 'image-to-image', label: '图生图', icon: ImageIcon, desc: '使用图片4.0引擎' },
+  { value: 'text-to-image-31', label: '文生图3.1', icon: Layers, desc: '高质量文生图' },
+  { value: 'text-to-image-30', label: '文生图3.0', icon: Hash, desc: '标准文生图' },
+  { value: 'text-to-image-21', label: '文生图2.1', icon: Clock, desc: '基础文生图' },
+]
+
+const creationTypeOptions = [
+  {
+    id: 'agent',
+    label: '创作类型',
+    icon: <Sparkles size={16} />,
+    subOptions: [
+      { id: 'agent-mode', label: 'Agent 模式', icon: <Sparkles size={16} />, description: '自由创作，AI 辅助' },
+      { id: 'image-gen', label: '图片生成', icon: <ImageIcon size={16} />, description: 'AI 图片生成' },
+      { id: 'video-gen', label: '视频生成', icon: <Layers size={16} />, description: 'AI 视频生成' },
+    ],
+  },
 ]
 
 const statusMap: Record<TaskQueueStatus, { label: string; className: string }> = {
@@ -33,97 +51,93 @@ const RESOLUTION_OPTIONS = [
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
 
 const MAX_IMAGES: Record<ImageGenerationMode, number> = {
-  'text-to-image': 0,
+  'text-to-image': 10,
   'image-to-image': 10,
-  'stylization-edit': 14,
-  'super-resolution': 1,
-  'inpainting': 1,
+  'text-to-image-31': 0,
+  'text-to-image-30': 0,
+  'text-to-image-21': 0,
 }
 
 export default function ImageGeneration() {
-  const { shots, imageTasks, submitImageTask, retryImageTask, cancelImageTask, deleteImageTask } = useAppStore()
+  const { imageTasks, submitImageTask: storeSubmitTask, cancelImageTask, retryImageTask, deleteImageTask } = useAppStore()
+  const { updateImageEndpoint } = useAIConfigStore()
 
-  const [mode, setMode] = useState<ImageGenerationMode>('text-to-image')
   const [prompt, setPrompt] = useState('')
-  const [frameType, setFrameType] = useState<'Opening' | 'Ending'>('Opening')
-  const [selectedShotId, setSelectedShotId] = useState('')
-  const [uploadedImages, setUploadedImages] = useState<{ url: string; base64: string }[]>([])
-  const [resolution, setResolution] = useState(2048 * 2048)
-  const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [useCustomSeed, setUseCustomSeed] = useState(false)
+  const [mode, setMode] = useState<ImageGenerationMode>('text-to-image')
   const [seed, setSeed] = useState(-1)
+  const [useRandomSeed, setUseRandomSeed] = useState(true)
+  const [resolution, setResolution] = useState<number>(1024 * 1024)
+  const [aspectRatio, setAspectRatio] = useState('1:1')
+  const [numImages, setNumImages] = useState(1)
   const [forceSingle, setForceSingle] = useState(false)
-  const [scale, setScale] = useState(50)
+  const [scale, setScale] = useState(100)
+  const [frameType, setFrameType] = useState<'Opening' | 'Ending' | ''>('')
+  const [shotId, setShotId] = useState('')
+  const [uploadedImages, setUploadedImages] = useState<{ file: File; url: string; base64: string }[]>([])
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const maxImages = MAX_IMAGES[mode]
+  const activeTasks = useMemo(() => imageTasks.filter((t) => t.status !== 'done' && t.status !== 'failed'), [imageTasks])
+  const completedTasks = useMemo(() => imageTasks.filter((t) => t.status === 'done'), [imageTasks])
+  const maxImages = forceSingle ? 1 : MAX_IMAGES[mode]
 
-  const handleImageUpload = useCallback((files: FileList | null) => {
+  // Image upload handling
+  const handleImageUpload = useCallback(async (files: FileList | null) => {
     if (!files) return
-    const remaining = maxImages - uploadedImages.length
-    if (remaining <= 0) {
-      showToast('warning', `最多上传 ${maxImages} 张图片`)
-      return
-    }
-    const filesToProcess = Array.from(files).slice(0, remaining)
-    filesToProcess.forEach((file) => {
-      if (!file.type.match(/image\/(jpeg|png)/)) {
-        showToast('error', `${file.name} 格式不支持，仅支持JPEG/PNG`)
-        return
-      }
-      if (file.size > 15 * 1024 * 1024) {
-        showToast('error', `${file.name} 超过15MB限制`)
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
-        setUploadedImages((prev) => [...prev, { url: base64, base64 }])
-      }
-      reader.readAsDataURL(file)
-    })
-  }, [maxImages, uploadedImages.length])
+    const newImages = await Promise.all(
+      Array.from(files).map(async (file) => ({
+        file,
+        url: URL.createObjectURL(file),
+        base64: await fileToBase64(file),
+      }))
+    )
+    setUploadedImages((prev) => [...prev, ...newImages].slice(0, maxImages))
+  }, [maxImages])
 
-  const removeImage = useCallback((index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+  const handleRemoveImage = useCallback((index: number) => {
+    setUploadedImages((prev) => {
+      const next = prev.filter((_, i) => i !== index)
+      return next
+    })
   }, [])
 
-  const handleSubmit = useCallback(() => {
-    if (!prompt.trim()) {
-      showToast('warning', '请输入Prompt')
-      return
+  // Auto-resolve reqKey on mode change
+  useEffect(() => {
+    const reqKey = getImageReqKeyForMode(mode)
+    updateImageEndpoint(mode, { reqKey })
+  }, [mode])
+
+  const handleSubmit = useCallback(async () => {
+    if (!prompt.trim()) return
+    if (maxImages > 0 && uploadedImages.length === 0 && mode === 'image-to-image') return
+
+    const seedValue = useRandomSeed ? -1 : seed
+
+    // Prepare uploaded images
+    const uploadFiles = uploadedImages.map((img) => img.file)
+
+    // Submit to service
+    try {
+      await submitImageTask(mode, {
+        prompt: prompt.trim(),
+        seed: seedValue,
+        size: resolution,
+        width: parseInt(aspectRatio.split(':')[0]) * 256,
+        height: parseInt(aspectRatio.split(':')[1]) * 256,
+        scale,
+        force_single: forceSingle,
+        resolution: resolution >= 2048 * 2048 ? '4k' : '8k',
+        binary_data_base64: uploadedImages.length > 0 ? uploadedImages.map((img) => img.base64) : undefined,
+      })
+      setPrompt('')
+      setUploadedImages([])
+    } catch (error) {
+      console.error('Failed to submit image task:', error)
     }
-    if (maxImages > 0 && uploadedImages.length === 0 && mode !== 'text-to-image') {
-      showToast('warning', '请上传图片')
-      return
-    }
-    submitImageTask(mode, {
-      prompt: prompt.trim(),
-      inputImageUrls: [],
-      inputImageBase64: uploadedImages.map((img) => img.base64),
-      size: resolution,
-      scale,
-      seed: useCustomSeed ? seed : -1,
-      forceSingle,
-      shotId: selectedShotId || undefined,
-      frameType,
-    })
-    setPrompt('')
-  }, [mode, prompt, uploadedImages, resolution, scale, useCustomSeed, seed, forceSingle, selectedShotId, frameType, submitImageTask, maxImages])
+  }, [prompt, mode, seed, useRandomSeed, resolution, numImages, forceSingle, scale, frameType, shotId, uploadedImages, maxImages])
 
-  const activeTasks = useMemo(() =>
-    imageTasks.filter((t) => ['submitting', 'in_queue', 'generating'].includes(t.status)),
-    [imageTasks]
-  )
-
-  const doneTasks = useMemo(() =>
-    imageTasks.filter((t) => t.status === 'done' && t.outputImageUrls.length > 0),
-    [imageTasks]
-  )
-
-  const latestDone = doneTasks.length > 0 ? doneTasks[doneTasks.length - 1] : null
-
-  const handleDownload = useCallback((url: string) => {
+  const handleDownload = (url: string) => {
     const a = document.createElement('a')
     a.href = url
     a.download = 'generated_image.png'
@@ -131,271 +145,294 @@ export default function ImageGeneration() {
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-  }, [])
+  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">图片生成工作台</h1>
-      </div>
-
-      <div className="card space-y-6">
-        <div>
-          <label className="label-field">生成模式</label>
-          <div className="flex flex-wrap gap-2">
-            {modeOptions.map((opt) => {
-              const Icon = opt.icon
-              return (
-                <button
-                  key={opt.value}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    mode === opt.value
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                  onClick={() => { setMode(opt.value); setUploadedImages([]) }}
-                >
-                  <Icon size={16} />
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label-field">帧类型</label>
-            <div className="flex gap-2">
-              <button
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  frameType === 'Opening' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-                onClick={() => setFrameType('Opening')}
-              >
-                首图 (Opening)
-              </button>
-              <button
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  frameType === 'Ending' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-                onClick={() => setFrameType('Ending')}
-              >
-                尾图 (Ending)
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="label-field">关联镜头（可选）</label>
-            <select
-              className="input-field"
-              value={selectedShotId}
-              onChange={(e) => setSelectedShotId(e.target.value)}
+  const paramSections = [
+    {
+      id: 'mode',
+      label: '生成模式',
+      children: (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {modeOptions.map((opt) => (
+            <button
+              key={opt.value}
+              className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left ${
+                mode === opt.value
+                  ? 'border-accent-500 bg-accent-50 dark:bg-accent-500/10'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+              onClick={() => setMode(opt.value)}
             >
-              <option value="">不关联镜头</option>
-              {shots.map((s) => (
-                <option key={s.id} value={s.id}>{s.shotName}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {maxImages > 0 && (
-          <div>
-            <label className="label-field">上传图片 {uploadedImages.length}/{maxImages}</label>
-            <div className="flex flex-wrap gap-3">
-              {uploadedImages.map((img, idx) => (
-                <div key={idx} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 group">
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    className="absolute top-0 right-0 bg-red-600 text-white rounded-bl p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeImage(idx)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              {uploadedImages.length < maxImages && (
-                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary-500 flex items-center justify-center cursor-pointer transition-colors">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e.target.files)}
-                    multiple={maxImages > 1}
-                  />
-                  <span className="text-gray-600 dark:text-gray-500 text-2xl">+</span>
-                </label>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label className="label-field">Prompt</label>
-          <textarea
-            className="input-field min-h-[80px]"
-            placeholder="描述你想要生成的图片内容..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            maxLength={800}
-          />
-          <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-            {prompt.length}/800 {prompt.length > 400 && prompt.length <= 800 && '(较长，可能影响生成效果)'}
-            {prompt.length > 800 && '(超出最大长度)'}
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
-          <label className="label-field">高级参数</label>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="label-field text-xs text-gray-600 dark:text-gray-400">分辨率</label>
-              <div className="flex gap-2">
-                {RESOLUTION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.label}
-                    className={`flex-1 py-1.5 rounded text-xs transition-all ${
-                      resolution === opt.size ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setResolution(opt.size)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <opt.icon size={18} className={mode === opt.value ? 'text-accent-500' : 'text-gray-400'} />
+              <div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{opt.label}</div>
+                <div className="text-xs text-gray-500">{opt.desc}</div>
               </div>
-            </div>
-            <div>
-              <label className="label-field text-xs text-gray-600 dark:text-gray-400">宽高比</label>
-              <div className="flex flex-wrap gap-1">
-                {ASPECT_RATIOS.map((ar) => (
-                  <button
-                    key={ar}
-                    className={`px-2 py-1 rounded text-xs transition-all ${
-                      aspectRatio === ar ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => setAspectRatio(ar)}
-                  >
-                    {ar}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="label-field text-xs text-gray-600 dark:text-gray-400">其他</label>
-              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                <input type="checkbox" checked={forceSingle} onChange={(e) => setForceSingle(e.target.checked)} />
-                强制单图
-              </label>
-              <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                <input type="checkbox" checked={useCustomSeed} onChange={(e) => setUseCustomSeed(e.target.checked)} />
-                自定义Seed
-              </label>
-            </div>
-          </div>
-          {useCustomSeed && (
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'resolution',
+      label: '分辨率',
+      children: (
+        <div className="flex gap-2">
+          {RESOLUTION_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              className={`flex-1 p-2 rounded-lg border-2 text-center transition-all ${
+                resolution === opt.size
+                  ? 'border-accent-500 bg-accent-50 dark:bg-accent-500/10'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+              }`}
+              onClick={() => setResolution(opt.size)}
+            >
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{opt.label}</div>
+              <div className="text-xs text-gray-500">{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'aspect',
+      label: '宽高比',
+      children: (
+        <div className="flex flex-wrap gap-2">
+          {ASPECT_RATIOS.map((ratio) => (
+            <button
+              key={ratio}
+              className={`px-4 py-2 rounded-lg border-2 text-sm transition-all ${
+                aspectRatio === ratio
+                  ? 'border-accent-500 bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+              }`}
+              onClick={() => setAspectRatio(ratio)}
+            >
+              {ratio}
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'seed',
+      label: 'Seed 随机种子',
+      children: (
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useRandomSeed}
+              onChange={(e) => setUseRandomSeed(e.target.checked)}
+              className="rounded border-gray-300 text-accent-500 focus:ring-accent-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">随机</span>
+          </label>
+          {!useRandomSeed && (
             <input
               type="number"
-              className="input-field mt-2"
               value={seed}
-              onChange={(e) => setSeed(parseInt(e.target.value) || -1)}
-              placeholder="随机种子"
+              onChange={(e) => setSeed(Number(e.target.value))}
+              className="input-field w-40"
+              min={0}
+              max={2147483647}
             />
           )}
-          <div className="mt-2">
-            <label className="label-field text-xs text-gray-600 dark:text-gray-400">文本影响程度 (Scale): {scale}</label>
+        </div>
+      ),
+    },
+    {
+      id: 'advanced',
+      label: '高级选项',
+      children: (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <label className="text-sm text-gray-700 dark:text-gray-300">生成数量</label>
             <input
               type="range"
-              min="0"
-              max="100"
-              value={scale}
-              onChange={(e) => setScale(parseInt(e.target.value))}
-              className="w-full accent-primary-500"
+              min={1}
+              max={maxImages}
+              value={numImages}
+              onChange={(e) => setNumImages(Number(e.target.value))}
+              className="flex-1 accent-accent-500"
             />
+            <span className="text-sm font-mono w-8">{numImages}</span>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={forceSingle}
+              onChange={(e) => setForceSingle(e.target.checked)}
+              className="rounded border-gray-300 text-accent-500 focus:ring-accent-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">强制单图</span>
+          </label>
+          <div className="flex items-center gap-4">
+            <label className="text-sm text-gray-700 dark:text-gray-300">文本影响程度</label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={scale}
+              onChange={(e) => setScale(Number(e.target.value))}
+              className="flex-1 accent-accent-500"
+            />
+            <span className="text-sm font-mono w-12">{scale}</span>
           </div>
         </div>
+      ),
+    },
+    {
+      id: 'frame',
+      label: '帧类型 / 关联镜头',
+      children: (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            {(['', 'Opening', 'Ending'] as const).map((ft) => (
+              <button
+                key={ft}
+                className={`px-4 py-2 rounded-lg border-2 text-sm transition-all ${
+                  frameType === ft
+                    ? 'border-accent-500 bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                }`}
+                onClick={() => setFrameType(ft)}
+              >
+                {ft === '' ? '无' : ft === 'Opening' ? '首图' : '尾图'}
+              </button>
+            ))}
+          </div>
+          <select
+            className="input-field"
+            value={shotId}
+            onChange={(e) => setShotId(e.target.value)}
+          >
+            <option value="">不关联镜头</option>
+            {/* Shot options would be populated from store */}
+          </select>
+        </div>
+      ),
+    },
+  ]
 
-        <button
-          className="btn-primary w-full py-3 text-lg font-medium"
-          onClick={handleSubmit}
-          disabled={!prompt.trim() || (maxImages > 0 && uploadedImages.length === 0 && mode !== 'text-to-image')}
-        >
-          提交生成
-        </button>
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2 py-4">
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">
+          开启你的 <span className="text-accent-500">Agent 模式</span> · 即刻造梦！
+        </h1>
+        <div className="flex justify-center">
+          <CreationTypeMenu
+            options={creationTypeOptions}
+            value="image-gen"
+            onChange={() => {}}
+          />
+        </div>
       </div>
 
+      {/* Agent Input */}
+      <JimengInput
+        value={prompt}
+        onChange={setPrompt}
+        onSubmit={handleSubmit}
+        disabled={activeTasks.length > 0}
+        placeholder="描述你想生成的图片内容..."
+        imageUpload={maxImages > 0 ? {
+          images: uploadedImages.map((img) => ({ url: img.url, base64: img.base64 })),
+          maxImages,
+          onUpload: handleImageUpload,
+          onRemove: handleRemoveImage,
+        } : undefined}
+        bottomActions={undefined}
+      />
+
+      {/* Param Panel */}
+      <ParamPanel title="生成参数" sections={paramSections} defaultExpanded />
+
+      {/* Active Tasks */}
       {activeTasks.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">生成中的任务</h3>
-          <div className="space-y-3">
-            {activeTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between p-3 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg">
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{task.prompt.slice(0, 40)}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{modeOptions.find(m => m.value === task.mode)?.label} · {statusMap[task.status].label}</div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
-                    <div
-                      className={`h-1.5 rounded-full transition-all ${task.status === 'generating' ? 'bg-primary-500' : 'bg-yellow-500'}`}
-                      style={{ width: task.status === 'generating' ? `${task.progress || 50}%` : '20%' }}
-                    />
-                  </div>
-                </div>
+        <div className="card space-y-3">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">活跃任务 ({activeTasks.length})</h3>
+          {activeTasks.map((task) => (
+            <div key={task.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-gray-700">
+              {task.status === 'generating' || task.status === 'in_queue' ? (
+                <Loader2 size={20} className="text-accent-500 animate-spin flex-shrink-0" />
+              ) : (
+                <AlertCircle size={20} className="text-error flex-shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{task.prompt}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className={`badge ${statusMap[task.status].className} text-xs`}>
+                    {statusMap[task.status].label}
+                  </span>
+                  {task.progress != null && ` · ${task.progress}%`}
+                </p>
+              </div>
+              {task.status === 'in_queue' && (
                 <button
-                  className="ml-3 px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                  className="p-1 text-gray-400 hover:text-error transition-colors"
                   onClick={() => cancelImageTask(task.id)}
                 >
-                  取消
+                  <X size={16} />
                 </button>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {latestDone && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
-            <span>生成结果</span>
-            {latestDone.tokensUsed != null && latestDone.tokensUsed > 0 && (
-              <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                <Cpu size={14} />
-                消耗 Token: {latestDone.tokensUsed.toLocaleString()}
-              </span>
-            )}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {latestDone.outputImageUrls.map((url, idx) => (
-              <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
-                <img src={url} alt="" className="w-full aspect-square object-cover" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button
-                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-                    onClick={() => setPreviewUrl(url)}
-                  >
-                    <Maximize2 size={16} className="text-white" />
-                  </button>
-                  <button
-                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors"
-                    onClick={() => handleDownload(url)}
-                  >
-                    <Download size={16} className="text-white" />
-                  </button>
+      {/* Generated Results */}
+      {completedTasks.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">生成结果 ({completedTasks.length})</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {completedTasks.flatMap((task) =>
+              task.outputImageUrls.map((url, idx) => (
+                <div
+                  key={`${task.id}-${idx}`}
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-accent-500 transition-all shadow-sm hover:shadow-lg"
+                  onClick={() => setPreviewUrl(url)}
+                >
+                  <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                    <p className="text-xs text-white/90 line-clamp-1 mb-1">{task.prompt}</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        className="flex-1 py-1 bg-accent-500/30 hover:bg-accent-500/50 rounded text-xs text-white backdrop-blur-sm transition-colors border border-accent-500/20"
+                        onClick={(e) => { e.stopPropagation(); handleDownload(url) }}
+                      >
+                        下载
+                      </button>
+                    </div>
+                  </div>
+                  {task.tokensUsed && (
+                    <div className="absolute top-2 right-2">
+                      <span className="badge badge-secondary text-[10px] bg-black/50 text-white border-0">
+                        {task.tokensUsed} tokens
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
 
+      {/* Image Preview Modal */}
       {previewUrl && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewUrl(null)}>
-          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreviewUrl(null)}>
+          <div className="relative max-w-5xl max-h-full" onClick={(e) => e.stopPropagation()}>
             <img src={previewUrl} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
             <button
-              className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+              className="absolute -top-3 -right-3 p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full shadow-lg transition-colors"
               onClick={() => setPreviewUrl(null)}
             >
-              ✕
+              <X size={16} className="text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>

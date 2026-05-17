@@ -12,7 +12,8 @@ import VideoGeneration from './pages/content/VideoGeneration'
 import GenerationHistory from './pages/content/GenerationHistory'
 import TaskDetail from './pages/content/TaskDetail'
 import ImageGeneration from './pages/content/ImageGeneration'
-import ImageGenerationHistory from './pages/content/ImageGenerationHistory'
+import ImageDetail from './pages/content/ImageDetail'
+import VideoDetail from './pages/content/VideoDetail'
 import Customers from './pages/projects/Customers'
 import Brands from './pages/projects/Brands'
 import Projects from './pages/projects/Projects'
@@ -42,7 +43,8 @@ export default function App() {
         <Route path="content/generation-history" element={<GenerationHistory />} />
         <Route path="content/task/:id" element={<TaskDetail />} />
         <Route path="content/image-generation" element={<ImageGeneration />} />
-        <Route path="content/image-generation-history" element={<ImageGenerationHistory />} />
+        <Route path="content/image-detail/:id" element={<ImageDetail />} />
+        <Route path="content/video-detail/:id" element={<VideoDetail />} />
         <Route path="projects/customers" element={<Customers />} />
         <Route path="projects/brands" element={<Brands />} />
         <Route path="projects/projects" element={<Projects />} />

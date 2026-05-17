@@ -233,7 +233,7 @@ const PROMPT_TEXTS = [
   '彩妆合集展示，产品排列，时尚感',
 ]
 
-const IMAGE_MODES: ImageGenerationMode[] = ['text-to-image', 'image-to-image', 'stylization-edit', 'super-resolution', 'inpainting']
+const IMAGE_MODES: ImageGenerationMode[] = ['text-to-image', 'image-to-image', 'text-to-image-31', 'text-to-image-30', 'text-to-image-21']
 const VIDEO_MODES: GenerationMode[] = ['text-to-video', 'image-to-video-first', 'image-to-video-first-tail']
 const TASK_STATUSES_ARR: TaskQueueStatus[] = ['done', 'generating', 'in_queue', 'failed', 'cancelled', 'expired', 'submitting', 'not_found']
 const STATUS_WEIGHTS = [0.4, 0.15, 0.1, 0.1, 0.05, 0.05, 0.1, 0.05]

@@ -44,8 +44,8 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
       <div className="space-y-2">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-gray-300 line-clamp-2">{task.prompt}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{task.prompt}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {task.mode === 'text-to-video' ? '文生视频' : '图生视频'} · {task.aspectRatio}
             </p>
           </div>
@@ -53,7 +53,7 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
         </div>
 
         {(task.status === 'in_queue' || task.status === 'generating') && (
-          <div className="w-full bg-gray-700 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 task.status === 'in_queue'
@@ -83,13 +83,13 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
           </p>
         )}
 
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>{task.timeElapsed ? `已用 ${task.timeElapsed}` : ''}</span>
           {task.completedAt && <span>{formatDate(task.completedAt, 'full')}</span>}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-gray-700/50">
+      <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700/50">
         <button onClick={onViewDetail} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
           <Eye size={14} />
           详情

@@ -5,17 +5,17 @@ import { getImageReqKey, getAIConfig } from './aiConfigService';
 export const IMAGE_MODEL_NAMES: Record<ImageGenerationMode, string> = {
   'text-to-image': '即梦图片4.0',
   'image-to-image': '即梦图片4.0',
-  'stylization-edit': '即梦图片4.6',
-  'super-resolution': '即梦智能超清',
-  'inpainting': '即梦交互编辑',
+  'text-to-image-31': '即梦文生图3.1',
+  'text-to-image-30': '即梦文生图3.0',
+  'text-to-image-21': '即梦文生图2.1',
 };
 
 export const IMAGE_MODEL_VERSIONS: Record<ImageGenerationMode, string> = {
   'text-to-image': 'v4.0',
   'image-to-image': 'v4.0',
-  'stylization-edit': 'v4.6',
-  'super-resolution': 'v3.0',
-  'inpainting': 'v1.0',
+  'text-to-image-31': 'v3.1',
+  'text-to-image-30': 'v3.0',
+  'text-to-image-21': 'v2.1',
 };
 
 export function getImageReqKeyForMode(mode: ImageGenerationMode): string {

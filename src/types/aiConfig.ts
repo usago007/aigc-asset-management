@@ -9,17 +9,18 @@ export interface AIEndpointConfig {
 }
 
 export interface VideoAIConfig {
-  textToVideo: AIEndpointConfig;
-  imageToVideoFirst: AIEndpointConfig;
-  imageToVideoFirstTail: AIEndpointConfig;
+  video30Pro: AIEndpointConfig;
+  video30: AIEndpointConfig;
+  actionImitation: AIEndpointConfig;
+  digitalHumanFast: AIEndpointConfig;
 }
 
 export interface ImageAIConfig {
-  textToImage: AIEndpointConfig;
-  imageToImage: AIEndpointConfig;
-  stylizationEdit: AIEndpointConfig;
-  superResolution: AIEndpointConfig;
-  inpainting: AIEndpointConfig;
+  image40: AIEndpointConfig;
+  textToImage31: AIEndpointConfig;
+  textToImage30: AIEndpointConfig;
+  imageToImage30: AIEndpointConfig;
+  textToImage21: AIEndpointConfig;
 }
 
 export interface DeepSeekConfig {
@@ -71,16 +72,17 @@ export function getDefaultAIConfig(): AIConfig {
       imageExpiryMs: 86400000,
     },
     video: {
-      textToVideo: DEFAULT_ENDPOINT('jimeng_t2v_v30_1080'),
-      imageToVideoFirst: DEFAULT_ENDPOINT('jimeng_i2v_first_v30_1080'),
-      imageToVideoFirstTail: DEFAULT_ENDPOINT('jimeng_i2v_first_tail_v30_1080'),
+      video30Pro: DEFAULT_ENDPOINT('jimeng_t2v_v30_pro'),
+      video30: DEFAULT_ENDPOINT('jimeng_t2v_v30'),
+      actionImitation: DEFAULT_ENDPOINT('jimeng_action_imitation'),
+      digitalHumanFast: DEFAULT_ENDPOINT('jimeng_digital_human_fast'),
     },
     image: {
-      textToImage: DEFAULT_ENDPOINT('jimeng_t2i_v40'),
-      imageToImage: DEFAULT_ENDPOINT('jimeng_t2i_v40'),
-      stylizationEdit: DEFAULT_ENDPOINT('jimeng_seedream46_cvtob'),
-      superResolution: DEFAULT_ENDPOINT('jimeng_i2i_seed3_tilesr_cvtob'),
-      inpainting: DEFAULT_ENDPOINT('i2i_inpainting_edit'),
+      image40: DEFAULT_ENDPOINT('jimeng_t2i_v40'),
+      textToImage31: DEFAULT_ENDPOINT('jimeng_t2i_v31'),
+      textToImage30: DEFAULT_ENDPOINT('jimeng_t2i_v30'),
+      imageToImage30: DEFAULT_ENDPOINT('jimeng_i2i_v30'),
+      textToImage21: DEFAULT_ENDPOINT('jimeng_t2i_v21'),
     },
     deepseek: {
       enabled: true,

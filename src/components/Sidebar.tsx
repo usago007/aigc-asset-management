@@ -38,13 +38,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       icon: <Image size={20} />,
       label: '内容创作',
       children: [
-        { path: '/content/keyframes', label: '首图/尾图' },
-        { path: '/content/shots', label: '镜头管理' },
-        { path: '/content/assets', label: '资产管理' },
-        { path: '/content/image-generation', label: '图片生成' },
-        { path: '/content/image-generation-history', label: '图片历史' },
-        { path: '/content/video-generation', label: '视频生成' },
-        { path: '/content/generation-history', label: '生成历史' },
+        { path: '/content/image-generation', label: 'AI创作' },
+        { path: '/content/video-generation', label: 'AI视频' },
+        { path: '/content/generation-history', label: '作品库' },
+        { path: '/content/assets', label: '资产库' },
+        { path: '/content/shots', label: '镜头' },
+        { path: '/content/keyframes', label: '关键帧' },
       ]
     },
     {

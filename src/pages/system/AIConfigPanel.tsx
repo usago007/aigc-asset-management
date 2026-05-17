@@ -277,31 +277,40 @@ export default function AIConfigPanel() {
         </h2>
         <div className="space-y-4">
           <EndpointCard
-            title="文生视频"
-            enabled={config.video.textToVideo.enabled}
-            reqKey={config.video.textToVideo.reqKey}
-            timeout={config.video.textToVideo.timeout}
-            maxRetries={config.video.textToVideo.maxRetries}
+            title="视频生成3.0 Pro"
+            enabled={config.video.video30Pro.enabled}
+            reqKey={config.video.video30Pro.reqKey}
+            timeout={config.video.video30Pro.timeout}
+            maxRetries={config.video.video30Pro.maxRetries}
             onToggle={(enabled) => updateVideoEndpoint('text-to-video', { enabled })}
             onChange={(field, value) => updateVideoEndpoint('text-to-video', { [field]: value })}
           />
           <EndpointCard
-            title="首帧图生视频"
-            enabled={config.video.imageToVideoFirst.enabled}
-            reqKey={config.video.imageToVideoFirst.reqKey}
-            timeout={config.video.imageToVideoFirst.timeout}
-            maxRetries={config.video.imageToVideoFirst.maxRetries}
+            title="视频生成3.0"
+            enabled={config.video.video30.enabled}
+            reqKey={config.video.video30.reqKey}
+            timeout={config.video.video30.timeout}
+            maxRetries={config.video.video30.maxRetries}
             onToggle={(enabled) => updateVideoEndpoint('image-to-video-first', { enabled })}
             onChange={(field, value) => updateVideoEndpoint('image-to-video-first', { [field]: value })}
           />
           <EndpointCard
-            title="首尾帧图生视频"
-            enabled={config.video.imageToVideoFirstTail.enabled}
-            reqKey={config.video.imageToVideoFirstTail.reqKey}
-            timeout={config.video.imageToVideoFirstTail.timeout}
-            maxRetries={config.video.imageToVideoFirstTail.maxRetries}
-            onToggle={(enabled) => updateVideoEndpoint('image-to-video-first-tail', { enabled })}
-            onChange={(field, value) => updateVideoEndpoint('image-to-video-first-tail', { [field]: value })}
+            title="动作模仿"
+            enabled={config.video.actionImitation.enabled}
+            reqKey={config.video.actionImitation.reqKey}
+            timeout={config.video.actionImitation.timeout}
+            maxRetries={config.video.actionImitation.maxRetries}
+            onToggle={(enabled) => updateVideoEndpoint('action-imitation', { enabled })}
+            onChange={(field, value) => updateVideoEndpoint('action-imitation', { [field]: value })}
+          />
+          <EndpointCard
+            title="数字人快速模式"
+            enabled={config.video.digitalHumanFast.enabled}
+            reqKey={config.video.digitalHumanFast.reqKey}
+            timeout={config.video.digitalHumanFast.timeout}
+            maxRetries={config.video.digitalHumanFast.maxRetries}
+            onToggle={(enabled) => updateVideoEndpoint('digital-human-fast', { enabled })}
+            onChange={(field, value) => updateVideoEndpoint('digital-human-fast', { [field]: value })}
           />
         </div>
       </div>
@@ -313,40 +322,49 @@ export default function AIConfigPanel() {
         </h2>
         <div className="space-y-4">
           <EndpointCard
-            title="即梦图片4.0（文生图/图生图）"
-            enabled={config.image.textToImage.enabled}
-            reqKey={config.image.textToImage.reqKey}
-            timeout={config.image.textToImage.timeout}
-            maxRetries={config.image.textToImage.maxRetries}
+            title="即梦图片4.0"
+            enabled={config.image.image40.enabled}
+            reqKey={config.image.image40.reqKey}
+            timeout={config.image.image40.timeout}
+            maxRetries={config.image.image40.maxRetries}
             onToggle={(enabled) => updateImageEndpoint('text-to-image', { enabled })}
             onChange={(field, value) => updateImageEndpoint('text-to-image', { [field]: value })}
           />
           <EndpointCard
-            title="即梦图片4.6（风格化/平面/人像）"
-            enabled={config.image.stylizationEdit.enabled}
-            reqKey={config.image.stylizationEdit.reqKey}
-            timeout={config.image.stylizationEdit.timeout}
-            maxRetries={config.image.stylizationEdit.maxRetries}
-            onToggle={(enabled) => updateImageEndpoint('stylization-edit', { enabled })}
-            onChange={(field, value) => updateImageEndpoint('stylization-edit', { [field]: value })}
+            title="文生图3.1"
+            enabled={config.image.textToImage31.enabled}
+            reqKey={config.image.textToImage31.reqKey}
+            timeout={config.image.textToImage31.timeout}
+            maxRetries={config.image.textToImage31.maxRetries}
+            onToggle={(enabled) => updateImageEndpoint('text-to-image-31', { enabled })}
+            onChange={(field, value) => updateImageEndpoint('text-to-image-31', { [field]: value })}
           />
           <EndpointCard
-            title="即梦智能超清"
-            enabled={config.image.superResolution.enabled}
-            reqKey={config.image.superResolution.reqKey}
-            timeout={config.image.superResolution.timeout}
-            maxRetries={config.image.superResolution.maxRetries}
-            onToggle={(enabled) => updateImageEndpoint('super-resolution', { enabled })}
-            onChange={(field, value) => updateImageEndpoint('super-resolution', { [field]: value })}
+            title="文生图3.0"
+            enabled={config.image.textToImage30.enabled}
+            reqKey={config.image.textToImage30.reqKey}
+            timeout={config.image.textToImage30.timeout}
+            maxRetries={config.image.textToImage30.maxRetries}
+            onToggle={(enabled) => updateImageEndpoint('text-to-image-30', { enabled })}
+            onChange={(field, value) => updateImageEndpoint('text-to-image-30', { [field]: value })}
           />
           <EndpointCard
-            title="即梦交互编辑（inpainting）"
-            enabled={config.image.inpainting.enabled}
-            reqKey={config.image.inpainting.reqKey}
-            timeout={config.image.inpainting.timeout}
-            maxRetries={config.image.inpainting.maxRetries}
-            onToggle={(enabled) => updateImageEndpoint('inpainting', { enabled })}
-            onChange={(field, value) => updateImageEndpoint('inpainting', { [field]: value })}
+            title="图生图3.0-智能参考"
+            enabled={config.image.imageToImage30.enabled}
+            reqKey={config.image.imageToImage30.reqKey}
+            timeout={config.image.imageToImage30.timeout}
+            maxRetries={config.image.imageToImage30.maxRetries}
+            onToggle={(enabled) => updateImageEndpoint('image-to-image', { enabled })}
+            onChange={(field, value) => updateImageEndpoint('image-to-image', { [field]: value })}
+          />
+          <EndpointCard
+            title="文生图2.1"
+            enabled={config.image.textToImage21.enabled}
+            reqKey={config.image.textToImage21.reqKey}
+            timeout={config.image.textToImage21.timeout}
+            maxRetries={config.image.textToImage21.maxRetries}
+            onToggle={(enabled) => updateImageEndpoint('text-to-image-21', { enabled })}
+            onChange={(field, value) => updateImageEndpoint('text-to-image-21', { [field]: value })}
           />
         </div>
       </div>

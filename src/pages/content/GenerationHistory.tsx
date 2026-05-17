@@ -1,10 +1,12 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import Pagination from '@/components/Pagination'
-import { Search, Download, Eye, RefreshCw, Play, Loader2, AlertCircle, X } from 'lucide-react'
-import type { TaskQueueStatus, GenerationMode, VideoGenerationTask } from '@/types/generation'
+import TimelineGrid from '@/components/TimelineGrid'
+import { Search, Download, RefreshCw, Maximize2, Trash2, Eye, Play, Loader2, AlertCircle, X } from 'lucide-react'
+import type { ImageGenerationMode, TaskQueueStatus, VideoGenerationTask, GenerationMode } from '@/types/generation'
 
 const statusMap: Record<TaskQueueStatus, { label: string; className: string }> = {
   submitting: { label: '提交中', className: 'badge-info' },
@@ -12,21 +14,45 @@ const statusMap: Record<TaskQueueStatus, { label: string; className: string }> =
   generating: { label: '生成中', className: 'badge-info' },
   done: { label: '已完成', className: 'badge-success' },
   failed: { label: '失败', className: 'badge-error' },
-  cancelled: { label: '已取消', className: 'badge-secondary' },
   expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
+  cancelled: { label: '已取消', className: 'badge-warning' },
 }
 
-const modeMap: Record<GenerationMode, string> = {
+const imageModeMap: Record<ImageGenerationMode, string> = {
+  'text-to-image': '图片4.0',
+  'image-to-image': '图生图',
+  'text-to-image-31': '文生图3.1',
+  'text-to-image-30': '文生图3.0',
+  'text-to-image-21': '文生图2.1',
+}
+
+const videoModeMap: Record<GenerationMode, string> = {
   'text-to-video': '文生视频',
   'image-to-video-first': '首帧图生',
   'image-to-video-first-tail': '首尾帧图生',
+  'action-imitation': '动作模仿',
+  'digital-human-fast': '数字人快速模式',
 }
 
-const truncate = (text: string, maxLen = 60) =>
-  text.length <= maxLen ? text : text.slice(0, maxLen) + '...'
+const STATUS_OPTIONS: { value: TaskQueueStatus | ''; label: string }[] = [
+  { value: '', label: '全部状态' },
+  { value: 'done', label: '已完成' },
+  { value: 'generating', label: '生成中' },
+  { value: 'failed', label: '失败' },
+  { value: 'in_queue', label: '排队中' },
+]
 
-const STATUS_OPTIONS: { value: string; label: string }[] = [
+const IMAGE_MODE_OPTIONS: { value: ImageGenerationMode | ''; label: string }[] = [
+  { value: '', label: '全部模式' },
+  { value: 'text-to-image', label: '图片4.0' },
+  { value: 'image-to-image', label: '图生图' },
+  { value: 'text-to-image-31', label: '文生图3.1' },
+  { value: 'text-to-image-30', label: '文生图3.0' },
+  { value: 'text-to-image-21', label: '文生图2.1' },
+]
+
+const VIDEO_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: '全部状态' },
   { value: 'done', label: '已完成' },
   { value: 'failed', label: '失败' },
@@ -35,22 +61,25 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'generating', label: '生成中' },
 ]
 
-const MODE_OPTIONS: { value: string; label: string }[] = [
+const VIDEO_MODE_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: '全部模式' },
   { value: 'text-to-video', label: '文生视频' },
   { value: 'image-to-video-first', label: '首帧图生' },
   { value: 'image-to-video-first-tail', label: '首尾帧图生' },
 ]
 
-const ACTIVE_STATUSES: TaskQueueStatus[] = ['submitting', 'in_queue', 'generating']
-
 const PLACEHOLDER_IMAGES = [
   'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=640&h=360&fit=crop',
   'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=640&h=360&fit=crop',
   'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=640&h=360&fit=crop',
-  'https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=640&h=360&fit=crop',
-  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=640&h=360&fit=crop',
 ]
+
+const TABS = [
+  { key: 'image', label: '图片' },
+  { key: 'video', label: '视频' },
+] as const
+
+type TabKey = typeof TABS[number]['key']
 
 function VideoThumbnailCard({
   task,
@@ -68,7 +97,7 @@ function VideoThumbnailCard({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isHovered, setIsHovered] = useState(false)
   const [hasError, setHasError] = useState(false)
-  const isActive = ACTIVE_STATUSES.includes(task.status)
+  const isActive = ['submitting', 'in_queue', 'generating'].includes(task.status)
   const isDone = task.status === 'done'
   const isFailed = task.status === 'failed'
 
@@ -154,7 +183,7 @@ function VideoThumbnailCard({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-900">
             <Loader2 size={32} className="text-primary-500 animate-spin" />
             <span className="text-sm text-gray-400">
-              {statusMap[task.status].label}
+              {statusMap[task.status as TaskQueueStatus]?.label}
               {task.progress != null ? ` ${task.progress}%` : ''}
             </span>
             <div className="w-3/4 bg-gray-700 rounded-full h-1.5">
@@ -178,19 +207,19 @@ function VideoThumbnailCard({
               loading="lazy"
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-gray-400 text-sm">{statusMap[task.status].label}</span>
+              <span className="text-gray-400 text-sm">{statusMap[task.status as TaskQueueStatus]?.label}</span>
             </div>
           </>
         )}
 
         <div className="absolute top-2 left-2 flex gap-1">
-          <span className={`badge ${statusMap[task.status].className} text-[10px] px-2 py-0.5`}>
-            {statusMap[task.status].label}
+          <span className={`badge ${statusMap[task.status as TaskQueueStatus]?.className} text-[10px] px-2 py-0.5`}>
+            {statusMap[task.status as TaskQueueStatus]?.label}
           </span>
         </div>
         <div className="absolute top-2 right-2 flex gap-1">
           <span className="badge badge-secondary text-[10px] px-2 py-0.5 bg-black/50 text-white border-0">
-            {modeMap[task.mode]}
+            {videoModeMap[task.mode]}
           </span>
           <span className="badge badge-secondary text-[10px] px-2 py-0.5 bg-black/50 text-white border-0">
             {task.aspectRatio}
@@ -261,10 +290,140 @@ function VideoThumbnailCard({
   )
 }
 
-export default function GenerationHistory() {
+function ImageTab() {
+  const navigate = useNavigate()
+  const { imageTasks, retryImageTask, deleteImageTask } = useAppStore()
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<TaskQueueStatus | ''>('')
+  const [modeFilter, setModeFilter] = useState<ImageGenerationMode | ''>('')
+  const [page, setPage] = useState(1)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const perPage = 12
+
+  const filtered = useMemo(() => {
+    return imageTasks.filter((t) => {
+      if (search && !t.prompt.toLowerCase().includes(search.toLowerCase())) return false
+      if (statusFilter && t.status !== statusFilter) return false
+      if (modeFilter && t.mode !== modeFilter) return false
+      return true
+    })
+  }, [imageTasks, search, statusFilter, modeFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
+  const pageData = filtered.slice((page - 1) * perPage, page * perPage)
+
+  const handleDownload = (url: string) => {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'generated_image.png'
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
+  const timelineItems = useMemo(() => pageData.map((task) => {
+    const imageUrl = task.outputImageUrls?.[0] || task.outputImageBase64?.[0] || ''
+    return {
+      id: task.id,
+      imageUrl,
+      prompt: task.prompt,
+      createdAt: task.createdAt,
+      badge: statusMap[task.status]?.label,
+      badgeClassName: statusMap[task.status]?.className,
+      onOpen: () => navigate(`/content/image-detail/${task.id}`),
+      onDownload: () => imageUrl && handleDownload(imageUrl),
+      onDelete: () => deleteImageTask(task.id),
+    }
+  }), [pageData, navigate, deleteImageTask])
+
+  return (
+    <div className="space-y-4">
+      <div className="card">
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <input
+              className="input-field pl-10"
+              placeholder="搜索Prompt..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            />
+          </div>
+          <select
+            className="input-field w-40"
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as TaskQueueStatus | ''); setPage(1) }}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select
+            className="input-field w-40"
+            value={modeFilter}
+            onChange={(e) => { setModeFilter(e.target.value as ImageGenerationMode | ''); setPage(1) }}
+          >
+            {IMAGE_MODE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Timeline Grid */}
+      <TimelineGrid
+        items={timelineItems}
+        columns={4}
+        emptyMessage="暂无图片作品"
+      />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-400">
+            共 {filtered.length} 条，第 {page}/{totalPages} 页
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="btn-secondary text-xs"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              上一页
+            </button>
+            <button
+              className="btn-secondary text-xs"
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewUrl(null)}>
+          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
+            <img src={previewUrl} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+            <button
+              className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+              onClick={() => setPreviewUrl(null)}
+            >
+              <X size={16} className="text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function VideoTab() {
   const navigate = useNavigate()
   const { tasks, retryTask } = useGenerationStore()
-
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [modeFilter, setModeFilter] = useState('all')
@@ -274,8 +433,7 @@ export default function GenerationHistory() {
 
   const filteredItems = useMemo(() => {
     return tasks.filter((task) => {
-      const matchSearch =
-        searchQuery === '' || task.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchSearch = searchQuery === '' || task.prompt.toLowerCase().includes(searchQuery.toLowerCase())
       const matchStatus = statusFilter === 'all' || task.status === statusFilter
       const matchMode = modeFilter === 'all' || task.mode === modeFilter
       return matchSearch && matchStatus && matchMode
@@ -299,12 +457,10 @@ export default function GenerationHistory() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成历史</h1>
-      </div>
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
 
+  return (
+    <div className="space-y-4">
       <div className="card">
         <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-[200px]">
@@ -328,7 +484,7 @@ export default function GenerationHistory() {
               setCurrentPage(1)
             }}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {VIDEO_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -342,7 +498,7 @@ export default function GenerationHistory() {
               setCurrentPage(1)
             }}
           >
-            {MODE_OPTIONS.map((opt) => (
+            {VIDEO_MODE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -351,6 +507,7 @@ export default function GenerationHistory() {
         </div>
       </div>
 
+      {/* Video Cards Grid */}
       {paginatedItems.length === 0 ? (
         <div className="card text-center py-16">
           <p className="text-gray-600 dark:text-gray-500">暂无数据</p>
@@ -362,7 +519,7 @@ export default function GenerationHistory() {
               key={task.id}
               task={task}
               onPlay={() => task.videoUrl && setPlayVideoUrl(task.videoUrl)}
-              onViewDetail={() => navigate(`/content/task/${task.id}`)}
+              onViewDetail={() => navigate(`/content/video-detail/${task.id}`)}
               onDownload={() => handleDownload(task)}
               onRetry={() => retryTask(task.id)}
             />
@@ -370,12 +527,15 @@ export default function GenerationHistory() {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        pageSize={pageSize}
-        totalItems={filteredItems.length}
-        onPageChange={setCurrentPage}
-      />
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalItems={filteredItems.length}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {playVideoUrl && (
         <div
@@ -399,6 +559,37 @@ export default function GenerationHistory() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+export default function GenerationHistory() {
+  const [activeTab, setActiveTab] = useState<TabKey>('image')
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-display font-bold text-gray-100">作品库</h1>
+      </div>
+
+      <div className="flex gap-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.key
+                ? 'bg-accent-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'image' && <ImageTab />}
+      {activeTab === 'video' && <VideoTab />}
     </div>
   )
 }

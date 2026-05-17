@@ -5,17 +5,19 @@ import { getDefaultAIConfig, AI_PRESETS } from '@/types/aiConfig';
 import { getAIConfig as loadFromStorage, saveAIConfig, resetAIConfig } from '@/services/aiConfigService';
 
 const VIDEO_MODE_KEYS: Record<GenerationMode, keyof import('@/types/aiConfig').VideoAIConfig> = {
-  'text-to-video': 'textToVideo',
-  'image-to-video-first': 'imageToVideoFirst',
-  'image-to-video-first-tail': 'imageToVideoFirstTail',
+  'text-to-video': 'video30Pro',
+  'image-to-video-first': 'video30Pro',
+  'image-to-video-first-tail': 'video30Pro',
+  'action-imitation': 'actionImitation',
+  'digital-human-fast': 'digitalHumanFast',
 };
 
 const IMAGE_MODE_KEYS: Record<ImageGenerationMode, keyof import('@/types/aiConfig').ImageAIConfig> = {
-  'text-to-image': 'textToImage',
-  'image-to-image': 'imageToImage',
-  'stylization-edit': 'stylizationEdit',
-  'super-resolution': 'superResolution',
-  'inpainting': 'inpainting',
+  'text-to-image': 'image40',
+  'image-to-image': 'image40',
+  'text-to-image-31': 'textToImage31',
+  'text-to-image-30': 'textToImage30',
+  'text-to-image-21': 'textToImage21',
 };
 
 interface AIConfigState {

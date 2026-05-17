@@ -2,7 +2,12 @@ import { BaseEntity, UUID } from './index';
 
 export type TaskQueueStatus = 'submitting' | 'in_queue' | 'generating' | 'done' | 'failed' | 'cancelled' | 'expired' | 'not_found';
 
-export type GenerationMode = 'text-to-video' | 'image-to-video-first' | 'image-to-video-first-tail';
+export type GenerationMode =
+  | 'text-to-video'
+  | 'image-to-video-first'
+  | 'image-to-video-first-tail'
+  | 'action-imitation'
+  | 'digital-human-fast';
 
 export interface VideoGenerationTask extends BaseEntity {
   taskId: string;
@@ -68,9 +73,9 @@ export interface TaskResultResponse {
 export type ImageGenerationMode =
   | 'text-to-image'
   | 'image-to-image'
-  | 'stylization-edit'
-  | 'super-resolution'
-  | 'inpainting';
+  | 'text-to-image-31'
+  | 'text-to-image-30'
+  | 'text-to-image-21';
 
 export interface ImageGenerationTask extends BaseEntity {
   taskId: string;
