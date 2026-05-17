@@ -1,7 +1,22 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useGenerationStore } from '@/store/generationStore'
-import { ArrowLeft, Download, Star, Share2, MoreHorizontal, Sparkles, Film, Clock, Hash, Mic, Music, Wand2, RefreshCw, Video, Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react'
+import { useAppStore } from '@/store/appStore'
+import { ArrowLeft, Download, Star, Share2, MoreHorizontal, Sparkles, Film, Clock, Hash, Mic, Music, Wand2, RefreshCw, Video, Play, Pause, Volume2, VolumeX, Maximize, FolderOpen, Clapperboard } from 'lucide-react'
+import {
+  detailAccordionClass,
+  detailAccordionContentClass,
+  detailAccordionTriggerClass,
+  detailActionTileClass,
+  detailBackButtonClass,
+  detailIconButtonClass,
+  detailMediaShellClass,
+  detailMetaPillClass,
+  detailPanelClass,
+  detailPanelMutedClass,
+  detailPanelTextClass,
+  detailPanelTitleClass,
+} from './detailStyles'
 
 const VIDEO_MODE_LABELS: Record<string, string> = {
   'text-to-video': 'Seedsance 1.5 Pro',
@@ -15,6 +30,7 @@ export default function VideoDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { tasks, updateTask } = useGenerationStore()
+  const { projects, shots } = useAppStore()
 
   const task = useMemo(() => tasks.find((t) => t.id === id), [tasks, id])
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
@@ -90,14 +106,16 @@ export default function VideoDetail() {
 
   const modeLabel = VIDEO_MODE_LABELS[task.mode] || task.mode
   const frameLabel = task.frames === 241 ? '10s' : '5s'
+  const projectName = projects.find((project) => project.id === task.projectId)?.projectName || '未绑定项目'
+  const shotName = shots.find((shot) => shot.id === task.shotId)?.shotName || '未绑定镜头'
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/content/generation-history')}
-          className="p-2 rounded-lg hover:bg-accent-500/20 transition-colors"
+          onClick={() => navigate('/content/assets')}
+          className={detailBackButtonClass}
         >
           <ArrowLeft size={20} className="text-accent-500" />
         </button>
@@ -107,7 +125,7 @@ export default function VideoDetail() {
       {/* Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Video Player */}
-        <div className="lg:col-span-3 bg-gray-800/80 rounded-xl overflow-hidden ring-1 ring-accent-500/10">
+        <div className={`lg:col-span-3 ${detailMediaShellClass}`}>
           <div className="relative bg-black aspect-video">
             {task.status === 'done' && task.videoUrl && !isExpired ? (
               <>
@@ -177,7 +195,7 @@ export default function VideoDetail() {
                 <Film size={48} className="text-error" />
                 <p className="text-error font-medium">生成失败</p>
                 {task.errorMessage && (
-                  <p className="text-gray-400 text-sm">{task.errorMessage}</p>
+                  <p className="text-gray-200 text-sm">{task.errorMessage}</p>
                 )}
                 <button
                   className="mt-2 px-4 py-2 bg-error hover:bg-red-600 text-white rounded-lg text-sm transition-colors flex items-center gap-2"
@@ -191,7 +209,7 @@ export default function VideoDetail() {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-yellow-950/50">
                 <Clock size={48} className="text-warning" />
                 <p className="text-warning font-medium">视频已过期</p>
-                <p className="text-gray-400 text-sm">视频链接已失效，请重新生成</p>
+                <p className="text-gray-200 text-sm">视频链接已失效，请重新生成</p>
                 <button
                   className="mt-2 px-4 py-2 bg-warning hover:bg-yellow-600 text-black rounded-lg text-sm transition-colors flex items-center gap-2"
                   onClick={() => navigate('/content/video-generation')}
@@ -213,28 +231,28 @@ export default function VideoDetail() {
         <div className="lg:col-span-2 space-y-4">
           {/* Top Actions */}
           <div className="flex items-center justify-end gap-2">
-            <button className="p-2 rounded-lg hover:bg-gray-700/50 transition-colors" title="下载" onClick={handleDownload}>
-              <Download size={18} className="text-gray-400" />
+            <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
+              <Download size={18} className="text-gray-600 dark:text-gray-400" />
             </button>
             <button
-              className={`p-2 rounded-lg hover:bg-gray-700/50 transition-colors ${isFavorited ? 'text-yellow-400' : ''}`}
+              className={`${detailIconButtonClass} ${isFavorited ? 'text-yellow-400' : ''}`}
               onClick={() => setIsFavorited(!isFavorited)}
               title="收藏"
             >
-              <Star size={18} className={isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'} />
+              <Star size={18} className={isFavorited ? 'fill-yellow-400 text-yellow-400' : 'text-gray-600 dark:text-gray-400'} />
             </button>
-            <button className="p-2 rounded-lg hover:bg-gray-700/50 transition-colors" title="分享">
-              <Share2 size={18} className="text-gray-400" />
+            <button className={detailIconButtonClass} title="分享">
+              <Share2 size={18} className="text-gray-600 dark:text-gray-400" />
             </button>
-            <button className="p-2 rounded-lg hover:bg-gray-700/50 transition-colors" title="更多操作">
-              <MoreHorizontal size={18} className="text-gray-400" />
+            <button className={detailIconButtonClass} title="更多操作">
+              <MoreHorizontal size={18} className="text-gray-600 dark:text-gray-400" />
             </button>
           </div>
 
           {/* Prompt */}
-          <div className="p-4 bg-gray-800/50 rounded-xl">
-            <div className="text-sm text-gray-400 mb-2">提示词</div>
-            <div className="text-gray-200 text-sm whitespace-pre-wrap line-clamp-3">
+          <div className={detailPanelMutedClass}>
+            <div className={`${detailPanelTitleClass} mb-2`}>提示词</div>
+            <div className={`${detailPanelTextClass} whitespace-pre-wrap line-clamp-3`}>
               {showPromptExpanded ? task.prompt : task.prompt.slice(0, 150)}
             </div>
             {task.prompt.length > 150 && (
@@ -248,23 +266,34 @@ export default function VideoDetail() {
           </div>
 
           {/* Model Info */}
-          <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl">
+          <div className={`flex items-center gap-3 p-3 ${detailPanelClass}`}>
             <Sparkles size={16} className="text-accent-500" />
-            <span className="text-sm font-medium text-gray-200">{modeLabel}</span>
-            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded">{frameLabel}</span>
-            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded">{task.aspectRatio}</span>
+            <span className={`${detailPanelTextClass} font-medium`}>{modeLabel}</span>
+            <span className={detailMetaPillClass}>{frameLabel}</span>
+            <span className={detailMetaPillClass}>{task.aspectRatio}</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`p-3 ${detailPanelClass}`}>
+              <div className={`flex items-center gap-2 ${detailPanelTitleClass}`}><FolderOpen size={14} /> 项目</div>
+              <p className={`mt-2 ${detailPanelTextClass}`}>{projectName}</p>
+            </div>
+            <div className={`p-3 ${detailPanelClass}`}>
+              <div className={`flex items-center gap-2 ${detailPanelTitleClass}`}><Clapperboard size={14} /> 镜头</div>
+              <p className={`mt-2 ${detailPanelTextClass}`}>{shotName}</p>
+            </div>
           </div>
 
           {/* Generation Params */}
-          <div className="border border-gray-700 rounded-xl overflow-hidden">
+          <div className={detailAccordionClass}>
             <button
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-400 hover:bg-gray-800/50 transition-colors"
+              className={detailAccordionTriggerClass}
               onClick={() => setShowParams(!showParams)}
             >
               <span>生成参数</span>
             </button>
             {showParams && (
-              <div className="px-4 pb-4 space-y-2 text-xs text-gray-400">
+              <div className={detailAccordionContentClass}>
                 <div>时长: {task.frames === 241 ? '10秒(241帧)' : '5秒(121帧)'}</div>
                 <div>宽高比: {task.aspectRatio}</div>
                 <div>Seed: {task.seed === -1 ? '随机' : task.seed}</div>
@@ -276,7 +305,7 @@ export default function VideoDetail() {
 
           {/* Expiration Countdown */}
           {task.status === 'done' && timeRemaining && (
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm text-yellow-300 flex items-center gap-2">
+            <div className="p-3 bg-yellow-50 border border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/30 rounded-xl text-sm text-yellow-800 dark:text-yellow-300 flex items-center gap-2">
               <Clock size={14} />
               <span>视频将在 {timeRemaining} 后过期</span>
             </div>
@@ -295,30 +324,30 @@ export default function VideoDetail() {
             ].map((btn) => (
               <button
                 key={btn.label}
-                className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed relative"
+                className={detailActionTileClass}
                 disabled={btn.disabled && !btn.action}
                 onClick={btn.action}
               >
                 {btn.icon}
                 <span>{btn.label}</span>
                 {btn.soon && (
-                  <span className="absolute top-1 right-1 text-[9px] text-gray-500 bg-gray-700 px-1 rounded">即将开放</span>
+                  <span className="absolute top-1 right-1 text-[9px] text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-1 rounded">即将开放</span>
                 )}
               </button>
             ))}
           </div>
 
           {/* Technical Info */}
-          <div className="border border-gray-700 rounded-xl overflow-hidden">
+          <div className={detailAccordionClass}>
             <button
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-400 hover:bg-gray-800/50 transition-colors"
+              className={detailAccordionTriggerClass}
               onClick={() => setShowTechInfo(!showTechInfo)}
             >
               <Hash size={14} />
               <span>技术信息</span>
             </button>
             {showTechInfo && (
-              <div className="px-4 pb-4 space-y-2 text-xs text-gray-500 font-mono">
+              <div className={`${detailAccordionContentClass} font-mono`}>
                 <div>任务ID: {task.id}</div>
                 <div>请求ID: {task.requestId}</div>
                 <div>模式: {task.mode}</div>

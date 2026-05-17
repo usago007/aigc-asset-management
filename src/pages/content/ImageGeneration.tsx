@@ -1,13 +1,13 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { useAIConfigStore } from '@/store/aiConfigStore'
-import { submitImageTask, getImageReqKeyForMode } from '@/services/imageGeneration'
+import { getImageReqKeyForMode } from '@/services/imageGeneration'
 import { fileToBase64 } from '@/utils/file'
-import { formatDate } from '@/utils/date'
+import { showToast } from '@/utils/toast'
 import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
-import CreationTypeMenu from '@/components/CreationTypeMenu'
-import { Sparkles, Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Maximize2, Loader2, AlertCircle, X, ImagePlus } from 'lucide-react'
+import { Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Loader2, AlertCircle, Eye, ExternalLink, X } from 'lucide-react'
 import type { ImageGenerationMode, TaskQueueStatus } from '@/types/generation'
 
 const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Palette; desc: string }[] = [
@@ -16,19 +16,6 @@ const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Pal
   { value: 'text-to-image-31', label: '文生图3.1', icon: Layers, desc: '高质量文生图' },
   { value: 'text-to-image-30', label: '文生图3.0', icon: Hash, desc: '标准文生图' },
   { value: 'text-to-image-21', label: '文生图2.1', icon: Clock, desc: '基础文生图' },
-]
-
-const creationTypeOptions = [
-  {
-    id: 'agent',
-    label: '创作类型',
-    icon: <Sparkles size={16} />,
-    subOptions: [
-      { id: 'agent-mode', label: 'Agent 模式', icon: <Sparkles size={16} />, description: '自由创作，AI 辅助' },
-      { id: 'image-gen', label: '图片生成', icon: <ImageIcon size={16} />, description: 'AI 图片生成' },
-      { id: 'video-gen', label: '视频生成', icon: <Layers size={16} />, description: 'AI 视频生成' },
-    ],
-  },
 ]
 
 const statusMap: Record<TaskQueueStatus, { label: string; className: string }> = {
@@ -59,7 +46,8 @@ const MAX_IMAGES: Record<ImageGenerationMode, number> = {
 }
 
 export default function ImageGeneration() {
-  const { imageTasks, submitImageTask: storeSubmitTask, cancelImageTask, retryImageTask, deleteImageTask } = useAppStore()
+  const navigate = useNavigate()
+  const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, cancelImageTask } = useAppStore()
   const { updateImageEndpoint } = useAIConfigStore()
 
   const [prompt, setPrompt] = useState('')
@@ -72,15 +60,17 @@ export default function ImageGeneration() {
   const [forceSingle, setForceSingle] = useState(false)
   const [scale, setScale] = useState(100)
   const [frameType, setFrameType] = useState<'Opening' | 'Ending' | ''>('')
+  const [projectId, setProjectId] = useState('')
   const [shotId, setShotId] = useState('')
   const [uploadedImages, setUploadedImages] = useState<{ file: File; url: string; base64: string }[]>([])
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const activeTasks = useMemo(() => imageTasks.filter((t) => t.status !== 'done' && t.status !== 'failed'), [imageTasks])
   const completedTasks = useMemo(() => imageTasks.filter((t) => t.status === 'done'), [imageTasks])
   const maxImages = forceSingle ? 1 : MAX_IMAGES[mode]
+  const filteredShots = useMemo(
+    () => shots.filter((shot) => shot.projectId === projectId),
+    [shots, projectId]
+  )
 
   // Image upload handling
   const handleImageUpload = useCallback(async (files: FileList | null) => {
@@ -106,36 +96,54 @@ export default function ImageGeneration() {
   useEffect(() => {
     const reqKey = getImageReqKeyForMode(mode)
     updateImageEndpoint(mode, { reqKey })
-  }, [mode])
+  }, [mode, updateImageEndpoint])
+
+  useEffect(() => {
+    if (shotId && !filteredShots.some((shot) => shot.id === shotId)) {
+      setShotId('')
+    }
+  }, [filteredShots, shotId])
 
   const handleSubmit = useCallback(async () => {
     if (!prompt.trim()) return
     if (maxImages > 0 && uploadedImages.length === 0 && mode === 'image-to-image') return
 
-    const seedValue = useRandomSeed ? -1 : seed
+    const selectedShot = shotId ? shots.find((shot) => shot.id === shotId) : undefined
+    if (shotId && !selectedShot) {
+      showToast('error', '所选镜头不存在，请重新选择')
+      return
+    }
+    if (selectedShot && selectedShot.projectId !== projectId) {
+      showToast('error', '所选镜头不属于当前项目，请重新选择')
+      setShotId('')
+      return
+    }
 
-    // Prepare uploaded images
-    const uploadFiles = uploadedImages.map((img) => img.file)
+    const seedValue = useRandomSeed ? -1 : seed
 
     // Submit to service
     try {
-      await submitImageTask(mode, {
+      await storeSubmitTask(mode, {
         prompt: prompt.trim(),
+        inputImageUrls: uploadedImages.map((img) => img.url),
+        inputImageBase64: uploadedImages.map((img) => img.base64),
         seed: seedValue,
         size: resolution,
         width: parseInt(aspectRatio.split(':')[0]) * 256,
         height: parseInt(aspectRatio.split(':')[1]) * 256,
         scale,
-        force_single: forceSingle,
+        forceSingle,
         resolution: resolution >= 2048 * 2048 ? '4k' : '8k',
-        binary_data_base64: uploadedImages.length > 0 ? uploadedImages.map((img) => img.base64) : undefined,
+        projectId: projectId || undefined,
+        shotId: shotId || undefined,
+        frameType: frameType || undefined,
       })
       setPrompt('')
       setUploadedImages([])
     } catch (error) {
       console.error('Failed to submit image task:', error)
     }
-  }, [prompt, mode, seed, useRandomSeed, resolution, numImages, forceSingle, scale, frameType, shotId, uploadedImages, maxImages])
+  }, [prompt, mode, seed, useRandomSeed, resolution, forceSingle, scale, frameType, projectId, shotId, uploadedImages, maxImages, shots, storeSubmitTask])
 
   const handleDownload = (url: string) => {
     const a = document.createElement('a')
@@ -286,7 +294,7 @@ export default function ImageGeneration() {
     },
     {
       id: 'frame',
-      label: '帧类型 / 关联镜头',
+      label: '帧类型 / 归属上下文',
       children: (
         <div className="space-y-3">
           <div className="flex gap-2">
@@ -304,14 +312,43 @@ export default function ImageGeneration() {
               </button>
             ))}
           </div>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300">项目</label>
+            <select
+              className="input-field"
+              value={projectId}
+              onChange={(e) => {
+                setProjectId(e.target.value)
+                setShotId('')
+              }}
+            >
+              <option value="">不绑定项目</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.projectName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300">镜头</label>
           <select
             className="input-field"
             value={shotId}
             onChange={(e) => setShotId(e.target.value)}
+            disabled={!projectId}
           >
             <option value="">不关联镜头</option>
-            {/* Shot options would be populated from store */}
+            {filteredShots.map((shot) => (
+              <option key={shot.id} value={shot.id}>
+                {shot.shotName}
+              </option>
+            ))}
           </select>
+            {!projectId && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">如需关联镜头，请先选择项目</p>
+            )}
+          </div>
         </div>
       ),
     },
@@ -381,19 +418,35 @@ export default function ImageGeneration() {
                 <div
                   key={`${task.id}-${idx}`}
                   className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-accent-500 transition-all shadow-sm hover:shadow-lg"
-                  onClick={() => setPreviewUrl(url)}
+                  onClick={() => navigate(`/content/image-detail/${task.id}/${idx}`)}
                 >
                   <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                     <p className="text-xs text-white/90 line-clamp-1 mb-1">{task.prompt}</p>
                     <div className="flex items-center gap-1">
                       <button
+                        className="flex-1 py-1 bg-white/15 hover:bg-white/25 rounded text-xs text-white backdrop-blur-sm transition-colors border border-white/20 flex items-center justify-center gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/content/image-detail/${task.id}/${idx}`)
+                        }}
+                      >
+                        <Eye size={12} />
+                        详情
+                      </button>
+                      <button
                         className="flex-1 py-1 bg-accent-500/30 hover:bg-accent-500/50 rounded text-xs text-white backdrop-blur-sm transition-colors border border-accent-500/20"
                         onClick={(e) => { e.stopPropagation(); handleDownload(url) }}
                       >
-                        下载
+                        <span className="inline-flex items-center gap-1"><Download size={12} /> 下载</span>
                       </button>
                     </div>
+                  </div>
+                  <div className="absolute top-2 left-2">
+                    <span className="badge badge-info text-[10px] border-0 bg-black/50 text-white">
+                      <ExternalLink size={10} />
+                      查看详情
+                    </span>
                   </div>
                   {task.tokensUsed && (
                     <div className="absolute top-2 right-2">
@@ -409,20 +462,6 @@ export default function ImageGeneration() {
         </div>
       )}
 
-      {/* Image Preview Modal */}
-      {previewUrl && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreviewUrl(null)}>
-          <div className="relative max-w-5xl max-h-full" onClick={(e) => e.stopPropagation()}>
-            <img src={previewUrl} alt="" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
-            <button
-              className="absolute -top-3 -right-3 p-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full shadow-lg transition-colors"
-              onClick={() => setPreviewUrl(null)}
-            >
-              <X size={16} className="text-gray-600 dark:text-gray-300" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

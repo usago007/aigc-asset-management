@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
@@ -26,6 +27,7 @@ const riskMap: Record<RiskLevel, { label: string; variant: 'success' | 'warning'
 }
 
 export default function Projects() {
+  const navigate = useNavigate()
   const { projects, brands, addProject, updateProject, deleteProject } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Project | null>(null)
@@ -91,6 +93,7 @@ export default function Projects() {
   }
 
   const getBrandName = (id: string) => brands.find(b => b.id === id)?.brandName || '-'
+  const goToDetail = (projectId: string) => navigate(`/projects/projects/${projectId}`)
 
   return (
     <div className="space-y-6">
@@ -130,11 +133,24 @@ export default function Projects() {
           </thead>
           <tbody>
             {paginatedItems.map(project => (
-              <tr key={project.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+              <tr
+                key={project.id}
+                className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
+                onClick={() => goToDetail(project.id)}
+              >
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
                     <Video size={14} className="text-primary-400" />
-                    <span className="font-medium text-gray-800 dark:text-gray-200">{project.projectName}</span>
+                    <button
+                      type="button"
+                      className="font-medium text-gray-800 dark:text-gray-200 hover:text-primary-500 transition-colors"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        goToDetail(project.id)
+                      }}
+                    >
+                      {project.projectName}
+                    </button>
                   </div>
                 </td>
                 <td className="table-cell">{getBrandName(project.brandId)}</td>
@@ -164,10 +180,24 @@ export default function Projects() {
                 </td>
                 <td className="table-cell">
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenModal(project)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleOpenModal(project)
+                      }}
+                    >
                       <Edit2 size={14} className="text-gray-600 dark:text-gray-400" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(project.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleDelete(project.id)
+                      }}
+                    >
                       <Trash2 size={14} className="text-error" />
                     </Button>
                   </div>

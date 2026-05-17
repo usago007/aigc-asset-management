@@ -8,10 +8,9 @@ const breadcrumbs: Record<string, string[]> = {
   '/dashboard/assets': ['仪表盘', '资产'],
   '/dashboard/tasks': ['仪表盘', '任务'],
   '/content/keyframes': ['内容创作', '关键帧'],
-  '/content/shots': ['内容创作', '镜头'],
+  '/content/shots': ['内容创作', '镜头管理'],
   '/content/assets': ['内容创作', '资产库'],
   '/content/video-generation': ['内容创作', '视频创作'],
-  '/content/generation-history': ['内容创作', '作品库'],
   '/content/image-generation': ['内容创作', '图片创作'],
   '/projects/customers': ['项目管理', '客户管理'],
   '/projects/brands': ['项目管理', '品牌管理'],
@@ -27,7 +26,10 @@ const breadcrumbs: Record<string, string[]> = {
 }
 
 const dynamicRoutes: { prefix: string; crumbs: string[] }[] = [
+  { prefix: '/content/image-detail/', crumbs: ['内容创作', '图片详情'] },
+  { prefix: '/content/video-detail/', crumbs: ['内容创作', '视频详情'] },
   { prefix: '/content/task/', crumbs: ['内容创作', '任务详情'] },
+  { prefix: '/projects/projects/', crumbs: ['项目管理', '项目详情'] },
 ]
 
 export default function Header() {

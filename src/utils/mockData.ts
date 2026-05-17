@@ -1,7 +1,7 @@
 import type {
   Customer, Brand, Project, Brief, Task, Review,
   KeyFrame, Shot, Asset, GenerationVersion, Role, Member, MemberStatus,
-  ProjectStage, RiskLevel, GenerationStatus, AssetStatus,
+  ProjectStage, RiskLevel, GenerationStatus,
   TaskStatus, TaskType, ReviewStatus, ReviewType, Visibility,
 } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask, TaskQueueStatus, GenerationMode, ImageGenerationMode } from '@/types/generation'
@@ -301,7 +301,6 @@ export function generateShots(count: number = 35, projects: Project[] = []): Sho
     promptId: `prompt-${i}`,
     modelName: pick(MODEL_NAMES),
     modelVersion: pick(MODEL_VERSIONS),
-    status: pick<GenerationStatus>(['Pending', 'Completed', 'Failed']),
   }))
 }
 
@@ -318,21 +317,55 @@ export function generateKeyFrames(count: number = 35, shots: Shot[] = []): KeyFr
   }))
 }
 
-export function generateAssets(count: number = 35, shots: Shot[] = []): Asset[] {
+export function generateAssets(
+  count: number = 35,
+  shots: Shot[] = [],
+  imageTasks: ImageGenerationTask[] = [],
+  videoTasks: VideoGenerationTask[] = [],
+): Asset[] {
   return Array.from({ length: count }, (_, i) => {
     const type = ASSET_TYPES[i % ASSET_TYPES.length]
-    const formats = ASSET_FORMATS_MAP[type] || ['PNG']
+    const imageTask = imageTasks.length > 0 ? imageTasks[i % imageTasks.length] : undefined
+    const videoTask = videoTasks.length > 0 ? videoTasks[i % videoTasks.length] : undefined
+    const shot = shots[i % shots.length]
+    const resolvedProjectId = type === 'Image'
+      ? imageTask?.projectId || shot?.projectId || ''
+      : type === 'Video'
+        ? videoTask?.projectId || shot?.projectId || ''
+        : shot?.projectId || ''
+    const resolvedShotId = type === 'Image'
+      ? imageTask?.shotId || shot?.id || ''
+      : type === 'Video'
+        ? videoTask?.shotId || shot?.id || ''
+        : shot?.id || ''
+    const resolvedFileUrl = type === 'Image'
+      ? imageTask?.outputImageUrls?.[0] || COSMETIC_IMAGES[i % COSMETIC_IMAGES.length]
+      : type === 'Video'
+        ? videoTask?.videoUrl || ''
+        : ''
+    const sourceType = type === 'Image' ? 'image-task' : type === 'Video' ? 'video-task' : 'script'
     return {
       ...baseEntity(),
       assetName: ASSET_NAMES[i % ASSET_NAMES.length],
       type,
-      shotId: shots[i % shots.length]?.id || '',
+      projectId: resolvedProjectId,
+      shotId: resolvedShotId,
+      sourceType,
+      sourceTaskId: type === 'Image' ? imageTask?.id : type === 'Video' ? videoTask?.id : undefined,
+      sourceResultIndex: type === 'Image' ? 0 : undefined,
       promptId: `prompt-${i}`,
-      modelName: pick(MODEL_NAMES),
-      modelVersion: pick(MODEL_VERSIONS),
+      modelName: type === 'Image'
+        ? imageTask?.mode || 'text-to-image'
+        : type === 'Video'
+          ? 'Seedsance 1.5 Pro'
+          : pick(MODEL_NAMES),
+      modelVersion: type === 'Image'
+        ? imageTask?.resolution || '4k'
+        : type === 'Video'
+          ? '1.0'
+          : pick(MODEL_VERSIONS),
       parentAssetIds: [],
-      status: pick<AssetStatus>(['Draft', 'Final', 'Approved']),
-      fileUrl: type === 'Image' ? COSMETIC_IMAGES[i % COSMETIC_IMAGES.length] : '',
+      fileUrl: resolvedFileUrl,
     }
   })
 }
@@ -409,6 +442,7 @@ export function generateImageTasks(count: number = 35): ImageGenerationTask[] {
     outputImageUrls: [COSMETIC_IMAGES[(i + 10) % COSMETIC_IMAGES.length]],
     outputImageBase64: [],
     keyFrameIds: [`kf-${i}`],
+    projectId: `project-${i % 10}`,
     shotId: `shot-${i % 10}`,
     frameType: i % 2 === 0 ? 'Opening' : 'Ending',
     status: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS),
@@ -420,7 +454,7 @@ export function generateImageTasks(count: number = 35): ImageGenerationTask[] {
 }
 
 export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
-  const TEST_VIDEO_URL = ''
+  const TEST_VIDEO_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
   return Array.from({ length: count }, (_, i) => ({
     ...baseEntity(),
     taskId: `video-task-${i}`,
@@ -447,3 +481,6 @@ export function generateVideoTasks(count: number = 35): VideoGenerationTask[] {
     tokensUsed: weightedPick(TASK_STATUSES_ARR, STATUS_WEIGHTS) === 'done' ? Math.floor(1000 + Math.random() * 4000) : undefined,
   }))
 }
+
+export const MOCK_IMAGE_TASKS = generateImageTasks(35)
+export const MOCK_VIDEO_TASKS = generateVideoTasks(35)

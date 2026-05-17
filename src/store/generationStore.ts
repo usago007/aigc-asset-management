@@ -5,9 +5,9 @@ import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockSubmitTask } from '@/services/mockAdapter';
-import { generateVideoTasks } from '@/utils/mockData';
+import { MOCK_VIDEO_TASKS } from '@/utils/mockData';
 
-const _videoTasks = generateVideoTasks(35);
+const _videoTasks = MOCK_VIDEO_TASKS;
 
 interface GenerationState {
   tasks: VideoGenerationTask[];
@@ -71,6 +71,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       seed: params.seed ?? -1,
       frames: params.frames ?? 121,
       aspectRatio: params.aspect_ratio ?? '16:9',
+      projectId: params.projectId,
+      shotId: params.shotId,
       status: 'submitting',
       progress: 0,
       aigcMetaTagged: false,
@@ -166,6 +168,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         seed: task.seed,
         frames: task.frames,
         aspect_ratio: task.aspectRatio,
+        projectId: task.projectId,
+        shotId: task.shotId,
         reqKey: task.reqKey,
       });
 

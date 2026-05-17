@@ -1,7 +1,6 @@
 export type UUID = string;
 
 export type GenerationStatus = 'Pending' | 'Completed' | 'Failed';
-export type AssetStatus = 'Draft' | 'Final' | 'Approved';
 export type TaskStatus = 'Pending' | 'InProgress' | 'Completed';
 export type TaskType = '生成' | '审核' | '交付';
 export type ReviewStatus = 'Pending' | 'Approved' | 'Rejected';
@@ -44,18 +43,20 @@ export interface Shot extends BaseEntity {
   promptId: string;
   modelName: string;
   modelVersion: string;
-  status: GenerationStatus;
 }
 
 export interface Asset extends BaseEntity {
   assetName: string;
   type: 'Image' | 'Video' | 'Script';
-  shotId: UUID;
+  projectId?: UUID;
+  shotId?: UUID;
+  sourceType: 'image-task' | 'video-task' | 'script';
+  sourceTaskId?: UUID;
+  sourceResultIndex?: number;
   promptId: string;
   modelName: string;
   modelVersion: string;
   parentAssetIds: UUID[];
-  status: AssetStatus;
   fileUrl: string;
 }
 

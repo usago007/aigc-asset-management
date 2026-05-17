@@ -44,6 +44,8 @@ export interface SubmitTaskParams {
   seed?: number;
   frames?: number;
   aspect_ratio?: string;
+  projectId?: UUID;
+  shotId?: UUID;
 }
 
 export interface SubmitTaskResponse {
@@ -96,6 +98,7 @@ export interface ImageGenerationTask extends BaseEntity {
   outputImageUrls: string[];
   outputImageBase64: string[];
   keyFrameIds: UUID[];
+  projectId?: UUID;
   shotId?: UUID;
   frameType?: 'Opening' | 'Ending';
   status: TaskQueueStatus;

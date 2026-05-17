@@ -78,7 +78,7 @@ export default function TaskDetail() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/content/generation-history')}
+          onClick={() => navigate('/content/assets')}
           className="p-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-colors"
         >
           <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, type ReactNode } from 'react'
-import { ImagePlus, Paperclip, Mic, Send, X } from 'lucide-react'
+import { ImagePlus, Mic, Send, X } from 'lucide-react'
 
 interface JimengInputProps {
   value: string
@@ -136,17 +136,6 @@ export default function JimengInput({
                         multiple={imageUpload.maxImages > 1}
                       />
                       <ImagePlus size={18} className="text-gray-600 dark:text-gray-400 group-hover:text-accent-500 transition-colors" />
-                    </label>
-                  )}
-                  {videoUpload && !videoUpload.video && (
-                    <label className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group" title="上传视频">
-                      <input
-                        type="file"
-                        accept="video/mp4"
-                        className="hidden"
-                        onChange={(e) => videoUpload.onUpload(e.target.files?.[0] || null)}
-                      />
-                      <Paperclip size={18} className="text-gray-600 dark:text-gray-400 group-hover:text-accent-500 transition-colors" />
                     </label>
                   )}
                 </>

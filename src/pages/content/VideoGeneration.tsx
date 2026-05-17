@@ -1,28 +1,15 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGenerationStore } from '@/store/generationStore'
+import { useAppStore } from '@/store/appStore'
 import { fileToBase64 } from '@/utils/file'
 import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
-import CreationTypeMenu from '@/components/CreationTypeMenu'
 import TaskCard from '@/components/TaskCard'
-import { Sparkles, Film, ImageIcon, ImagePlus, Clock, Hash, Download, X, Loader2, AlertCircle } from 'lucide-react'
+import { Film, ImageIcon, ImagePlus, Clock, Hash, X, Loader2, AlertCircle } from 'lucide-react'
 import type { GenerationMode, VideoGenerationTask } from '@/types/generation'
 
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
-
-const creationTypeOptions = [
-  {
-    id: 'agent',
-    label: '创作类型',
-    icon: <Sparkles size={16} />,
-    subOptions: [
-      { id: 'agent-mode', label: 'Agent 模式', icon: <Sparkles size={16} />, description: '自由创作，AI 辅助' },
-      { id: 'image-gen', label: '图片生成', icon: <ImageIcon size={16} />, description: 'AI 图片生成' },
-      { id: 'video-gen', label: '视频生成', icon: <Film size={16} />, description: 'AI 视频生成' },
-    ],
-  },
-]
 
 const statusMap: Record<string, { label: string; className: string }> = {
   submitting: { label: '提交中', className: 'badge-info' },
@@ -38,6 +25,7 @@ const statusMap: Record<string, { label: string; className: string }> = {
 export default function VideoGeneration() {
   const navigate = useNavigate()
   const { tasks, submitTask, retryTask, cancelTask } = useGenerationStore()
+  const { projects, shots } = useAppStore()
 
   const [mode, setMode] = useState<GenerationMode>('image-to-video-first-tail')
   const [prompt, setPrompt] = useState('')
@@ -50,6 +38,8 @@ export default function VideoGeneration() {
   const [firstAspectRatio, setFirstAspectRatio] = useState<number | null>(null)
   const [lastAspectRatio, setLastAspectRatio] = useState<number | null>(null)
   const [aspectRatioMismatch, setAspectRatioMismatch] = useState(false)
+  const [projectId, setProjectId] = useState('')
+  const [shotId, setShotId] = useState('')
 
   useEffect(() => {
     if (mode !== 'image-to-video-first-tail' || firstAspectRatio == null || lastAspectRatio == null) {
@@ -62,6 +52,13 @@ export default function VideoGeneration() {
 
   const activeTasks = useMemo(() => tasks.filter((t) => ['submitting', 'in_queue', 'generating'].includes(t.status)), [tasks])
   const completedTasks = useMemo(() => tasks.filter((t) => t.status === 'done'), [tasks])
+  const filteredShots = useMemo(() => shots.filter((shot) => shot.projectId === projectId), [shots, projectId])
+
+  useEffect(() => {
+    if (shotId && !filteredShots.some((shot) => shot.id === shotId)) {
+      setShotId('')
+    }
+  }, [filteredShots, shotId])
 
   const handleFirstFrameUpload = useCallback(async (file: File | null) => {
     if (!file) {
@@ -98,6 +95,13 @@ export default function VideoGeneration() {
     if (mode === 'image-to-video-first' && !firstFrame) return
     if (mode === 'image-to-video-first-tail' && (!firstFrame || !lastFrame)) return
 
+    const selectedShot = shotId ? shots.find((shot) => shot.id === shotId) : undefined
+    if (shotId && !selectedShot) return
+    if (selectedShot && selectedShot.projectId !== projectId) {
+      setShotId('')
+      return
+    }
+
     const binary_data_base64: string[] = []
     if (firstFrame?.base64) binary_data_base64.push(firstFrame.base64)
     if (lastFrame?.base64) binary_data_base64.push(lastFrame.base64)
@@ -108,6 +112,8 @@ export default function VideoGeneration() {
       seed: useCustomSeed ? seed : -1,
       frames,
       aspect_ratio: aspectRatio,
+      projectId: projectId || undefined,
+      shotId: shotId || undefined,
     })
 
     setPrompt('')
@@ -116,22 +122,7 @@ export default function VideoGeneration() {
     setFirstAspectRatio(null)
     setLastAspectRatio(null)
     setAspectRatioMismatch(false)
-  }, [mode, prompt, firstFrame, lastFrame, useCustomSeed, seed, frames, aspectRatio, submitTask])
-
-  const isFormValid = useMemo(() => {
-    if (!prompt.trim()) return false
-    if (mode === 'image-to-video-first' && !firstFrame) return false
-    if (mode === 'image-to-video-first-tail' && (!firstFrame || !lastFrame)) return false
-    return true
-  }, [mode, prompt, firstFrame, lastFrame])
-
-  const handleCreationTypeChange = useCallback((id: string) => {
-    if (id === 'image-gen') {
-      navigate('/content/image-generation')
-    } else if (id === 'video-gen') {
-      navigate('/content/video-generation')
-    }
-  }, [navigate])
+  }, [mode, prompt, firstFrame, lastFrame, useCustomSeed, seed, frames, aspectRatio, projectId, shotId, shots, submitTask])
 
   const paramSections = [
     {
@@ -243,6 +234,52 @@ export default function VideoGeneration() {
               max={2147483647}
             />
           )}
+        </div>
+      ),
+    },
+    {
+      id: 'ownership',
+      label: '归属上下文',
+      icon: <ImageIcon size={16} />,
+      children: (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300">项目</label>
+            <select
+              className="input-field"
+              value={projectId}
+              onChange={(e) => {
+                setProjectId(e.target.value)
+                setShotId('')
+              }}
+            >
+              <option value="">不绑定项目</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.projectName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300">镜头</label>
+            <select
+              className="input-field"
+              value={shotId}
+              onChange={(e) => setShotId(e.target.value)}
+              disabled={!projectId}
+            >
+              <option value="">不绑定镜头</option>
+              {filteredShots.map((shot) => (
+                <option key={shot.id} value={shot.id}>
+                  {shot.shotName}
+                </option>
+              ))}
+            </select>
+            {!projectId && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">如需关联镜头，请先选择项目</p>
+            )}
+          </div>
         </div>
       ),
     },

@@ -29,10 +29,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       children: [
         { path: '/content/image-generation', label: '图片创作' },
         { path: '/content/video-generation', label: '视频创作' },
-        { path: '/content/generation-history', label: '作品库' },
         { path: '/content/assets', label: '资产库' },
-        { path: '/content/shots', label: '镜头' },
-        { path: '/content/keyframes', label: '关键帧' },
+        { path: '/content/shots', label: '镜头管理' },
       ]
     },
     {

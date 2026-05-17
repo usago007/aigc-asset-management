@@ -7,16 +7,9 @@ import Pagination from '@/components/Pagination'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit2, Trash2, Search } from 'lucide-react'
-import type { Shot, GenerationStatus } from '@/types'
-
-const statusMap: Record<GenerationStatus, { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
-  Pending: { label: '进行中', variant: 'warning' },
-  Completed: { label: '已完成', variant: 'success' },
-  Failed: { label: '失败', variant: 'destructive' },
-}
+import type { Shot } from '@/types'
 
 export default function Shots() {
   const { shots, projects, keyFrames, addShot, updateShot, deleteShot } = useAppStore()
@@ -35,7 +28,6 @@ export default function Shots() {
     promptId: '',
     modelName: '',
     modelVersion: '',
-    status: 'Pending' as GenerationStatus,
   })
 
   const filteredItems = useMemo(() => {
@@ -51,10 +43,10 @@ export default function Shots() {
   const handleOpenModal = (item?: Shot) => {
     if (item) {
       setEditingItem(item)
-      setFormData({ shotName: item.shotName, projectId: item.projectId, firstFrameId: item.firstFrameId || '', lastFrameId: item.lastFrameId || '', promptId: item.promptId, modelName: item.modelName, modelVersion: item.modelVersion, status: item.status })
+      setFormData({ shotName: item.shotName, projectId: item.projectId, firstFrameId: item.firstFrameId || '', lastFrameId: item.lastFrameId || '', promptId: item.promptId, modelName: item.modelName, modelVersion: item.modelVersion })
     } else {
       setEditingItem(null)
-      setFormData({ shotName: '', projectId: '', firstFrameId: '', lastFrameId: '', promptId: '', modelName: '', modelVersion: '', status: 'Pending' })
+      setFormData({ shotName: '', projectId: '', firstFrameId: '', lastFrameId: '', promptId: '', modelName: '', modelVersion: '' })
     }
     setIsModalOpen(true)
   }
@@ -98,7 +90,7 @@ export default function Shots() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="table-header">镜头名称</th><th className="table-header">所属项目</th><th className="table-header">首图</th><th className="table-header">尾图</th><th className="table-header">AI模型</th><th className="table-header">状态</th><th className="table-header">创建时间</th><th className="table-header">操作</th>
+              <th className="table-header">镜头名称</th><th className="table-header">所属项目</th><th className="table-header">首图</th><th className="table-header">尾图</th><th className="table-header">AI模型</th><th className="table-header">创建时间</th><th className="table-header">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +101,6 @@ export default function Shots() {
                 <td className="table-cell text-xs">{getFrameName(shot.firstFrameId)}</td>
                 <td className="table-cell text-xs">{getFrameName(shot.lastFrameId)}</td>
                 <td className="table-cell">{shot.modelName} {shot.modelVersion}</td>
-                <td className="table-cell"><Badge variant={statusMap[shot.status].variant}>{statusMap[shot.status].label}</Badge></td>
                 <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(shot.createdAt)}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-1">

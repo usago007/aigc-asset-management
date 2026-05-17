@@ -14,7 +14,8 @@ import {
   generateBriefs,
   generateTasks,
   generateReviews,
-  generateImageTasks,
+  MOCK_IMAGE_TASKS,
+  MOCK_VIDEO_TASKS,
   generateMembers,
 } from '@/utils/mockData';
 import { IMAGE_MODEL_NAMES, IMAGE_MODEL_VERSIONS, getImageReqKeyForMode, getImagePollInterval, getImageExpiryMs } from '@/services/imageGeneration';
@@ -82,7 +83,7 @@ interface AppState {
   toggleMemberStatus: (id: string) => void;
 
   createKeyFramesFromImages: (imageUrls: string[], frameType: 'Opening' | 'Ending', shotId: string | undefined, modelName: string, modelVersion: string, prompt: string) => string[];
-  submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
+  submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; projectId?: string; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
   retryImageTask: (taskId: string) => Promise<void>;
   cancelImageTask: (taskId: string) => void;
   deleteImageTask: (taskId: string) => void;
@@ -95,12 +96,12 @@ const _brands = generateBrands(35, _customers);
 const _projects = generateProjects(35, _brands);
 const _shots = generateShots(35, _projects);
 const _keyFrames = generateKeyFrames(35, _shots);
-const _assets = generateAssets(35, _shots);
+const _imageTasks = MOCK_IMAGE_TASKS;
+const _assets = generateAssets(35, _shots, _imageTasks, MOCK_VIDEO_TASKS);
 const _generationVersions = generateGenerationVersions(35, _keyFrames.map(kf => kf.id));
 const _briefs = generateBriefs(35, _projects);
 const _tasks = generateTasks(35, _projects);
 const _reviews = generateReviews(35);
-const _imageTasks = generateImageTasks(35);
 const _roles = [
   { id: 'role-1', roleName: '超级管理员', permissions: ['*'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
   { id: 'role-2', roleName: '项目经理', permissions: ['project:*', 'task:*', 'brief:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },
@@ -465,11 +466,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         const updateData: Partial<Shot> = {};
         if (frameType === 'Opening' && (!shot.firstFrameId || true)) {
           updateData.firstFrameId = createdIds[0];
-          updateData.status = 'Completed';
         }
         if (frameType === 'Ending' && (!shot.lastFrameId || true)) {
           updateData.lastFrameId = createdIds[createdIds.length - 1];
-          updateData.status = 'Completed';
         }
         if (Object.keys(updateData).length > 0) {
           return {
@@ -512,6 +511,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       outputImageUrls: [],
       outputImageBase64: [],
       keyFrameIds: [],
+      projectId: params.projectId,
       shotId: params.shotId,
       frameType: params.frameType,
       status: 'submitting',
