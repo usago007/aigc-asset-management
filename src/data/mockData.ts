@@ -330,7 +330,7 @@ export const mockBriefs: Brief[] = [
     id: 'brief-001',
     createdAt: '2024-01-28T09:00:00Z',
     updatedAt: '2024-01-28T09:00:00Z',
-    briefTitle: '2024春季美妆广告简报',
+    briefTitle: '2024春季美妆广告提案',
     projectId: 'project-001',
     description: '针对18-35岁女性，突出春季新品的清新与活力',
     targetAudience: '18-35岁女性',
@@ -343,7 +343,7 @@ export const mockBriefs: Brief[] = [
     id: 'brief-002',
     createdAt: '2024-02-18T10:00:00Z',
     updatedAt: '2024-02-18T10:00:00Z',
-    briefTitle: '新品手机发布会视频简报',
+    briefTitle: '新品手机发布会视频提案',
     projectId: 'project-002',
     description: '科技感十足的广告视频，突出产品创新功能',
     targetAudience: '20-40岁科技爱好者',
@@ -425,7 +425,7 @@ export const mockReviews: Review[] = [
     reviewer: '客户代表D',
     reviewType: 'Client',
     status: 'Approved',
-    notes: '客户确认简报内容',
+    notes: '客户确认提案内容',
   },
 ];
 

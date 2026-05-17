@@ -15,7 +15,7 @@ const breadcrumbs: Record<string, string[]> = {
   '/projects/customers': ['项目管理', '客户管理'],
   '/projects/brands': ['项目管理', '品牌管理'],
   '/projects/projects': ['项目管理', '项目列表'],
-  '/projects/briefs': ['项目管理', '简报管理'],
+  '/projects/briefs': ['项目管理', '提案管理'],
   '/projects/tasks': ['项目管理', '任务管理'],
   '/projects/reviews': ['项目管理', '审核管理'],
   '/system/members': ['系统配置', '成员管理'],
@@ -28,6 +28,7 @@ const breadcrumbs: Record<string, string[]> = {
 const dynamicRoutes: { prefix: string; crumbs: string[] }[] = [
   { prefix: '/content/image-detail/', crumbs: ['内容创作', '图片详情'] },
   { prefix: '/content/video-detail/', crumbs: ['内容创作', '视频详情'] },
+  { prefix: '/content/shots/', crumbs: ['内容创作', '镜头详情'] },
   { prefix: '/content/task/', crumbs: ['内容创作', '任务详情'] },
   { prefix: '/projects/projects/', crumbs: ['项目管理', '项目详情'] },
 ]

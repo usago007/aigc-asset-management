@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Customer, Brand, Project, KeyFrame, Shot, Asset, GenerationVersion, Brief, Task, Review, Role, Member } from '@/types';
+import type { Customer, Brand, Project, KeyFrame, Shot, Asset, GenerationVersion, Brief, Task, Review, Role, Member, ProjectShotSlot } from '@/types';
 import type { ImageGenerationTask, ImageGenerationMode, TaskQueueStatus } from '@/types/generation';
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
@@ -19,6 +19,7 @@ interface AppState {
   projects: Project[];
   keyFrames: KeyFrame[];
   shots: Shot[];
+  projectShotSlots: ProjectShotSlot[];
   assets: Asset[];
   generationVersions: GenerationVersion[];
   briefs: Brief[];
@@ -47,6 +48,12 @@ interface AppState {
   addShot: (data: Omit<Shot, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateShot: (id: string, data: Partial<Shot>) => void;
   deleteShot: (id: string) => void;
+  getProjectShotSlots: (projectId: string) => ProjectShotSlot[];
+  ensureDefaultProjectShotSlots: (projectId: string) => void;
+  appendProjectShotSlot: (projectId: string) => void;
+  assignShotToProjectSlot: (projectId: string, slotId: string, shotId: string) => void;
+  clearProjectShotSlot: (projectId: string, slotId: string) => void;
+  moveProjectShotSlot: (projectId: string, slotId: string, direction: 'up' | 'down') => void;
   
   addAsset: (data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateAsset: (id: string, data: Partial<Asset>) => void;
@@ -104,12 +111,112 @@ const _roles = [
 
 const _members = generateMembers(35, _roles.map(r => r.id));
 
+const sortProjectShotSlots = (slots: ProjectShotSlot[], projectId: string) =>
+  slots
+    .filter((slot) => slot.projectId === projectId)
+    .sort((a, b) => a.position - b.position);
+
+const syncShotsToSlots = (shots: Shot[], slots: ProjectShotSlot[]) => {
+  const projectIdByShotId = new Map<string, string>();
+  slots.forEach((slot) => {
+    if (slot.shotId) {
+      projectIdByShotId.set(slot.shotId, slot.projectId);
+    }
+  });
+
+  return shots.map((shot) => {
+    const nextProjectId = projectIdByShotId.get(shot.id) || '';
+    return shot.projectId === nextProjectId
+      ? shot
+      : { ...shot, projectId: nextProjectId, updatedAt: new Date().toISOString() };
+  });
+};
+
+const buildInitialProjectShotSlots = (projects: Project[], shots: Shot[]): ProjectShotSlot[] =>
+  projects.flatMap((project) => {
+    const projectShots = shots.filter((shot) => shot.projectId === project.id);
+    const slotCount = Math.max(5, projectShots.length);
+    return Array.from({ length: slotCount }, (_, index) => {
+      const position = index + 1;
+      const shot = projectShots[index];
+      const createdAt = shot?.createdAt || project.createdAt;
+      const updatedAt = shot?.updatedAt || project.updatedAt;
+      return {
+        id: `slot-${project.id}-${position}`,
+        projectId: project.id,
+        shotId: shot?.id || null,
+        position,
+        createdAt,
+        updatedAt,
+      };
+    });
+  });
+
+const ensureProjectDefaultSlots = (slots: ProjectShotSlot[], projectId: string) => {
+  const projectSlots = sortProjectShotSlots(slots, projectId);
+  if (projectSlots.length >= 5) return slots;
+
+  const now = new Date().toISOString();
+  const nextSlots = [...slots];
+  for (let position = projectSlots.length + 1; position <= 5; position += 1) {
+    nextSlots.push({
+      id: generateUUID(),
+      projectId,
+      shotId: null,
+      position,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+  return nextSlots;
+};
+
+const createEmptyProjectSlot = (projectId: string, position: number): ProjectShotSlot => {
+  const now = new Date().toISOString();
+  return {
+    id: generateUUID(),
+    projectId,
+    shotId: null,
+    position,
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
+const assignShotIntoProject = (shots: Shot[], slots: ProjectShotSlot[], projectId: string, slotId: string, shotId: string) => {
+  const now = new Date().toISOString();
+  const normalizedSlots = ensureProjectDefaultSlots(slots, projectId).map((slot) => {
+    if (slot.shotId === shotId) {
+      return { ...slot, shotId: null, updatedAt: now };
+    }
+    if (slot.id === slotId) {
+      return { ...slot, shotId, updatedAt: now };
+    }
+    return slot;
+  });
+
+  return {
+    projectShotSlots: normalizedSlots,
+    shots: syncShotsToSlots(shots, normalizedSlots),
+  };
+};
+
+const appendSlotForProject = (slots: ProjectShotSlot[], projectId: string) => {
+  const normalizedSlots = ensureProjectDefaultSlots(slots, projectId);
+  const projectSlots = sortProjectShotSlots(normalizedSlots, projectId);
+  return [...normalizedSlots, createEmptyProjectSlot(projectId, projectSlots.length + 1)];
+};
+
+const _projectShotSlots = buildInitialProjectShotSlots(_projects, _shots);
+const _normalizedShots = syncShotsToSlots(_shots, _projectShotSlots);
+
 export const useAppStore = create<AppState>((set, get) => ({
   customers: _customers,
   brands: _brands,
   projects: _projects,
   keyFrames: _keyFrames,
-  shots: _shots,
+  shots: _normalizedShots,
+  projectShotSlots: _projectShotSlots,
   assets: _assets,
   generationVersions: _generationVersions,
   briefs: _briefs,
@@ -176,7 +283,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
     showToast('success', '项目创建成功');
-    return { projects: [...state.projects, newItem] };
+    return {
+      projects: [...state.projects, newItem],
+      projectShotSlots: [...state.projectShotSlots, ...Array.from({ length: 5 }, (_, index) => ({
+        id: generateUUID(),
+        projectId: newItem.id,
+        shotId: null,
+        position: index + 1,
+        createdAt: newItem.createdAt,
+        updatedAt: newItem.updatedAt,
+      }))],
+    };
   }),
 
   updateProject: (id, data) => set((state) => {
@@ -190,7 +307,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteProject: (id) => set((state) => {
     showToast('success', '项目删除成功');
-    return { projects: state.projects.filter((p) => p.id !== id) };
+    const remainingSlots = state.projectShotSlots.filter((slot) => slot.projectId !== id);
+    return {
+      projects: state.projects.filter((p) => p.id !== id),
+      projectShotSlots: remainingSlots,
+      shots: syncShotsToSlots(state.shots, remainingSlots),
+    };
   }),
 
   addKeyFrame: (data) => set((state) => {
@@ -226,21 +348,133 @@ export const useAppStore = create<AppState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
     showToast('success', '镜头创建成功');
-    return { shots: [...state.shots, newItem] };
+    if (!data.projectId) {
+      return { shots: [...state.shots, newItem] };
+    }
+
+    const normalizedSlots = ensureProjectDefaultSlots(state.projectShotSlots, data.projectId);
+    const projectSlots = sortProjectShotSlots(normalizedSlots, data.projectId);
+    const emptySlot = projectSlots.find((slot) => !slot.shotId);
+    const nextSlots = emptySlot
+      ? normalizedSlots.map((slot) => slot.id === emptySlot.id ? { ...slot, shotId: newItem.id, updatedAt: newItem.updatedAt } : slot)
+      : [...normalizedSlots, {
+          id: generateUUID(),
+          projectId: data.projectId,
+          shotId: newItem.id,
+          position: projectSlots.length + 1,
+          createdAt: newItem.createdAt,
+          updatedAt: newItem.updatedAt,
+        }];
+
+    return {
+      shots: syncShotsToSlots([...state.shots, newItem], nextSlots),
+      projectShotSlots: nextSlots,
+    };
   }),
 
   updateShot: (id, data) => set((state) => {
     showToast('success', '镜头更新成功');
+    const existingShot = state.shots.find((shot) => shot.id === id);
+    if (!existingShot) return {};
+
+    if (data.projectId === undefined || data.projectId === existingShot.projectId) {
+      return {
+        shots: state.shots.map((s) =>
+          s.id === id ? { ...s, ...data, updatedAt: new Date().toISOString() } : s
+        ),
+      };
+    }
+
+    const now = new Date().toISOString();
+    let nextSlots = state.projectShotSlots.map((slot) =>
+      slot.shotId === id ? { ...slot, shotId: null, updatedAt: now } : slot
+    );
+
+    if (data.projectId) {
+      nextSlots = ensureProjectDefaultSlots(nextSlots, data.projectId);
+      const targetProjectSlots = sortProjectShotSlots(nextSlots, data.projectId);
+      const emptySlot = targetProjectSlots.find((slot) => !slot.shotId);
+      if (emptySlot) {
+        nextSlots = nextSlots.map((slot) => slot.id === emptySlot.id ? { ...slot, shotId: id, updatedAt: now } : slot);
+      } else {
+        nextSlots = [...nextSlots, {
+          id: generateUUID(),
+          projectId: data.projectId,
+          shotId: id,
+          position: targetProjectSlots.length + 1,
+          createdAt: now,
+          updatedAt: now,
+        }];
+      }
+    }
+
+    const nextShots = state.shots.map((shot) =>
+      shot.id === id ? { ...shot, ...data, updatedAt: now } : shot
+    );
     return {
-      shots: state.shots.map((s) =>
-        s.id === id ? { ...s, ...data, updatedAt: new Date().toISOString() } : s
-      ),
+      shots: syncShotsToSlots(nextShots, nextSlots),
+      projectShotSlots: nextSlots,
     };
   }),
 
   deleteShot: (id) => set((state) => {
     showToast('success', '镜头删除成功');
-    return { shots: state.shots.filter((s) => s.id !== id) };
+    return {
+      shots: state.shots.filter((s) => s.id !== id),
+      projectShotSlots: state.projectShotSlots.map((slot) =>
+        slot.shotId === id ? { ...slot, shotId: null, updatedAt: new Date().toISOString() } : slot
+      ),
+    };
+  }),
+
+  getProjectShotSlots: (projectId) => sortProjectShotSlots(get().projectShotSlots, projectId),
+
+  ensureDefaultProjectShotSlots: (projectId) => set((state) => ({
+    projectShotSlots: ensureProjectDefaultSlots(state.projectShotSlots, projectId),
+  })),
+
+  appendProjectShotSlot: (projectId) => set((state) => ({
+    projectShotSlots: appendSlotForProject(state.projectShotSlots, projectId),
+  })),
+
+  assignShotToProjectSlot: (projectId, slotId, shotId) => set((state) => {
+    const shot = state.shots.find((item) => item.id === shotId);
+    if (!shot) return {};
+    showToast('success', '镜头关联成功');
+    return assignShotIntoProject(state.shots, state.projectShotSlots, projectId, slotId, shotId);
+  }),
+
+  clearProjectShotSlot: (projectId, slotId) => set((state) => {
+    const now = new Date().toISOString();
+    const nextSlots = ensureProjectDefaultSlots(state.projectShotSlots, projectId).map((slot) =>
+      slot.id === slotId ? { ...slot, shotId: null, updatedAt: now } : slot
+    );
+    showToast('success', '镜头关联已解除');
+    return {
+      projectShotSlots: nextSlots,
+      shots: syncShotsToSlots(state.shots, nextSlots),
+    };
+  }),
+
+  moveProjectShotSlot: (projectId, slotId, direction) => set((state) => {
+    const projectSlots = sortProjectShotSlots(state.projectShotSlots, projectId);
+    const currentIndex = projectSlots.findIndex((slot) => slot.id === slotId);
+    if (currentIndex < 0) return {};
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= projectSlots.length) return {};
+
+    const currentSlot = projectSlots[currentIndex];
+    const targetSlot = projectSlots[targetIndex];
+    const now = new Date().toISOString();
+
+    showToast('success', '镜头顺序已更新');
+    return {
+      projectShotSlots: state.projectShotSlots.map((slot) => {
+        if (slot.id === currentSlot.id) return { ...slot, position: targetSlot.position, updatedAt: now };
+        if (slot.id === targetSlot.id) return { ...slot, position: currentSlot.position, updatedAt: now };
+        return slot;
+      }),
+    };
   }),
 
   addAsset: (data) => set((state) => {
@@ -275,12 +509,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    showToast('success', '简报创建成功');
+    showToast('success', '提案创建成功');
     return { briefs: [...state.briefs, newItem] };
   }),
 
   updateBrief: (id, data) => set((state) => {
-    showToast('success', '简报更新成功');
+    showToast('success', '提案更新成功');
     return {
       briefs: state.briefs.map((b) =>
         b.id === id ? { ...b, ...data, updatedAt: new Date().toISOString() } : b
@@ -289,7 +523,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 
   deleteBrief: (id) => set((state) => {
-    showToast('success', '简报删除成功');
+    showToast('success', '提案删除成功');
     return { briefs: state.briefs.filter((b) => b.id !== id) };
   }),
 

@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { useAppStore } from '@/store/appStore'
+import { useMemo, useState } from 'react'
 import { Users, UserPlus, Search, ChevronLeft, ChevronRight, Edit, Trash2, Power, Eye } from 'lucide-react'
+import { useAppStore } from '@/store/appStore'
 import Modal from '@/components/Modal'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { showToast } from '@/utils/toast'
+import { matchesKeyword } from '@/utils/search'
 import type { Member, MemberStatus } from '@/types'
 
 const statusMap: Record<MemberStatus, { label: string; className: string }> = {
@@ -19,7 +21,7 @@ const ITEMS_PER_PAGE = 10
 
 function getAvatarColor(name: string) {
   let hash = 0
-  for (let i = 0; i < name.length; i++) {
+  for (let i = 0; i < name.length; i += 1) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash)
   }
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
@@ -30,7 +32,7 @@ function Avatar({ name }: { name: string }) {
   const initials = name.slice(-2)
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
       style={{ backgroundColor: color }}
     >
       {initials}
@@ -41,6 +43,7 @@ function Avatar({ name }: { name: string }) {
 export default function Members() {
   const { members, roles, addMember, updateMember, deleteMember, toggleMemberStatus } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingMember, setViewingMember] = useState<Member | null>(null)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRole, setFilterRole] = useState<string>('all')
@@ -52,6 +55,8 @@ export default function Members() {
   const [formPhone, setFormPhone] = useState('')
   const [formDepartment, setFormDepartment] = useState('')
   const [formRoleIds, setFormRoleIds] = useState<string[]>([])
+
+  const getRoleNames = (roleIds: string[]) => roleIds.map((id) => roles.find((role) => role.id === id)?.roleName || id)
 
   const handleOpenModal = (member?: Member) => {
     if (member) {
@@ -113,32 +118,36 @@ export default function Members() {
     }
   }
 
-  const filteredMembers = members.filter(m => {
-    if (filterRole !== 'all' && !m.roleIds.includes(filterRole)) return false
-    if (filterStatus !== 'all' && m.status !== filterStatus) return false
-    if (searchQuery && !m.name.includes(searchQuery) && !m.email.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    return true
-  })
+  const filteredMembers = useMemo(() => (
+    members.filter((member) => {
+      const roleNames = getRoleNames(member.roleIds)
+      const matchRole = filterRole === 'all' || member.roleIds.includes(filterRole)
+      const matchStatus = filterStatus === 'all' || member.status === filterStatus
+      const matchSearch = matchesKeyword(searchQuery, [
+        member.name,
+        member.email,
+        member.phone,
+        member.department,
+        member.invitedBy,
+        roleNames,
+        member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未',
+      ])
+      return matchRole && matchStatus && matchSearch
+    })
+  ), [members, roles, searchQuery, filterRole, filterStatus])
 
   const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE)
   const paginatedMembers = filteredMembers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-
-  const getRoleNames = (roleIds: string[]) => {
-    return roleIds.map(id => {
-      const role = roles.find(r => r.id === id)
-      return role ? role.roleName : id
-    })
-  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
             <Users size={20} className="text-primary-500" />
             成员管理
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">管理系统成员、角色分配和状态</p>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统成员、角色分配和状态</p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
           <UserPlus size={16} />
@@ -147,33 +156,33 @@ export default function Members() {
       </div>
 
       <div className="card">
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px]">
+        <div className="mb-4 flex flex-wrap gap-4">
+          <div className="min-w-[200px] flex-1">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
-                placeholder="搜索姓名或邮箱..."
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none"
+                placeholder="搜索姓名、邮箱、手机、部门或角色..."
+                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
               />
             </div>
           </div>
           <select
             value={filterRole}
             onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1) }}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
           >
             <option value="all">全部角色</option>
-            {roles.map(r => (
-              <option key={r.id} value={r.id}>{r.roleName}</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.id}>{role.roleName}</option>
             ))}
           </select>
           <select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1) }}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
           >
             <option value="all">全部状态</option>
             <option value="active">活跃</option>
@@ -182,7 +191,7 @@ export default function Members() {
           </select>
         </div>
 
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
           共 {filteredMembers.length} 名成员，当前第 {currentPage}/{totalPages || 1} 页
         </p>
 
@@ -190,19 +199,19 @@ export default function Members() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">成员</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">邮箱</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">角色</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">部门</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">状态</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">最后登录</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">操作</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">成员</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">邮箱</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">角色</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">部门</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">状态</th>
+                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">最后登录</th>
+                <th className="px-2 py-3 text-right font-medium text-gray-500 dark:text-gray-400">操作</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedMembers.map(member => (
-                <tr key={member.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                  <td className="py-2.5 px-2">
+              {paginatedMembers.map((member) => (
+                <tr key={member.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/30">
+                  <td className="px-2 py-2.5">
                     <div className="flex items-center gap-2.5">
                       <Avatar name={member.name} />
                       <div>
@@ -211,42 +220,49 @@ export default function Members() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 text-gray-600 dark:text-gray-400">{member.email}</td>
-                  <td className="py-2.5 px-2">
+                  <td className="px-2 py-2.5 text-gray-600 dark:text-gray-400">{member.email}</td>
+                  <td className="px-2 py-2.5">
                     <div className="flex flex-wrap gap-1">
-                      {getRoleNames(member.roleIds).map((name, i) => (
-                        <span key={i} className="text-xs px-2 py-0.5 rounded bg-primary-500/10 text-primary-600 dark:text-primary-400">
+                      {getRoleNames(member.roleIds).map((name, index) => (
+                        <span key={index} className="rounded bg-primary-500/10 px-2 py-0.5 text-xs text-primary-600 dark:text-primary-400">
                           {name}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 text-gray-600 dark:text-gray-400">{member.department}</td>
-                  <td className="py-2.5 px-2">
+                  <td className="px-2 py-2.5 text-gray-600 dark:text-gray-400">{member.department || '-'}</td>
+                  <td className="px-2 py-2.5">
                     <span className={`badge ${statusMap[member.status]?.className}`}>
                       {statusMap[member.status]?.label}
                     </span>
                   </td>
-                  <td className="py-2.5 px-2 text-gray-600 dark:text-gray-400 text-xs">{member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未'}</td>
-                  <td className="py-2.5 px-2 text-right">
+                  <td className="px-2 py-2.5 text-xs text-gray-600 dark:text-gray-400">{member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未'}</td>
+                  <td className="px-2 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => toggleMemberStatus(member.id)}
-                        className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                         title={member.status === 'active' ? '禁用' : '启用'}
                       >
                         <Power size={14} className={member.status === 'active' ? 'text-yellow-500' : 'text-green-500'} />
                       </button>
                       <button
+                        onClick={() => setViewingMember(member)}
+                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+                        title="查看"
+                      >
+                        <Eye size={14} className="text-gray-600 dark:text-gray-400" />
+                      </button>
+                      <button
                         onClick={() => handleOpenModal(member)}
-                        className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                         title="编辑"
                       >
                         <Edit size={14} className="text-gray-600 dark:text-gray-400" />
                       </button>
                       <button
                         onClick={() => handleDelete(member)}
-                        className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                        className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
                         title="移除"
                       >
                         <Trash2 size={14} className="text-red-500" />
@@ -268,35 +284,35 @@ export default function Members() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               显示 {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} / 共 {filteredMembers.length} 名
             </p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage <= 1}
-                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-gray-700 dark:hover:bg-gray-800"
               >
                 <ChevronLeft size={14} />
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                  className={`h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
                     page === currentPage
                       ? 'bg-primary-500 text-white'
-                      : 'border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                      : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800'
                   }`}
                 >
                   {page}
                 </button>
               ))}
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                 disabled={currentPage >= totalPages}
-                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-gray-700 dark:hover:bg-gray-800"
               >
                 <ChevronRight size={14} />
               </button>
@@ -313,7 +329,7 @@ export default function Members() {
         width="max-w-lg"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>姓名 *</Label>
               <Input
@@ -332,7 +348,7 @@ export default function Members() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>手机号</Label>
               <Input
@@ -353,26 +369,26 @@ export default function Members() {
           <div className="space-y-2">
             <Label>角色（可多选）</Label>
             <div className="flex flex-wrap gap-2">
-              {roles.map(role => {
+              {roles.map((role) => {
                 const selected = formRoleIds.includes(role.id)
                 return (
                   <button
                     key={role.id}
                     onClick={() => {
                       if (selected) {
-                        setFormRoleIds(formRoleIds.filter(id => id !== role.id))
+                        setFormRoleIds(formRoleIds.filter((id) => id !== role.id))
                       } else {
                         setFormRoleIds([...formRoleIds, role.id])
                       }
                     }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
                       selected
-                        ? 'bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-500/30'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        ? 'border-primary-500/30 bg-primary-500/20 text-primary-600 dark:text-primary-400'
+                        : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
                     }`}
                   >
                     {selected && (
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -383,13 +399,29 @@ export default function Members() {
             </div>
           </div>
           {!editingMember && (
-            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
               <p className="text-sm text-blue-700 dark:text-blue-400">
                 邀请后成员将收到激活邮件，初始状态为「待激活」
               </p>
             </div>
           )}
         </div>
+      </Modal>
+
+      <Modal title="查看成员" isOpen={Boolean(viewingMember)} onClose={() => setViewingMember(null)} width="max-w-2xl">
+        {viewingMember && (
+          <ReadOnlySection>
+            <ReadOnlyField label="姓名" value={viewingMember.name} />
+            <ReadOnlyField label="邮箱" value={viewingMember.email} />
+            <ReadOnlyField label="手机号" value={viewingMember.phone} />
+            <ReadOnlyField label="部门" value={viewingMember.department} />
+            <ReadOnlyField label="状态" value={<span className={`badge ${statusMap[viewingMember.status]?.className}`}>{statusMap[viewingMember.status]?.label}</span>} />
+            <ReadOnlyField label="角色" value={<div className="flex flex-wrap gap-1">{getRoleNames(viewingMember.roleIds).map((name) => <span key={name} className="rounded bg-primary-500/10 px-2 py-0.5 text-xs text-primary-600 dark:text-primary-400">{name}</span>)}</div>} />
+            <ReadOnlyField label="最后登录" value={viewingMember.lastLoginAt ? new Date(viewingMember.lastLoginAt).toLocaleString('zh-CN') : '从未'} />
+            <ReadOnlyField label="加入时间" value={viewingMember.joinedAt ? new Date(viewingMember.joinedAt).toLocaleString('zh-CN') : '-'} />
+            <ReadOnlyField label="邀请人" value={viewingMember.invitedBy} />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

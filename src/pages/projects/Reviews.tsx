@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Eye, Plus, Edit2, Trash2, Search } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { formatDate } from '@/utils/date'
+import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
-import { Plus, Edit2, Trash2, Search } from 'lucide-react'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import type { Review, ReviewStatus } from '@/types'
 
 const statusMap: Record<ReviewStatus, { label: string; className: string }> = {
@@ -12,31 +14,54 @@ const statusMap: Record<ReviewStatus, { label: string; className: string }> = {
   Rejected: { label: '拒绝', className: 'badge-error' },
 }
 
+const reviewTypeMap = {
+  Internal: '内部审核',
+  Client: '客户审核',
+} as const
+
+const targetTypeMap = {
+  Asset: '资产',
+  Shot: '镜头',
+  Brief: '提案',
+} as const
+
 export default function Reviews() {
   const { reviews, addReview, updateReview, deleteReview } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingItem, setViewingItem] = useState<Review | null>(null)
   const [editingItem, setEditingItem] = useState<Review | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [targetTypeFilter, setTargetTypeFilter] = useState<'all' | Review['targetType']>('all')
+  const [reviewTypeFilter, setReviewTypeFilter] = useState<'all' | Review['reviewType']>('all')
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
   const [formData, setFormData] = useState({
     targetId: '',
-    targetType: 'Asset' as 'Asset' | 'Shot' | 'Brief',
+    targetType: 'Asset' as Review['targetType'],
     reviewer: '',
-    reviewType: 'Internal' as 'Internal' | 'Client',
+    reviewType: 'Internal' as Review['reviewType'],
     status: 'Pending' as ReviewStatus,
     notes: '',
   })
 
-  const filteredItems = useMemo(() => {
-    return reviews.filter(r => {
-      const matchSearch = r.reviewer.toLowerCase().includes(searchQuery.toLowerCase()) || r.notes.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchStatus = statusFilter === 'all' || r.status === statusFilter
-      return matchSearch && matchStatus
+  const filteredItems = useMemo(() => (
+    reviews.filter((review) => {
+      const matchTargetType = targetTypeFilter === 'all' || review.targetType === targetTypeFilter
+      const matchReviewType = reviewTypeFilter === 'all' || review.reviewType === reviewTypeFilter
+      const matchStatus = statusFilter === 'all' || review.status === statusFilter
+      const matchSearch = matchesKeyword(searchQuery, [
+        review.targetId,
+        targetTypeMap[review.targetType],
+        review.reviewer,
+        reviewTypeMap[review.reviewType],
+        review.notes,
+        formatDate(review.createdAt),
+      ])
+      return matchTargetType && matchReviewType && matchStatus && matchSearch
     })
-  }, [reviews, searchQuery, statusFilter])
+  ), [reviews, searchQuery, targetTypeFilter, reviewTypeFilter, statusFilter])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
@@ -86,9 +111,20 @@ export default function Reviews() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input type="text" placeholder="搜索审核人或评论..." className="input-field pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <input type="text" placeholder="搜索对象 ID、审核人或评论..." className="input-field pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
-        <select className="input-field max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as any); setCurrentPage(1) }}>
+        <select className="input-field max-w-[150px]" value={targetTypeFilter} onChange={(e) => { setTargetTypeFilter(e.target.value as 'all' | Review['targetType']); setCurrentPage(1) }}>
+          <option value="all">全部对象</option>
+          <option value="Asset">资产</option>
+          <option value="Shot">镜头</option>
+          <option value="Brief">提案</option>
+        </select>
+        <select className="input-field max-w-[150px]" value={reviewTypeFilter} onChange={(e) => { setReviewTypeFilter(e.target.value as 'all' | Review['reviewType']); setCurrentPage(1) }}>
+          <option value="all">全部审核类型</option>
+          <option value="Internal">内部审核</option>
+          <option value="Client">客户审核</option>
+        </select>
+        <select className="input-field max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as ReviewStatus | 'all'); setCurrentPage(1) }}>
           <option value="all">全部状态</option>
           <option value="Pending">待审核</option>
           <option value="Approved">通过</option>
@@ -110,22 +146,19 @@ export default function Reviews() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(review => (
-              <tr key={review.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
-                <td className="table-cell">
-                  <span className="badge badge-info">{review.targetType}</span>
-                </td>
+            {paginatedItems.map((review) => (
+              <tr key={review.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
+                <td className="table-cell"><span className="badge badge-info">{targetTypeMap[review.targetType]}</span></td>
                 <td className="table-cell">{review.reviewer}</td>
-                <td className="table-cell">{review.reviewType === 'Internal' ? '内部审核' : '客户审核'}</td>
-                <td className="table-cell">
-                  <span className={`badge ${statusMap[review.status].className}`}>{statusMap[review.status].label}</span>
-                </td>
-                <td className="table-cell max-w-[200px] truncate">{review.notes}</td>
+                <td className="table-cell">{reviewTypeMap[review.reviewType]}</td>
+                <td className="table-cell"><span className={`badge ${statusMap[review.status].className}`}>{statusMap[review.status].label}</span></td>
+                <td className="table-cell max-w-[200px] truncate">{review.notes || '-'}</td>
                 <td className="table-cell text-gray-500">{formatDate(review.createdAt)}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(review)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(review.id)}><Trash2 size={14} className="text-error" /></button>
+                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => setViewingItem(review)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => handleOpenModal(review)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => handleDelete(review.id)} title="删除"><Trash2 size={14} className="text-error" /></button>
                   </div>
                 </td>
               </tr>
@@ -142,10 +175,10 @@ export default function Reviews() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label-field">审核对象类型</label>
-              <select className="input-field" value={formData.targetType} onChange={(e) => setFormData({ ...formData, targetType: e.target.value as any })}>
+              <select className="input-field" value={formData.targetType} onChange={(e) => setFormData({ ...formData, targetType: e.target.value as Review['targetType'] })}>
                 <option value="Asset">资产</option>
                 <option value="Shot">镜头</option>
-                <option value="Brief">简报</option>
+                <option value="Brief">提案</option>
               </select>
             </div>
             <div>
@@ -160,7 +193,7 @@ export default function Reviews() {
             </div>
             <div>
               <label className="label-field">审核类型</label>
-              <select className="input-field" value={formData.reviewType} onChange={(e) => setFormData({ ...formData, reviewType: e.target.value as any })}>
+              <select className="input-field" value={formData.reviewType} onChange={(e) => setFormData({ ...formData, reviewType: e.target.value as Review['reviewType'] })}>
                 <option value="Internal">内部审核</option>
                 <option value="Client">客户审核</option>
               </select>
@@ -168,7 +201,7 @@ export default function Reviews() {
           </div>
           <div>
             <label className="label-field">状态</label>
-            <select className="input-field" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}>
+            <select className="input-field" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as ReviewStatus })}>
               <option value="Pending">待审核</option>
               <option value="Approved">通过</option>
               <option value="Rejected">拒绝</option>
@@ -179,6 +212,21 @@ export default function Reviews() {
             <textarea className="input-field min-h-[80px]" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入审核评论" />
           </div>
         </div>
+      </Modal>
+
+      <Modal title="查看审核" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
+        {viewingItem && (
+          <ReadOnlySection>
+            <ReadOnlyField label="审核对象类型" value={<span className="badge badge-info">{targetTypeMap[viewingItem.targetType]}</span>} />
+            <ReadOnlyField label="审核对象 ID" value={viewingItem.targetId} />
+            <ReadOnlyField label="审核人" value={viewingItem.reviewer} />
+            <ReadOnlyField label="审核类型" value={reviewTypeMap[viewingItem.reviewType]} />
+            <ReadOnlyField label="状态" value={<span className={`badge ${statusMap[viewingItem.status].className}`}>{statusMap[viewingItem.status].label}</span>} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
+            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
+            <ReadOnlyField label="评论" value={viewingItem.notes} span="full" />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

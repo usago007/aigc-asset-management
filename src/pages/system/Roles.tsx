@@ -1,22 +1,24 @@
+import { useMemo, useState } from 'react'
+import { Shield, Edit, Trash2, Plus, X, Eye } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
-import { Shield, Edit, Trash2, Plus, X } from 'lucide-react'
-import { useState } from 'react'
 import Modal from '@/components/Modal'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import { showToast } from '@/utils/toast'
+import { matchesKeyword } from '@/utils/search'
+import { formatDate } from '@/utils/date'
 
 const visibilityMap: Record<string, { label: string; className: string }> = {
   'internal-only': { label: '仅内部', className: 'badge-info' },
   'client-safe': { label: '客户可见', className: 'badge-warning' },
-  'public': { label: '公开', className: 'badge-success' },
+  public: { label: '公开', className: 'badge-success' },
 }
 
 const AVAILABLE_PERMISSIONS = [
   { category: '项目', key: 'project', actions: ['read', 'write', 'delete'] },
   { category: '任务', key: 'task', actions: ['read', 'write', 'delete'] },
-  { category: '简报', key: 'brief', actions: ['read', 'write', 'delete'] },
+  { category: '提案', key: 'brief', actions: ['read', 'write', 'delete'] },
   { category: '资产', key: 'asset', actions: ['read', 'write', 'delete', 'review'] },
   { category: '镜头', key: 'shot', actions: ['read', 'write', 'delete'] },
   { category: '首图/尾图', key: 'keyframe', actions: ['read', 'write', 'delete'] },
@@ -28,10 +30,26 @@ const AVAILABLE_PERMISSIONS = [
 export default function Roles() {
   const { roles, addRole, updateRole, deleteRole } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingRole, setViewingRole] = useState<typeof roles[0] | null>(null)
   const [editingRole, setEditingRole] = useState<typeof roles[0] | null>(null)
   const [roleName, setRoleName] = useState('')
   const [visibility, setVisibility] = useState<'internal-only' | 'client-safe' | 'public'>('internal-only')
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'internal-only' | 'client-safe' | 'public'>('all')
+
+  const filteredRoles = useMemo(() => (
+    roles.filter((role) => {
+      const matchVisibility = visibilityFilter === 'all' || role.visibility === visibilityFilter
+      const matchSearch = matchesKeyword(searchQuery, [
+        role.roleName,
+        visibilityMap[role.visibility]?.label,
+        role.permissions,
+        formatDate(role.createdAt),
+      ])
+      return matchVisibility && matchSearch
+    })
+  ), [roles, searchQuery, visibilityFilter])
 
   const handleOpenModal = (role?: typeof roles[0]) => {
     if (role) {
@@ -83,33 +101,27 @@ export default function Roles() {
 
   const togglePermission = (perm: string) => {
     if (perm === '*') {
-      if (selectedPermissions.includes('*')) {
-        setSelectedPermissions([])
-      } else {
-        setSelectedPermissions(['*'])
-      }
+      setSelectedPermissions((current) => current.includes('*') ? [] : ['*'])
       return
     }
 
-    const newPerms = selectedPermissions.includes('*') ? [] : [...selectedPermissions]
+    const nextPerms = selectedPermissions.includes('*') ? [] : [...selectedPermissions]
 
-    if (newPerms.includes(perm)) {
-      setSelectedPermissions(newPerms.filter(p => p !== perm))
+    if (nextPerms.includes(perm)) {
+      setSelectedPermissions(nextPerms.filter((item) => item !== perm))
     } else {
-      setSelectedPermissions([...newPerms, perm])
+      setSelectedPermissions([...nextPerms, perm])
     }
   }
 
-  const isPermissionSelected = (perm: string) => {
-    return selectedPermissions.includes('*') || selectedPermissions.includes(perm)
-  }
+  const isPermissionSelected = (perm: string) => selectedPermissions.includes('*') || selectedPermissions.includes(perm)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">角色权限管理</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">管理系统角色和权限配置</p>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统角色和权限配置</p>
         </div>
         <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
           <Plus size={16} />
@@ -117,12 +129,22 @@ export default function Roles() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {roles.map(role => (
+      <div className="flex flex-wrap items-center gap-4">
+        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索角色名称或权限..." className="max-w-sm" />
+        <select className="input-field max-w-[180px]" value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}>
+          <option value="all">全部可见性</option>
+          <option value="internal-only">仅内部</option>
+          <option value="client-safe">客户可见</option>
+          <option value="public">公开</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredRoles.map((role) => (
           <div key={role.id} className="card">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-accent-500/10">
+                <div className="rounded-lg bg-accent-500/10 p-2">
                   <Shield size={20} className="text-accent-500" />
                 </div>
                 <div>
@@ -133,25 +155,22 @@ export default function Roles() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
-                  onClick={() => handleOpenModal(role)}
-                >
+                <button className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => setViewingRole(role)} title="查看">
+                  <Eye size={14} className="text-gray-600 dark:text-gray-400" />
+                </button>
+                <button className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => handleOpenModal(role)} title="编辑">
                   <Edit size={14} className="text-gray-600 dark:text-gray-400" />
                 </button>
-                <button
-                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                  onClick={() => handleDelete(role)}
-                >
+                <button className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => handleDelete(role)} title="删除">
                   <Trash2 size={14} className="text-red-500" />
                 </button>
               </div>
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">权限列表 ({role.permissions.length})</p>
+              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">权限列表 ({role.permissions.length})</p>
               <div className="flex flex-wrap gap-1.5">
-                {role.permissions.map((perm, i) => (
-                  <span key={i} className={`text-xs px-2 py-1 rounded ${perm === '*' ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
+                {role.permissions.map((perm, index) => (
+                  <span key={index} className={`rounded px-2 py-1 text-xs ${perm === '*' ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
                     {perm === '*' ? '全部权限' : perm}
                   </span>
                 ))}
@@ -159,6 +178,9 @@ export default function Roles() {
             </div>
           </div>
         ))}
+        {filteredRoles.length === 0 && (
+          <div className="card text-center text-sm text-gray-500 dark:text-gray-400">暂无匹配角色</div>
+        )}
       </div>
 
       <Modal
@@ -169,7 +191,7 @@ export default function Roles() {
         width="max-w-2xl"
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>角色名称</Label>
               <Input
@@ -195,13 +217,13 @@ export default function Roles() {
           <div className="space-y-3">
             <Label>权限配置</Label>
 
-            <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={selectedPermissions.includes('*')}
                   onChange={() => togglePermission('*')}
-                  className="w-4 h-4 rounded border-gray-300 text-accent-500 focus:ring-accent-500"
+                  className="h-4 w-4 rounded border-gray-300 text-accent-500 focus:ring-accent-500"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">全部权限</span>
                 {selectedPermissions.includes('*') && (
@@ -210,29 +232,29 @@ export default function Roles() {
               </label>
             </div>
 
-            {!selectedPermissions.includes('*') && AVAILABLE_PERMISSIONS.map(category => (
+            {!selectedPermissions.includes('*') && AVAILABLE_PERMISSIONS.map((category) => (
               <div key={category.key} className="space-y-2">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{category.category}</p>
                 <div className="flex flex-wrap gap-2">
-                  {category.actions.map(action => {
+                  {category.actions.map((action) => {
                     const perm = `${category.key}:${action}`
                     const selected = isPermissionSelected(perm)
                     return (
                       <button
                         key={perm}
                         onClick={() => togglePermission(perm)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
                           selected
-                            ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400 border border-accent-500/30'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            ? 'border-accent-500/30 bg-accent-500/20 text-accent-600 dark:text-accent-400'
+                            : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
                         }`}
                       >
                         {selected && (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
-                        {action === '*' ? '全部' : action}
+                        {action}
                       </button>
                     )
                   })}
@@ -242,11 +264,11 @@ export default function Roles() {
           </div>
 
           {selectedPermissions.length > 0 && !selectedPermissions.includes('*') && (
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">已选权限 ({selectedPermissions.length})</p>
+            <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
+              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">已选权限 ({selectedPermissions.length})</p>
               <div className="flex flex-wrap gap-1.5">
-                {selectedPermissions.map(perm => (
-                  <span key={perm} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-accent-500/10 text-accent-600 dark:text-accent-400">
+                {selectedPermissions.map((perm) => (
+                  <span key={perm} className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-2 py-1 text-xs text-accent-600 dark:text-accent-400">
                     {perm}
                     <button onClick={() => togglePermission(perm)} className="hover:text-red-500">
                       <X size={12} />
@@ -257,6 +279,29 @@ export default function Roles() {
             </div>
           )}
         </div>
+      </Modal>
+
+      <Modal title="查看角色" isOpen={Boolean(viewingRole)} onClose={() => setViewingRole(null)} width="max-w-2xl">
+        {viewingRole && (
+          <ReadOnlySection>
+            <ReadOnlyField label="角色名称" value={viewingRole.roleName} />
+            <ReadOnlyField label="可见性" value={<span className={`badge ${visibilityMap[viewingRole.visibility]?.className || 'badge-info'}`}>{visibilityMap[viewingRole.visibility]?.label || viewingRole.visibility}</span>} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingRole.createdAt)} />
+            <ReadOnlyField
+              label="权限列表"
+              span="full"
+              value={
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingRole.permissions.map((perm, index) => (
+                    <span key={index} className={`rounded px-2 py-1 text-xs ${perm === '*' ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                      {perm === '*' ? '全部权限' : perm}
+                    </span>
+                  ))}
+                </div>
+              }
+            />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

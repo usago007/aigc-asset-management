@@ -41,7 +41,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { path: '/projects/projects', label: '项目列表' },
         { path: '/projects/customers', label: '客户管理' },
         { path: '/projects/brands', label: '品牌管理' },
-        { path: '/projects/briefs', label: '简报管理' },
+        { path: '/projects/briefs', label: '提案管理' },
         { path: '/projects/tasks', label: '任务管理' },
         { path: '/projects/reviews', label: '审核管理' },
       ]

@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit2, Film, FolderKanban, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, Film, FolderKanban, Link2, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
+import { normalizeSearchText } from '@/utils/search'
 import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -16,8 +16,8 @@ import type {
   Brief,
   GenerationVersion,
   KeyFrame,
-  Project,
   ProjectStage,
+  ProjectShotSlot,
   RiskLevel,
   Shot,
 } from '@/types'
@@ -58,15 +58,26 @@ type VideoLookup = {
   previewUrl: string | null
 }
 
+type SlotItem = {
+  slot: ProjectShotSlot
+  shot: Shot | null
+}
+
 const summarizeText = (value: string, max = 96) => {
   if (!value) return '-'
   return value.length > max ? `${value.slice(0, max)}...` : value
 }
 
+const includesText = (value: unknown, query: string) => {
+  const normalizedQuery = normalizeSearchText(query)
+  if (!normalizedQuery) return true
+  return normalizeSearchText(value).includes(normalizedQuery)
+}
+
 const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup }) => {
   if (!lookup.frame) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">未绑定{label}记录</p>
       </div>
@@ -74,7 +85,7 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
@@ -86,10 +97,10 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
         <img
           src={lookup.previewUrl}
           alt={lookup.frame.name}
-          className="mt-4 h-40 w-full rounded-lg object-cover bg-gray-100 dark:bg-gray-800"
+          className="mt-4 h-40 w-full rounded-lg bg-gray-100 object-cover dark:bg-gray-800"
         />
       ) : (
-        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
           暂无可追溯图片
         </div>
       )}
@@ -118,7 +129,7 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
 const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">当前镜头还没有可播放的视频预览。</p>
       </div>
@@ -126,7 +137,7 @@ const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50/70 dark:bg-gray-900/40">
+    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
@@ -136,12 +147,7 @@ const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
           {lookup.task.status}
         </Badge>
       </div>
-      <video
-        src={lookup.previewUrl}
-        controls
-        preload="metadata"
-        className="mt-4 h-56 w-full rounded-lg bg-black object-cover"
-      />
+      <video src={lookup.previewUrl} controls preload="metadata" className="mt-4 h-56 w-full rounded-lg bg-black object-cover" />
       <div className="mt-4 space-y-2 text-sm">
         <div className="text-gray-600 dark:text-gray-400">
           <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
@@ -171,32 +177,27 @@ export default function ProjectDetail() {
     projects,
     brands,
     shots,
+    projectShotSlots,
     keyFrames,
     briefs,
     generationVersions,
     imageTasks,
-    addShot,
-    updateShot,
-    deleteShot,
+    ensureDefaultProjectShotSlots,
+    appendProjectShotSlot,
+    assignShotToProjectSlot,
+    clearProjectShotSlot,
+    moveProjectShotSlot,
     addBrief,
     updateBrief,
     deleteBrief,
   } = useAppStore()
   const videoTasks = useGenerationStore((state) => state.tasks)
 
-  const [shotModalOpen, setShotModalOpen] = useState(false)
-  const [editingShot, setEditingShot] = useState<Shot | null>(null)
   const [briefModalOpen, setBriefModalOpen] = useState(false)
   const [editingBrief, setEditingBrief] = useState<Brief | null>(null)
-
-  const [shotForm, setShotForm] = useState({
-    shotName: '',
-    firstFrameId: '',
-    lastFrameId: '',
-    promptId: '',
-    modelName: '',
-    modelVersion: '',
-  })
+  const [linkModalOpen, setLinkModalOpen] = useState(false)
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null)
+  const [slotSearchQuery, setSlotSearchQuery] = useState('')
 
   const [briefForm, setBriefForm] = useState({
     briefTitle: '',
@@ -211,53 +212,44 @@ export default function ProjectDetail() {
   const project = projects.find((item) => item.id === id) || null
   const brandName = project ? brands.find((brand) => brand.id === project.brandId)?.brandName || '-' : '-'
 
-  const projectShots = useMemo(
-    () => shots.filter((shot) => shot.projectId === id),
-    [shots, id]
+  useEffect(() => {
+    if (project) {
+      ensureDefaultProjectShotSlots(project.id)
+    }
+  }, [project, ensureDefaultProjectShotSlots])
+
+  const sortedProjectSlots = useMemo(
+    () => projectShotSlots.filter((slot) => slot.projectId === id).sort((a, b) => a.position - b.position),
+    [projectShotSlots, id],
   )
+
+  const shotById = useMemo(() => new Map(shots.map((shot) => [shot.id, shot])), [shots])
+  const slotItems = useMemo<SlotItem[]>(
+    () => sortedProjectSlots.map((slot) => ({ slot, shot: slot.shotId ? shotById.get(slot.shotId) || null : null })),
+    [sortedProjectSlots, shotById],
+  )
+  const filledSlotItems = useMemo(() => slotItems.filter((item) => item.shot), [slotItems])
+  const projectShots = useMemo(() => filledSlotItems.map((item) => item.shot!).filter(Boolean), [filledSlotItems])
   const projectShotIds = useMemo(() => new Set(projectShots.map((shot) => shot.id)), [projectShots])
   const projectKeyFrames = useMemo(
     () => keyFrames.filter((frame) => projectShotIds.has(frame.parentShotId)),
-    [keyFrames, projectShotIds]
+    [keyFrames, projectShotIds],
   )
   const projectKeyFrameIds = useMemo(() => new Set(projectKeyFrames.map((frame) => frame.id)), [projectKeyFrames])
-  const projectBriefs = useMemo(
-    () => briefs.filter((brief) => brief.projectId === id),
-    [briefs, id]
-  )
+  const projectBriefs = useMemo(() => briefs.filter((brief) => brief.projectId === id), [briefs, id])
   const relatedImageTasks = useMemo(
-    () =>
-      imageTasks.filter(
-        (task) =>
-          task.projectId === id ||
-          (task.shotId ? projectShotIds.has(task.shotId) : false)
-      ),
-    [imageTasks, id, projectShotIds]
+    () => imageTasks.filter((task) => task.projectId === id || (task.shotId ? projectShotIds.has(task.shotId) : false)),
+    [imageTasks, id, projectShotIds],
   )
   const relatedVideoTasks = useMemo(
-    () =>
-      videoTasks.filter(
-        (task) =>
-          task.projectId === id ||
-          (task.shotId ? projectShotIds.has(task.shotId) : false)
-      ),
-    [videoTasks, id, projectShotIds]
+    () => videoTasks.filter((task) => task.projectId === id || (task.shotId ? projectShotIds.has(task.shotId) : false)),
+    [videoTasks, id, projectShotIds],
   )
   const relatedGenerationVersions = useMemo(
     () => generationVersions.filter((version) => projectKeyFrameIds.has(version.keyFrameId)),
-    [generationVersions, projectKeyFrameIds]
+    [generationVersions, projectKeyFrameIds],
   )
 
-  const openingFrameOptions = useMemo(
-    () => projectKeyFrames.filter((frame) => frame.type === 'Opening'),
-    [projectKeyFrames]
-  )
-  const endingFrameOptions = useMemo(
-    () => projectKeyFrames.filter((frame) => frame.type === 'Ending'),
-    [projectKeyFrames]
-  )
-
-  const shotById = useMemo(() => new Map(projectShots.map((shot) => [shot.id, shot])), [projectShots])
   const keyFrameById = useMemo(() => new Map(keyFrames.map((frame) => [frame.id, frame])), [keyFrames])
   const latestVideoTaskByShotId = useMemo(() => {
     const grouped = new Map<string, VideoGenerationTask[]>()
@@ -283,10 +275,28 @@ export default function ProjectDetail() {
     return latest
   }, [relatedVideoTasks])
 
+  const activeSlot = useMemo(() => slotItems.find((item) => item.slot.id === activeSlotId) || null, [slotItems, activeSlotId])
+
+  const assignedShotIdsInProject = useMemo(() => new Set(filledSlotItems.map((item) => item.shot!.id)), [filledSlotItems])
+  const candidateShots = useMemo(() => {
+    const reservedShotIds = new Set([...assignedShotIdsInProject])
+    if (activeSlot?.shot?.id) reservedShotIds.delete(activeSlot.shot.id)
+
+    return shots
+      .filter((shot) => !reservedShotIds.has(shot.id))
+      .filter((shot) => includesText(shot.shotName, slotSearchQuery) || includesText(shot.promptId, slotSearchQuery) || includesText(shot.modelName, slotSearchQuery))
+      .sort((a, b) => {
+        const aScore = a.projectId === project?.id ? 0 : a.projectId ? 2 : 1
+        const bScore = b.projectId === project?.id ? 0 : b.projectId ? 2 : 1
+        if (aScore !== bScore) return aScore - bScore
+        return a.shotName.localeCompare(b.shotName)
+      })
+  }, [shots, assignedShotIdsInProject, activeSlot, slotSearchQuery, project?.id])
+
+  const getProjectName = (projectId: string) => projects.find((item) => item.id === projectId)?.projectName || '未关联项目'
+
   const getFrameLookup = (frameId: string | null): FrameLookup => {
-    if (!frameId) {
-      return { frame: null, previewUrl: null, sourceTask: null }
-    }
+    if (!frameId) return { frame: null, previewUrl: null, sourceTask: null }
 
     const frame = keyFrameById.get(frameId) || null
     const sourceTask = relatedImageTasks.find((task) => task.keyFrameIds.includes(frameId)) || null
@@ -298,22 +308,19 @@ export default function ProjectDetail() {
 
   const getVideoLookup = (shotId: string): VideoLookup => {
     const task = latestVideoTaskByShotId.get(shotId) || null
-    return {
-      task,
-      previewUrl: task?.videoUrl || null,
-    }
+    return { task, previewUrl: task?.videoUrl || null }
   }
 
   const processRecords = useMemo<ProcessRecord[]>(() => {
-    const shotRecords: ProcessRecord[] = projectShots.map((shot) => ({
-      id: `shot-${shot.id}`,
-      title: shot.shotName,
+    const shotRecords: ProcessRecord[] = filledSlotItems.map(({ slot, shot }) => ({
+      id: `shot-${shot!.id}`,
+      title: `镜头 ${slot.position} · ${shot!.shotName}`,
       category: '镜头模型',
-      model: `${shot.modelName || '-'} ${shot.modelVersion || ''}`.trim(),
-      time: shot.updatedAt || shot.createdAt,
-      prompt: shot.promptId ? `镜头提示词标识：${shot.promptId}` : '未绑定镜头提示词标识',
-      shotName: shot.shotName,
-      extra: `项目镜头记录`,
+      model: `${shot!.modelName || '-'} ${shot!.modelVersion || ''}`.trim(),
+      time: shot!.updatedAt || shot!.createdAt,
+      prompt: shot!.promptId ? `镜头提示词标识：${shot!.promptId}` : '未绑定镜头提示词标识',
+      shotName: shot!.shotName,
+      extra: `排序位 ${slot.position}`,
     }))
 
     const frameRecords: ProcessRecord[] = projectKeyFrames.map((frame) => {
@@ -374,64 +381,9 @@ export default function ProjectDetail() {
     })
 
     return [...shotRecords, ...frameRecords, ...versionRecords, ...imageTaskRecords, ...videoTaskRecords].sort(
-      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
     )
-  }, [projectShots, projectKeyFrames, relatedGenerationVersions, relatedImageTasks, relatedVideoTasks, keyFrameById, shotById])
-
-  const openShotModal = (shot?: Shot) => {
-    if (shot) {
-      setEditingShot(shot)
-      setShotForm({
-        shotName: shot.shotName,
-        firstFrameId: shot.firstFrameId || '',
-        lastFrameId: shot.lastFrameId || '',
-        promptId: shot.promptId || '',
-        modelName: shot.modelName || '',
-        modelVersion: shot.modelVersion || '',
-      })
-    } else {
-      setEditingShot(null)
-      setShotForm({
-        shotName: '',
-        firstFrameId: '',
-        lastFrameId: '',
-        promptId: '',
-        modelName: '',
-        modelVersion: '',
-      })
-    }
-    setShotModalOpen(true)
-  }
-
-  const saveShot = () => {
-    if (!project) return
-    if (!shotForm.shotName.trim()) {
-      showToast('error', '请输入镜头名称')
-      return
-    }
-
-    const payload = {
-      shotName: shotForm.shotName.trim(),
-      projectId: project.id,
-      firstFrameId: shotForm.firstFrameId || null,
-      lastFrameId: shotForm.lastFrameId || null,
-      promptId: shotForm.promptId.trim(),
-      modelName: shotForm.modelName.trim(),
-      modelVersion: shotForm.modelVersion.trim(),
-    }
-
-    if (editingShot) {
-      updateShot(editingShot.id, payload)
-    } else {
-      addShot(payload)
-    }
-    setShotModalOpen(false)
-  }
-
-  const removeShot = (shotId: string) => {
-    if (!window.confirm('确定要删除这个镜头吗？')) return
-    deleteShot(shotId)
-  }
+  }, [filledSlotItems, projectKeyFrames, relatedGenerationVersions, relatedImageTasks, relatedVideoTasks, keyFrameById, shotById])
 
   const openBriefModal = (brief?: Brief) => {
     if (brief) {
@@ -491,6 +443,29 @@ export default function ProjectDetail() {
     deleteBrief(briefId)
   }
 
+  const openLinkModal = (slotId: string) => {
+    setActiveSlotId(slotId)
+    setSlotSearchQuery('')
+    setLinkModalOpen(true)
+  }
+
+  const handleAssignShot = (shotId: string) => {
+    if (!project || !activeSlot) return
+    assignShotToProjectSlot(project.id, activeSlot.slot.id, shotId)
+    setLinkModalOpen(false)
+  }
+
+  const handleClearSlot = (slotId: string) => {
+    if (!project) return
+    if (!window.confirm('确定要解除这个镜头位的关联吗？')) return
+    clearProjectShotSlot(project.id, slotId)
+  }
+
+  const handleAddSlot = () => {
+    if (!project) return
+    appendProjectShotSlot(project.id)
+  }
+
   if (!project) {
     return (
       <div className="space-y-6">
@@ -516,13 +491,13 @@ export default function ProjectDetail() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{project.projectName}</h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">项目详情工作台，集中管理镜头、提案与生成追溯。</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">项目详情工作台，集中管理镜头位编排、提案与生成追溯。</p>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
-        <div className="card lg:col-span-2 space-y-4">
+        <div className="card space-y-4 lg:col-span-2">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             <FolderKanban size={16} />
             项目基础信息
@@ -559,9 +534,9 @@ export default function ProjectDetail() {
         </div>
 
         <div className="card space-y-3">
-          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头数量</div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{projectShots.length}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">已关联首尾帧 {projectShots.filter((shot) => shot.firstFrameId || shot.lastFrameId).length} 个镜头</p>
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头位编排</div>
+          <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{filledSlotItems.length}</div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">已关联镜头 / 共 {slotItems.length} 个镜头位</p>
         </div>
 
         <div className="card space-y-3">
@@ -582,84 +557,112 @@ export default function ProjectDetail() {
       <section className="card space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">镜头</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">管理当前项目镜头，并查看首图、尾图、提示词和模型追溯。</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">镜头位编排</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">默认保留 1-5 个镜头位，可关联镜头管理中的现有镜头，并在这里做上下排序。</p>
           </div>
-          <Button className="gap-2" onClick={() => openShotModal()}>
+          <Button className="gap-2" onClick={handleAddSlot}>
             <Plus size={16} />
-            新建镜头
+            添加镜头位
           </Button>
         </div>
 
-        {projectShots.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-            当前项目还没有镜头，先创建镜头再绑定首图和尾图。
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {projectShots.map((shot) => {
-              const opening = getFrameLookup(shot.firstFrameId)
-              const ending = getFrameLookup(shot.lastFrameId)
-              const video = getVideoLookup(shot.id)
+        <div className="space-y-4">
+          {slotItems.map((item, index) => {
+            const { slot, shot } = item
+            const canMoveUp = index > 0
+            const canMoveDown = index < slotItems.length - 1
 
+            if (!shot) {
               return (
-                <div key={shot.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-primary-900/40 p-5 space-y-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-3">
+                <div key={slot.id} className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-5 dark:border-gray-700 dark:bg-gray-900/40">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Film size={16} className="text-primary-500" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{shot.shotName}</h3>
+                        <Badge variant="outline">镜头 {slot.position}</Badge>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">未关联镜头</span>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头提示词标识</div>
-                          <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
-                        </div>
-                        <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">基础模型</div>
-                          <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">
-                            {shot.modelName || '未记录'} {shot.modelVersion || ''}
-                          </div>
-                        </div>
-                        <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">首图记录</div>
-                          <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{opening.frame?.name || '未绑定'}</div>
-                        </div>
-                        <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
-                          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">尾图记录</div>
-                          <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{ending.frame?.name || '未绑定'}</div>
-                        </div>
-                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">这个排序位已经预留，可以从内容创作中心挑一个现有镜头关联进来。</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="secondary" size="sm" className="gap-2" onClick={() => openShotModal(shot)}>
-                        <Edit2 size={14} />
-                        编辑
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-2 text-error hover:text-error" onClick={() => removeShot(shot.id)}>
-                        <Trash2 size={14} />
-                        删除
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 xl:grid-cols-3">
-                    <ShotVideoCard lookup={video} />
-                    <FrameTraceCard label="首图" lookup={opening} />
-                    <FrameTraceCard label="尾图" lookup={ending} />
+                    <Button variant="secondary" className="gap-2" onClick={() => openLinkModal(slot.id)}>
+                      <Link2 size={14} />
+                      关联镜头
+                    </Button>
                   </div>
                 </div>
               )
-            })}
-          </div>
-        )}
+            }
+
+            const opening = getFrameLookup(shot.firstFrameId)
+            const ending = getFrameLookup(shot.lastFrameId)
+            const video = getVideoLookup(shot.id)
+
+            return (
+              <div key={slot.id} className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-primary-900/40">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">镜头 {slot.position}</Badge>
+                      <Film size={16} className="text-primary-500" />
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{shot.shotName}</h3>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头提示词标识</div>
+                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">基础模型</div>
+                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">首图记录</div>
+                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{opening.frame?.name || '未绑定'}</div>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">尾图记录</div>
+                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{ending.frame?.name || '未绑定'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="secondary" size="sm" className="gap-2" disabled={!canMoveUp} onClick={() => moveProjectShotSlot(project.id, slot.id, 'up')}>
+                      <ArrowUp size={14} />
+                      上移
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-2" disabled={!canMoveDown} onClick={() => moveProjectShotSlot(project.id, slot.id, 'down')}>
+                      <ArrowDown size={14} />
+                      下移
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-2" onClick={() => openLinkModal(slot.id)}>
+                      <Link2 size={14} />
+                      更换关联
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => navigate(`/content/shots/${shot.id}`)}>
+                      查看详情
+                    </Button>
+                    <Button variant="ghost" size="sm" className="gap-2 text-error hover:text-error" onClick={() => handleClearSlot(slot.id)}>
+                      <Trash2 size={14} />
+                      解除关联
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-3">
+                  <ShotVideoCard lookup={video} />
+                  <FrameTraceCard label="首图" lookup={opening} />
+                  <FrameTraceCard label="尾图" lookup={ending} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </section>
 
       <section className="card space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">提案</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">复用项目简报数据，直接维护当前项目提案。</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">复用项目提案数据，直接维护当前项目提案。</p>
           </div>
           <Button className="gap-2" onClick={() => openBriefModal()}>
             <Plus size={16} />
@@ -668,13 +671,13 @@ export default function ProjectDetail() {
         </div>
 
         {projectBriefs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             当前项目还没有提案，先补充提案内容和交付要求。
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
             {projectBriefs.map((brief) => (
-              <div key={brief.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-primary-900/40 p-5 space-y-4">
+              <div key={brief.id} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-primary-900/40">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{brief.briefTitle}</h3>
@@ -682,7 +685,6 @@ export default function ProjectDetail() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="secondary" size="sm" className="gap-2" onClick={() => openBriefModal(brief)}>
-                      <Edit2 size={14} />
                       编辑
                     </Button>
                     <Button variant="ghost" size="sm" className="gap-2 text-error hover:text-error" onClick={() => removeBrief(brief.id)}>
@@ -693,19 +695,19 @@ export default function ProjectDetail() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
                     <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">目标受众</div>
                     <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.targetAudience || '未填写'}</div>
                   </div>
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
                     <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">交付平台</div>
                     <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.platform || '未填写'}</div>
                   </div>
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
                     <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">截止日期</div>
                     <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.deadline ? formatDate(brief.deadline, 'date') : '未设置'}</div>
                   </div>
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
                     <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">版本绑定</div>
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant={brief.currentVersionId ? 'success' : 'outline'}>
@@ -716,9 +718,9 @@ export default function ProjectDetail() {
                 </div>
 
                 {brief.fileUrl && (
-                  <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 p-3 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
                     <span className="font-medium text-gray-800 dark:text-gray-200">文件链接：</span>
-                    <a href={brief.fileUrl} target="_blank" rel="noreferrer" className="text-primary-500 hover:underline break-all">
+                    <a href={brief.fileUrl} target="_blank" rel="noreferrer" className="break-all text-primary-500 hover:underline">
                       {brief.fileUrl}
                     </a>
                   </div>
@@ -736,13 +738,13 @@ export default function ProjectDetail() {
         </div>
 
         {processRecords.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
             当前项目还没有可追溯的模型或生成过程记录。
           </div>
         ) : (
           <div className="space-y-3">
             {processRecords.map((record) => (
-              <div key={record.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-primary-900/40 p-4">
+              <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-primary-900/40">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -758,7 +760,7 @@ export default function ProjectDetail() {
                       <span>{record.model || '-'}</span>
                     </div>
                     <div>时间：{formatDate(record.time)}</div>
-                    {record.extra && <div>备注：{record.extra}</div>}
+                    {record.extra && <div>附加信息：{record.extra}</div>}
                   </div>
                 </div>
               </div>
@@ -767,97 +769,84 @@ export default function ProjectDetail() {
         )}
       </section>
 
-      <Modal title={editingShot ? '编辑镜头' : '新建镜头'} isOpen={shotModalOpen} onClose={() => setShotModalOpen(false)} onSave={saveShot}>
-        <div className="space-y-5">
+      <Modal title={editingBrief ? '编辑提案' : '新建提案'} isOpen={briefModalOpen} onClose={() => setBriefModalOpen(false)} onSave={saveBrief} width="max-w-2xl">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label>镜头名称 *</Label>
-            <Input value={shotForm.shotName} onChange={(event) => setShotForm({ ...shotForm, shotName: event.target.value })} placeholder="输入镜头名称" />
+            <Label>提案标题 *</Label>
+            <Input value={briefForm.briefTitle} onChange={(e) => setBriefForm({ ...briefForm, briefTitle: e.target.value })} placeholder="输入提案标题" />
           </div>
           <div className="space-y-2">
-            <Label>镜头提示词标识</Label>
-            <Input value={shotForm.promptId} onChange={(event) => setShotForm({ ...shotForm, promptId: event.target.value })} placeholder="输入 promptId 或内部标识" />
+            <Label>内容描述</Label>
+            <Input value={briefForm.description} onChange={(e) => setBriefForm({ ...briefForm, description: e.target.value })} placeholder="输入提案描述" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>首图</Label>
-              <Select value={shotForm.firstFrameId || 'none'} onValueChange={(value) => setShotForm({ ...shotForm, firstFrameId: value === 'none' ? '' : value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择首图" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">未绑定首图</SelectItem>
-                  {openingFrameOptions.map((frame) => (
-                    <SelectItem key={frame.id} value={frame.id}>{frame.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>目标受众</Label>
+              <Input value={briefForm.targetAudience} onChange={(e) => setBriefForm({ ...briefForm, targetAudience: e.target.value })} placeholder="输入目标受众" />
             </div>
             <div className="space-y-2">
-              <Label>尾图</Label>
-              <Select value={shotForm.lastFrameId || 'none'} onValueChange={(value) => setShotForm({ ...shotForm, lastFrameId: value === 'none' ? '' : value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择尾图" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">未绑定尾图</SelectItem>
-                  {endingFrameOptions.map((frame) => (
-                    <SelectItem key={frame.id} value={frame.id}>{frame.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>交付平台</Label>
+              <Input value={briefForm.platform} onChange={(e) => setBriefForm({ ...briefForm, platform: e.target.value })} placeholder="输入交付平台" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>基础模型</Label>
-              <Input value={shotForm.modelName} onChange={(event) => setShotForm({ ...shotForm, modelName: event.target.value })} placeholder="如：Midjourney" />
+              <Label>截止日期</Label>
+              <Input type="date" value={briefForm.deadline} onChange={(e) => setBriefForm({ ...briefForm, deadline: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>模型版本</Label>
-              <Input value={shotForm.modelVersion} onChange={(event) => setShotForm({ ...shotForm, modelVersion: event.target.value })} placeholder="如：v6.0" />
+              <Label>当前版本 ID</Label>
+              <Input value={briefForm.currentVersionId} onChange={(e) => setBriefForm({ ...briefForm, currentVersionId: e.target.value })} placeholder="输入当前版本 ID" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>文件地址</Label>
+            <Input value={briefForm.fileUrl} onChange={(e) => setBriefForm({ ...briefForm, fileUrl: e.target.value })} placeholder="输入文件地址" />
           </div>
         </div>
       </Modal>
 
-      <Modal title={editingBrief ? '编辑提案' : '新建提案'} isOpen={briefModalOpen} onClose={() => setBriefModalOpen(false)} onSave={saveBrief} width="max-w-2xl">
-        <div className="space-y-5">
+      <Modal title={activeSlot ? `关联镜头 · 镜头 ${activeSlot.slot.position}` : '关联镜头'} isOpen={linkModalOpen} onClose={() => setLinkModalOpen(false)} width="max-w-3xl">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label>提案标题 *</Label>
-            <Input value={briefForm.briefTitle} onChange={(event) => setBriefForm({ ...briefForm, briefTitle: event.target.value })} placeholder="输入提案标题" />
+            <Label htmlFor="slot-shot-search">搜索现有镜头</Label>
+            <Input id="slot-shot-search" value={slotSearchQuery} onChange={(e) => setSlotSearchQuery(e.target.value)} placeholder="按镜头名称、Prompt ID 或模型筛选" />
           </div>
-          <div className="space-y-2">
-            <Label>内容描述</Label>
-            <textarea
-              className="input-field min-h-[96px]"
-              value={briefForm.description}
-              onChange={(event) => setBriefForm({ ...briefForm, description: event.target.value })}
-              placeholder="输入提案内容描述"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>目标受众</Label>
-              <Input value={briefForm.targetAudience} onChange={(event) => setBriefForm({ ...briefForm, targetAudience: event.target.value })} placeholder="如：18-35 岁女性" />
-            </div>
-            <div className="space-y-2">
-              <Label>交付平台</Label>
-              <Input value={briefForm.platform} onChange={(event) => setBriefForm({ ...briefForm, platform: event.target.value })} placeholder="如：抖音 / 小红书" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>截止日期</Label>
-              <Input type="date" value={briefForm.deadline} onChange={(event) => setBriefForm({ ...briefForm, deadline: event.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>当前版本 ID</Label>
-              <Input value={briefForm.currentVersionId} onChange={(event) => setBriefForm({ ...briefForm, currentVersionId: event.target.value })} placeholder="未绑定可留空" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>文件链接</Label>
-            <Input value={briefForm.fileUrl} onChange={(event) => setBriefForm({ ...briefForm, fileUrl: event.target.value })} placeholder="输入提案文件链接" />
+          <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+            {candidateShots.map((shot) => {
+              const belongsToCurrentProject = shot.projectId === project.id
+              const belongsToAnotherProject = Boolean(shot.projectId && shot.projectId !== project.id)
+              const isCurrentSelection = activeSlot?.shot?.id === shot.id
+              return (
+                <div key={shot.id} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{shot.shotName}</h3>
+                        {isCurrentSelection && <Badge variant="outline">当前关联</Badge>}
+                        {belongsToCurrentProject && !isCurrentSelection && <Badge variant="success">当前项目镜头</Badge>}
+                        {belongsToAnotherProject && <Badge variant="warning">原项目：{getProjectName(shot.projectId)}</Badge>}
+                        {!shot.projectId && <Badge variant="outline">未归属项目</Badge>}
+                      </div>
+                      <div className="grid gap-2 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-3">
+                        <div>Prompt ID：{shot.promptId || '未填写'}</div>
+                        <div>模型：{shot.modelName || '未填写'}</div>
+                        <div>版本：{shot.modelVersion || '未填写'}</div>
+                      </div>
+                    </div>
+                    <Button className="gap-2" onClick={() => handleAssignShot(shot.id)}>
+                      <Link2 size={14} />
+                      {belongsToAnotherProject ? '转移并关联' : isCurrentSelection ? '重新确认' : '关联到该排序位'}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+            {candidateShots.length === 0 && (
+              <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                暂无匹配镜头，可先去内容创作中心创建镜头后再回来关联。
+              </div>
+            )}
           </div>
         </div>
       </Modal>

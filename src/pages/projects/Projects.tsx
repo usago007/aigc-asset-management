@@ -1,16 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, Plus, Edit2, Trash2, Search, Video } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { showToast } from '@/utils/toast'
+import { matchesKeyword } from '@/utils/search'
+import { formatDate } from '@/utils/date'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit2, Trash2, Search, Video } from 'lucide-react'
 import type { Project, ProjectStage, RiskLevel } from '@/types'
 
 const stageMap: Record<ProjectStage, { label: string; variant: 'info' | 'warning' | 'success' }> = {
@@ -30,8 +33,12 @@ export default function Projects() {
   const navigate = useNavigate()
   const { projects, brands, addProject, updateProject, deleteProject } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingItem, setViewingItem] = useState<Project | null>(null)
   const [editingItem, setEditingItem] = useState<Project | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [brandFilter, setBrandFilter] = useState('all')
+  const [stageFilter, setStageFilter] = useState<'all' | ProjectStage>('all')
+  const [riskFilter, setRiskFilter] = useState<'all' | RiskLevel>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
@@ -45,9 +52,27 @@ export default function Projects() {
     pendingReviews: 0,
   })
 
-  const filteredItems = useMemo(() => {
-    return projects.filter(p => p.projectName.toLowerCase().includes(searchQuery.toLowerCase()))
-  }, [projects, searchQuery])
+  const getBrandName = (id: string) => brands.find((brand) => brand.id === id)?.brandName || '-'
+  const goToDetail = (projectId: string) => navigate(`/projects/projects/${projectId}`)
+
+  const filteredItems = useMemo(() => (
+    projects.filter((project) => {
+      const matchBrand = brandFilter === 'all' || project.brandId === brandFilter
+      const matchStage = stageFilter === 'all' || project.stage === stageFilter
+      const matchRisk = riskFilter === 'all' || project.riskLevel === riskFilter
+      const matchSearch = matchesKeyword(searchQuery, [
+        project.projectName,
+        getBrandName(project.brandId),
+        project.projectOwner,
+        stageMap[project.stage].label,
+        riskMap[project.riskLevel].label,
+        project.progress,
+        project.pendingReviews,
+        formatDate(project.createdAt),
+      ])
+      return matchBrand && matchStage && matchRisk && matchSearch
+    })
+  ), [projects, brands, searchQuery, brandFilter, stageFilter, riskFilter])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
@@ -92,29 +117,57 @@ export default function Projects() {
     }
   }
 
-  const getBrandName = (id: string) => brands.find(b => b.id === id)?.brandName || '-'
-  const goToDetail = (projectId: string) => navigate(`/projects/projects/${projectId}`)
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">项目列表</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-500 mt-1">管理所有视频制作项目</p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有视频制作项目</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="gap-2">
           <Plus size={16} /> 创建项目
         </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-        <Input
-          placeholder="搜索项目名称..."
-          className="pl-10"
-          value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
-        />
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          <Input
+            placeholder="搜索项目名称、品牌、负责人或进度..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
+          />
+        </div>
+        <Select value={brandFilter} onValueChange={(value) => { setBrandFilter(value); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部品牌" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部品牌</SelectItem>
+            {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={stageFilter} onValueChange={(value) => { setStageFilter(value as 'all' | ProjectStage); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="全部阶段" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部阶段</SelectItem>
+            <SelectItem value="Planning">规划中</SelectItem>
+            <SelectItem value="InProduction">制作中</SelectItem>
+            <SelectItem value="Review">审核中</SelectItem>
+            <SelectItem value="Completed">已完成</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={riskFilter} onValueChange={(value) => { setRiskFilter(value as 'all' | RiskLevel); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="全部风险" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部风险</SelectItem>
+            <SelectItem value="Low">低</SelectItem>
+            <SelectItem value="Medium">中</SelectItem>
+            <SelectItem value="High">高</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="card overflow-x-auto p-0">
@@ -132,10 +185,10 @@ export default function Projects() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(project => (
+            {paginatedItems.map((project) => (
               <tr
                 key={project.id}
-                className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
+                className="cursor-pointer border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30"
                 onClick={() => goToDetail(project.id)}
               >
                 <td className="table-cell">
@@ -143,7 +196,7 @@ export default function Projects() {
                     <Video size={14} className="text-primary-400" />
                     <button
                       type="button"
-                      className="font-medium text-gray-800 dark:text-gray-200 hover:text-primary-500 transition-colors"
+                      className="font-medium text-gray-800 transition-colors hover:text-primary-500 dark:text-gray-200"
                       onClick={(event) => {
                         event.stopPropagation()
                         goToDetail(project.id)
@@ -154,29 +207,21 @@ export default function Projects() {
                   </div>
                 </td>
                 <td className="table-cell">{getBrandName(project.brandId)}</td>
-                <td className="table-cell">{project.projectOwner}</td>
+                <td className="table-cell">{project.projectOwner || '-'}</td>
                 <td className="table-cell">
-                  <div className="flex items-center gap-3 min-w-[140px]">
+                  <div className="flex min-w-[140px] items-center gap-3">
                     <Progress value={project.progress} className="w-20" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{project.progress}%</span>
+                    <span className="w-8 text-xs text-gray-600 dark:text-gray-400">{project.progress}%</span>
                   </div>
                 </td>
                 <td className="table-cell">
-                  <Badge variant={stageMap[project.stage].variant}>
-                    {stageMap[project.stage].label}
-                  </Badge>
+                  <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
                 </td>
                 <td className="table-cell">
-                  <Badge variant={riskMap[project.riskLevel].variant}>
-                    {riskMap[project.riskLevel].label}
-                  </Badge>
+                  <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
                 </td>
                 <td className="table-cell text-center">
-                  {project.pendingReviews > 0 ? (
-                    <Badge variant="warning">{project.pendingReviews}</Badge>
-                  ) : (
-                    <span className="text-gray-600">0</span>
-                  )}
+                  {project.pendingReviews > 0 ? <Badge variant="warning">{project.pendingReviews}</Badge> : <span className="text-gray-600">0</span>}
                 </td>
                 <td className="table-cell">
                   <div className="flex items-center gap-1">
@@ -185,8 +230,20 @@ export default function Projects() {
                       size="icon"
                       onClick={(event) => {
                         event.stopPropagation()
+                        setViewingItem(project)
+                      }}
+                      title="查看"
+                    >
+                      <Eye size={14} className="text-gray-600 dark:text-gray-400" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(event) => {
+                        event.stopPropagation()
                         handleOpenModal(project)
                       }}
+                      title="编辑"
                     >
                       <Edit2 size={14} className="text-gray-600 dark:text-gray-400" />
                     </Button>
@@ -197,6 +254,7 @@ export default function Projects() {
                         event.stopPropagation()
                         handleDelete(project.id)
                       }}
+                      title="删除"
                     >
                       <Trash2 size={14} className="text-error" />
                     </Button>
@@ -219,13 +277,11 @@ export default function Projects() {
           </div>
           <div className="space-y-2">
             <Label>所属品牌</Label>
-            <Select value={formData.brandId || 'none'} onValueChange={(val) => setFormData({ ...formData, brandId: val === 'none' ? '' : val })}>
-              <SelectTrigger>
-                <SelectValue placeholder="选择品牌" />
-              </SelectTrigger>
+            <Select value={formData.brandId || 'none'} onValueChange={(value) => setFormData({ ...formData, brandId: value === 'none' ? '' : value })}>
+              <SelectTrigger><SelectValue placeholder="选择品牌" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">未选择</SelectItem>
-                {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.brandName}</SelectItem>)}
+                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -236,16 +292,14 @@ export default function Projects() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="progress">进度 (%)</Label>
-              <Input id="progress" type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) || 0 })} />
+              <Input id="progress" type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value, 10) || 0 })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>阶段状态</Label>
-              <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val as ProjectStage })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value as ProjectStage })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Planning">规划中</SelectItem>
                   <SelectItem value="InProduction">制作中</SelectItem>
@@ -256,10 +310,8 @@ export default function Projects() {
             </div>
             <div className="space-y-2">
               <Label>延期风险</Label>
-              <Select value={formData.riskLevel} onValueChange={(val) => setFormData({ ...formData, riskLevel: val as RiskLevel })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.riskLevel} onValueChange={(value) => setFormData({ ...formData, riskLevel: value as RiskLevel })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Low">低</SelectItem>
                   <SelectItem value="Medium">中</SelectItem>
@@ -268,7 +320,27 @@ export default function Projects() {
               </Select>
             </div>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="pendingReviews">待审核数</Label>
+            <Input id="pendingReviews" type="number" min="0" value={formData.pendingReviews} onChange={(e) => setFormData({ ...formData, pendingReviews: parseInt(e.target.value, 10) || 0 })} />
+          </div>
         </div>
+      </Modal>
+
+      <Modal title="查看项目" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
+        {viewingItem && (
+          <ReadOnlySection>
+            <ReadOnlyField label="项目名称" value={viewingItem.projectName} />
+            <ReadOnlyField label="所属品牌" value={getBrandName(viewingItem.brandId)} />
+            <ReadOnlyField label="负责人" value={viewingItem.projectOwner} />
+            <ReadOnlyField label="进度" value={`${viewingItem.progress}%`} />
+            <ReadOnlyField label="阶段" value={<Badge variant={stageMap[viewingItem.stage].variant}>{stageMap[viewingItem.stage].label}</Badge>} />
+            <ReadOnlyField label="风险" value={<Badge variant={riskMap[viewingItem.riskLevel].variant}>{riskMap[viewingItem.riskLevel].label}</Badge>} />
+            <ReadOnlyField label="待审核数" value={String(viewingItem.pendingReviews)} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
+            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

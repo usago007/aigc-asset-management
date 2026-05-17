@@ -10,7 +10,7 @@ const translations: Record<string, Record<string, string>> = {
     customers: '客户管理',
     brands: '品牌管理',
     projects: '项目管理',
-    briefs: '简报管理',
+    briefs: '提案管理',
     tasks: '任务管理',
     reviews: '审核管理',
     system_settings: '系统设置',

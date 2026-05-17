@@ -45,6 +45,12 @@ export interface Shot extends BaseEntity {
   modelVersion: string;
 }
 
+export interface ProjectShotSlot extends BaseEntity {
+  projectId: UUID;
+  shotId: UUID | null;
+  position: number;
+}
+
 export interface Asset extends BaseEntity {
   assetName: string;
   type: 'Image' | 'Video' | 'Script';

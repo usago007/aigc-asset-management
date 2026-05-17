@@ -1,16 +1,39 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Eye, Plus, Edit2, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { formatDate } from '@/utils/date'
+import { normalizeSearchText } from '@/utils/search'
+import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
-import { Plus, Edit2, Trash2, Search } from 'lucide-react'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import type { Brief } from '@/types'
+
+const includesText = (value: unknown, query: string) => {
+  const normalizedQuery = normalizeSearchText(query)
+  if (!normalizedQuery) return true
+  return normalizeSearchText(value).includes(normalizedQuery)
+}
 
 export default function Briefs() {
   const { briefs, projects, addBrief, updateBrief, deleteBrief } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingItem, setViewingItem] = useState<Brief | null>(null)
   const [editingItem, setEditingItem] = useState<Brief | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState({
+    briefTitle: '',
+    projectId: 'all',
+    description: '',
+    targetAudience: '',
+    platform: '',
+    deadline: '',
+    fileUrl: '',
+    currentVersionId: '',
+  })
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
@@ -25,11 +48,31 @@ export default function Briefs() {
     currentVersionId: '',
   })
 
-  const filteredItems = useMemo(() => {
-    return briefs.filter(b => b.briefTitle.toLowerCase().includes(searchQuery.toLowerCase()))
-  }, [briefs, searchQuery])
+  const getProjectName = (id: string) => projects.find((project) => project.id === id)?.projectName || '-'
+
+  const filteredItems = useMemo(() => (
+    briefs.filter((brief) => {
+      const matchTitle = includesText(brief.briefTitle, filters.briefTitle)
+      const matchProject = filters.projectId === 'all' || brief.projectId === filters.projectId
+      const matchDescription = includesText(brief.description, filters.description)
+      const matchAudience = includesText(brief.targetAudience, filters.targetAudience)
+      const matchPlatform = includesText(brief.platform, filters.platform)
+      const matchDeadline = !filters.deadline || (brief.deadline ? brief.deadline.slice(0, 10) === filters.deadline : false)
+      const matchFileUrl = includesText(brief.fileUrl, filters.fileUrl)
+      const matchVersionId = includesText(brief.currentVersionId, filters.currentVersionId)
+      return matchTitle && matchProject && matchDescription && matchAudience && matchPlatform && matchDeadline && matchFileUrl && matchVersionId
+    })
+  ), [briefs, filters])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  const updateFilter = (
+    key: 'briefTitle' | 'description' | 'targetAudience' | 'platform' | 'deadline' | 'fileUrl' | 'currentVersionId',
+    value: string,
+  ) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    setCurrentPage(1)
+  }
 
   const handleOpenModal = (item?: Brief) => {
     if (item) {
@@ -52,11 +95,16 @@ export default function Briefs() {
   }
 
   const handleSave = () => {
-    if (!formData.briefTitle) return
+    if (!formData.briefTitle) {
+      showToast('error', '请输入提案标题')
+      return
+    }
     if (editingItem) {
       updateBrief(editingItem.id, { ...formData, deadline: formData.deadline ? new Date(formData.deadline).toISOString() : '' })
+      showToast('success', '提案更新成功')
     } else {
       addBrief({ ...formData, deadline: formData.deadline ? new Date(formData.deadline).toISOString() : '' } as Omit<Brief, 'id' | 'createdAt' | 'updatedAt'>)
+      showToast('success', '提案创建成功')
     }
     setIsModalOpen(false)
   }
@@ -64,30 +112,65 @@ export default function Briefs() {
   const handleDelete = (id: string) => {
     if (window.confirm('确定要删除吗？')) {
       deleteBrief(id)
+      showToast('success', '提案删除成功')
     }
   }
-
-  const getProjectName = (id: string) => projects.find(p => p.id === id)?.projectName || '-'
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">简报管理</h1>
-        <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
-          <Plus size={16} /> 创建简报
-        </button>
+        <div>
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">提案管理</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有提案信息</p>
+        </div>
+        <Button onClick={() => handleOpenModal()} className="gap-2">
+          <Plus size={16} /> 创建提案
+        </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-        <input type="text" placeholder="搜索简报标题..." className="input-field pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/40 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-title">提案标题</Label>
+          <Input id="brief-filter-title" value={filters.briefTitle} onChange={(e) => updateFilter('briefTitle', e.target.value)} placeholder="按提案标题筛选" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-description">内容描述</Label>
+          <Input id="brief-filter-description" value={filters.description} onChange={(e) => updateFilter('description', e.target.value)} placeholder="按内容描述筛选" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-audience">目标受众</Label>
+          <Input id="brief-filter-audience" value={filters.targetAudience} onChange={(e) => updateFilter('targetAudience', e.target.value)} placeholder="按目标受众筛选" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-platform">交付平台</Label>
+          <Input id="brief-filter-platform" value={filters.platform} onChange={(e) => updateFilter('platform', e.target.value)} placeholder="按交付平台筛选" />
+        </div>
+        <div className="space-y-2">
+          <Label>所属项目</Label>
+          <select className="input-field" value={filters.projectId} onChange={(e) => { setFilters((current) => ({ ...current, projectId: e.target.value })); setCurrentPage(1) }}>
+            <option value="all">全部项目</option>
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.projectName}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-deadline">截止日期</Label>
+          <Input id="brief-filter-deadline" type="date" value={filters.deadline} onChange={(e) => updateFilter('deadline', e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-file">文件地址</Label>
+          <Input id="brief-filter-file" value={filters.fileUrl} onChange={(e) => updateFilter('fileUrl', e.target.value)} placeholder="按文件地址筛选" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brief-filter-version">当前版本 ID</Label>
+          <Input id="brief-filter-version" value={filters.currentVersionId} onChange={(e) => updateFilter('currentVersionId', e.target.value)} placeholder="按当前版本 ID 筛选" />
+        </div>
       </div>
 
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="table-header">简报标题</th>
+              <th className="table-header">提案标题</th>
               <th className="table-header">所属项目</th>
               <th className="table-header">目标受众</th>
               <th className="table-header">交付平台</th>
@@ -96,17 +179,18 @@ export default function Briefs() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(brief => (
-              <tr key={brief.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+            {paginatedItems.map((brief) => (
+              <tr key={brief.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
                 <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{brief.briefTitle}</td>
                 <td className="table-cell">{getProjectName(brief.projectId)}</td>
-                <td className="table-cell">{brief.targetAudience}</td>
-                <td className="table-cell">{brief.platform}</td>
+                <td className="table-cell">{brief.targetAudience || '-'}</td>
+                <td className="table-cell">{brief.platform || '-'}</td>
                 <td className="table-cell text-gray-500">{formatDate(brief.deadline, 'date')}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleOpenModal(brief)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" onClick={() => handleDelete(brief.id)}><Trash2 size={14} className="text-error" /></button>
+                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setViewingItem(brief)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => handleOpenModal(brief)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
+                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => handleDelete(brief.id)} title="删除"><Trash2 size={14} className="text-error" /></button>
                   </div>
                 </td>
               </tr>
@@ -118,38 +202,63 @@ export default function Briefs() {
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
 
-      <Modal title={editingItem ? '编辑简报' : '创建简报'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
+      <Modal title={editingItem ? '编辑提案' : '创建提案'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-4">
-          <div>
-            <label className="label-field">简报标题 *</label>
-            <input type="text" className="input-field" value={formData.briefTitle} onChange={(e) => setFormData({ ...formData, briefTitle: e.target.value })} placeholder="输入简报标题" />
+          <div className="space-y-2">
+            <Label>提案标题 *</Label>
+            <Input value={formData.briefTitle} onChange={(e) => setFormData({ ...formData, briefTitle: e.target.value })} placeholder="输入提案标题" />
           </div>
-          <div>
-            <label className="label-field">所属项目</label>
+          <div className="space-y-2">
+            <Label>所属项目</Label>
             <select className="input-field" value={formData.projectId} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}>
               <option value="">选择项目</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.projectName}</option>)}
+              {projects.map((project) => <option key={project.id} value={project.id}>{project.projectName}</option>)}
             </select>
           </div>
-          <div>
-            <label className="label-field">内容描述</label>
-            <textarea className="input-field min-h-[80px]" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="输入内容描述" />
+          <div className="space-y-2">
+            <Label>内容描述</Label>
+            <Textarea className="min-h-[80px]" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="输入内容描述" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">目标受众</label>
-              <input type="text" className="input-field" value={formData.targetAudience} onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })} placeholder="如：18-35岁女性" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>目标受众</Label>
+              <Input value={formData.targetAudience} onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })} placeholder="如：18-35岁女性" />
             </div>
-            <div>
-              <label className="label-field">交付平台</label>
-              <input type="text" className="input-field" value={formData.platform} onChange={(e) => setFormData({ ...formData, platform: e.target.value })} placeholder="如：抖音、小红书" />
+            <div className="space-y-2">
+              <Label>交付平台</Label>
+              <Input value={formData.platform} onChange={(e) => setFormData({ ...formData, platform: e.target.value })} placeholder="如：抖音、小红书" />
             </div>
           </div>
-          <div>
-            <label className="label-field">截止日期</label>
-            <input type="date" className="input-field" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+          <div className="space-y-2">
+            <Label>截止日期</Label>
+            <Input type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>文件地址</Label>
+            <Input value={formData.fileUrl} onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })} placeholder="如：/files/brief-v2.pdf" />
+          </div>
+          <div className="space-y-2">
+            <Label>当前版本 ID</Label>
+            <Input value={formData.currentVersionId} onChange={(e) => setFormData({ ...formData, currentVersionId: e.target.value })} placeholder="输入当前版本 ID" />
           </div>
         </div>
+      </Modal>
+
+      <Modal title="查看提案" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
+        {viewingItem && (
+          <ReadOnlySection>
+            <ReadOnlyField label="提案标题" value={viewingItem.briefTitle} />
+            <ReadOnlyField label="所属项目" value={getProjectName(viewingItem.projectId)} />
+            <ReadOnlyField label="目标受众" value={viewingItem.targetAudience} />
+            <ReadOnlyField label="交付平台" value={viewingItem.platform} />
+            <ReadOnlyField label="截止日期" value={formatDate(viewingItem.deadline, 'date')} />
+            <ReadOnlyField label="文件地址" value={viewingItem.fileUrl} />
+            <ReadOnlyField label="当前版本 ID" value={viewingItem.currentVersionId} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
+            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
+            <ReadOnlyField label="内容描述" value={viewingItem.description} span="full" />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

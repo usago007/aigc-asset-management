@@ -7,6 +7,7 @@ import DashboardAssets from './pages/dashboard/DashboardAssets'
 import DashboardTasks from './pages/dashboard/DashboardTasks'
 import KeyFrames from './pages/content/KeyFrames'
 import Shots from './pages/content/Shots'
+import ShotDetail from './pages/content/ShotDetail'
 import Assets from './pages/content/Assets'
 import VideoGeneration from './pages/content/VideoGeneration'
 import TaskDetail from './pages/content/TaskDetail'
@@ -30,7 +31,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<Navigate to="/content/image-generation" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="dashboard/overview" element={<Overview />} />
         <Route path="dashboard/generation" element={<Generation />} />
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="dashboard/tasks" element={<DashboardTasks />} />
         <Route path="content/keyframes" element={<KeyFrames />} />
         <Route path="content/shots" element={<Shots />} />
+        <Route path="content/shots/:id" element={<ShotDetail />} />
         <Route path="content/assets" element={<Assets />} />
         <Route path="content/video-generation" element={<VideoGeneration />} />
         <Route path="content/task/:id" element={<TaskDetail />} />

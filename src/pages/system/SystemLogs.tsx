@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FileText, Trash2, Download, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
 import { showToast } from '@/utils/toast'
+import { matchesKeyword } from '@/utils/search'
 
 interface LogEntry {
   id: string
@@ -81,7 +82,7 @@ export default function SystemLogs() {
   const filteredLogs = logs.filter(log => {
     if (filterLevel !== 'all' && log.level !== filterLevel) return false
     if (filterSource !== 'all' && log.source !== filterSource) return false
-    if (searchQuery && !log.message.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    if (!matchesKeyword(searchQuery, [log.message, log.details, log.timestamp, levelMap[log.level]?.label, sourceMap[log.source]?.label])) return false
     return true
   })
 
@@ -139,7 +140,7 @@ export default function SystemLogs() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
-                placeholder="搜索日志消息..."
+                placeholder="搜索日志消息或详细信息..."
                 className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none"
               />
             </div>

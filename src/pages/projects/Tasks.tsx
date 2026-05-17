@@ -1,16 +1,18 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Eye, Plus, Edit2, Trash2, Search } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { showToast } from '@/utils/toast'
 import { formatDate } from '@/utils/date'
+import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit2, Trash2, Search } from 'lucide-react'
 import type { Task, TaskStatus } from '@/types'
 
 const statusMap: Record<TaskStatus, { label: string; variant: 'warning' | 'info' | 'success' }> = {
@@ -22,8 +24,11 @@ const statusMap: Record<TaskStatus, { label: string; variant: 'warning' | 'info'
 export default function Tasks() {
   const { tasks, projects, addTask, updateTask, deleteTask } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingItem, setViewingItem] = useState<Task | null>(null)
   const [editingItem, setEditingItem] = useState<Task | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [projectFilter, setProjectFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | Task['type']>('all')
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
@@ -33,18 +38,30 @@ export default function Tasks() {
     projectId: '',
     assignedTo: '',
     status: 'Pending' as TaskStatus,
-    type: '生成' as '生成' | '审核' | '交付',
+    type: '生成' as Task['type'],
     deadline: '',
     notes: '',
   })
 
-  const filteredItems = useMemo(() => {
-    return tasks.filter(t => {
-      const matchSearch = t.taskName.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchStatus = statusFilter === 'all' || t.status === statusFilter
-      return matchSearch && matchStatus
+  const getProjectName = (id: string) => projects.find((project) => project.id === id)?.projectName || '-'
+
+  const filteredItems = useMemo(() => (
+    tasks.filter((task) => {
+      const matchProject = projectFilter === 'all' || task.projectId === projectFilter
+      const matchType = typeFilter === 'all' || task.type === typeFilter
+      const matchStatus = statusFilter === 'all' || task.status === statusFilter
+      const matchSearch = matchesKeyword(searchQuery, [
+        task.taskName,
+        getProjectName(task.projectId),
+        task.assignedTo,
+        task.type,
+        statusMap[task.status].label,
+        task.notes,
+        formatDate(task.deadline, 'date'),
+      ])
+      return matchProject && matchType && matchStatus && matchSearch
     })
-  }, [tasks, searchQuery, statusFilter])
+  ), [tasks, projects, searchQuery, projectFilter, typeFilter, statusFilter])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
@@ -89,14 +106,12 @@ export default function Tasks() {
     }
   }
 
-  const getProjectName = (id: string) => projects.find(p => p.id === id)?.projectName || '-'
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">任务管理</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-500 mt-1">管理所有项目任务</p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有项目任务</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="gap-2">
           <Plus size={16} /> 创建任务
@@ -106,12 +121,26 @@ export default function Tasks() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-          <Input type="text" placeholder="搜索任务名称..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <Input type="text" placeholder="搜索任务名称、项目、负责人或备注..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
-        <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val as any); setCurrentPage(1) }}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="全部状态" />
-          </SelectTrigger>
+        <Select value={projectFilter} onValueChange={(value) => { setProjectFilter(value); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部项目" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部项目</SelectItem>
+            {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value as 'all' | Task['type']); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部类型" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部类型</SelectItem>
+            <SelectItem value="生成">生成</SelectItem>
+            <SelectItem value="审核">审核</SelectItem>
+            <SelectItem value="交付">交付</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value as TaskStatus | 'all'); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部状态" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">全部状态</SelectItem>
             <SelectItem value="Pending">待处理</SelectItem>
@@ -135,22 +164,19 @@ export default function Tasks() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(task => (
-              <tr key={task.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+            {paginatedItems.map((task) => (
+              <tr key={task.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
                 <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{task.taskName}</td>
                 <td className="table-cell">{getProjectName(task.projectId)}</td>
-                <td className="table-cell">{task.assignedTo}</td>
-                <td className="table-cell">
-                  <Badge variant="info">{task.type}</Badge>
-                </td>
-                <td className="table-cell">
-                  <Badge variant={statusMap[task.status].variant}>{statusMap[task.status].label}</Badge>
-                </td>
+                <td className="table-cell">{task.assignedTo || '-'}</td>
+                <td className="table-cell"><Badge variant="info">{task.type}</Badge></td>
+                <td className="table-cell"><Badge variant={statusMap[task.status].variant}>{statusMap[task.status].label}</Badge></td>
                 <td className="table-cell text-gray-500">{formatDate(task.deadline, 'date')}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenModal(task)}><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 size={14} className="text-error" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setViewingItem(task)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenModal(task)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)} title="删除"><Trash2 size={14} className="text-error" /></Button>
                   </div>
                 </td>
               </tr>
@@ -171,13 +197,11 @@ export default function Tasks() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>所属项目</Label>
-              <Select value={formData.projectId || 'none'} onValueChange={(val) => setFormData({ ...formData, projectId: val === 'none' ? '' : val })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择项目" />
-                </SelectTrigger>
+              <Select value={formData.projectId || 'none'} onValueChange={(value) => setFormData({ ...formData, projectId: value === 'none' ? '' : value })}>
+                <SelectTrigger><SelectValue placeholder="选择项目" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">未选择</SelectItem>
-                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.projectName}</SelectItem>)}
+                  {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -189,10 +213,8 @@ export default function Tasks() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>类型</Label>
-              <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val as any })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as Task['type'] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="生成">生成</SelectItem>
                   <SelectItem value="审核">审核</SelectItem>
@@ -202,10 +224,8 @@ export default function Tasks() {
             </div>
             <div className="space-y-2">
               <Label>状态</Label>
-              <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val as TaskStatus })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Pending">待处理</SelectItem>
                   <SelectItem value="InProgress">进行中</SelectItem>
@@ -223,6 +243,22 @@ export default function Tasks() {
             <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入备注信息" className="min-h-[80px]" />
           </div>
         </div>
+      </Modal>
+
+      <Modal title="查看任务" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
+        {viewingItem && (
+          <ReadOnlySection>
+            <ReadOnlyField label="任务名称" value={viewingItem.taskName} />
+            <ReadOnlyField label="所属项目" value={getProjectName(viewingItem.projectId)} />
+            <ReadOnlyField label="负责人" value={viewingItem.assignedTo} />
+            <ReadOnlyField label="类型" value={<Badge variant="info">{viewingItem.type}</Badge>} />
+            <ReadOnlyField label="状态" value={<Badge variant={statusMap[viewingItem.status].variant}>{statusMap[viewingItem.status].label}</Badge>} />
+            <ReadOnlyField label="截止日期" value={formatDate(viewingItem.deadline, 'date')} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
+            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
+            <ReadOnlyField label="备注" value={viewingItem.notes} span="full" />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )

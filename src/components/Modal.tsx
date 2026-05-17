@@ -31,7 +31,7 @@ export default function Modal({ title, isOpen, onClose, onSave, children, width 
           {children}
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>取消</Button>
+          <Button variant="secondary" onClick={onClose}>{onSave ? '取消' : '关闭'}</Button>
           {onSave && <Button onClick={onSave}>保存</Button>}
         </DialogFooter>
       </DialogContent>

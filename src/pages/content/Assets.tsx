@@ -1,17 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, Plus, Edit2, Trash2, Search, FileText, Play, ExternalLink } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import { showToast } from '@/utils/toast'
+import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit2, Trash2, Search, FileText, Play, Image as ImageIcon, ExternalLink } from 'lucide-react'
 import type { Asset } from '@/types'
 
 const ASSET_PLACEHOLDER_IMAGES = [
@@ -24,44 +26,154 @@ const ASSET_PLACEHOLDER_IMAGES = [
 
 const VIDEO_PLACEHOLDER = 'https://picsum.photos/seed/video/100/100'
 
+const assetTypeLabelMap: Record<Asset['type'], string> = {
+  Image: '图片',
+  Video: '视频',
+  Script: '脚本',
+}
+
+const sourceTypeLabelMap: Record<Asset['sourceType'], string> = {
+  'image-task': '图片任务',
+  'video-task': '视频任务',
+  script: '脚本录入',
+}
+
 export default function Assets() {
   const navigate = useNavigate()
   const { assets, projects, shots, imageTasks, addAsset, updateAsset, deleteAsset } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [viewingItem, setViewingItem] = useState<Asset | null>(null)
   const [editingItem, setEditingItem] = useState<Asset | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | Asset['type']>('all')
+  const [projectFilter, setProjectFilter] = useState('all')
+  const [shotFilter, setShotFilter] = useState('all')
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<'all' | Asset['sourceType']>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
   const [formData, setFormData] = useState({
-    assetName: '', type: 'Image' as 'Image' | 'Video' | 'Script', sourceType: 'image-task' as Asset['sourceType'], sourceTaskId: '', sourceResultIndex: '0', projectId: '', shotId: '', promptId: '', modelName: '', modelVersion: '', parentAssetIds: [] as string[], fileUrl: '',
+    assetName: '',
+    type: 'Image' as Asset['type'],
+    sourceType: 'image-task' as Asset['sourceType'],
+    sourceTaskId: '',
+    sourceResultIndex: '0',
+    projectId: '',
+    shotId: '',
+    promptId: '',
+    modelName: '',
+    modelVersion: '',
+    parentAssetIds: [] as string[],
+    fileUrl: '',
   })
+
   const filteredShots = useMemo(() => shots.filter((shot) => shot.projectId === formData.projectId), [shots, formData.projectId])
   const completedImageTasks = useMemo(() => imageTasks.filter((task) => task.status === 'done' && task.outputImageUrls.length > 0), [imageTasks])
   const completedVideoTasks = useMemo(() => videoTasks.filter((task) => task.status === 'done'), [videoTasks])
   const selectedImageTask = useMemo(() => completedImageTasks.find((task) => task.id === formData.sourceTaskId), [completedImageTasks, formData.sourceTaskId])
   const selectedVideoTask = useMemo(() => completedVideoTasks.find((task) => task.id === formData.sourceTaskId), [completedVideoTasks, formData.sourceTaskId])
 
-  const filteredItems = useMemo(() => assets.filter(asset => asset.assetName.toLowerCase().includes(searchQuery.toLowerCase())), [assets, searchQuery])
+  const getProjectId = (asset: Asset) => asset.projectId || shots.find((shot) => shot.id === asset.shotId)?.projectId || ''
+  const getProjectName = (asset: Asset) => projects.find((project) => project.id === getProjectId(asset))?.projectName || '-'
+  const getShotName = (shotId?: string) => shotId ? shots.find((shot) => shot.id === shotId)?.shotName || '-' : '-'
+  const getTaskSummary = (asset: Asset) => {
+    if (!asset.sourceTaskId) return '-'
+    if (asset.sourceType === 'image-task') {
+      const task = imageTasks.find((item) => item.id === asset.sourceTaskId)
+      return task ? task.prompt.slice(0, 40) : asset.sourceTaskId
+    }
+    if (asset.sourceType === 'video-task') {
+      const task = videoTasks.find((item) => item.id === asset.sourceTaskId)
+      return task ? task.prompt.slice(0, 40) : asset.sourceTaskId
+    }
+    return asset.sourceTaskId
+  }
+
+  const filteredItems = useMemo(() => (
+    assets.filter((asset) => {
+      const matchType = typeFilter === 'all' || asset.type === typeFilter
+      const matchProject = projectFilter === 'all' || getProjectId(asset) === projectFilter
+      const matchShot = shotFilter === 'all' || asset.shotId === shotFilter
+      const matchSourceType = sourceTypeFilter === 'all' || asset.sourceType === sourceTypeFilter
+      const matchSearch = matchesKeyword(searchQuery, [
+        asset.assetName,
+        assetTypeLabelMap[asset.type],
+        sourceTypeLabelMap[asset.sourceType],
+        getProjectName(asset),
+        getShotName(asset.shotId),
+        asset.promptId,
+        asset.modelName,
+        asset.modelVersion,
+        asset.fileUrl,
+        getTaskSummary(asset),
+        asset.parentAssetIds,
+      ])
+      return matchType && matchProject && matchShot && matchSourceType && matchSearch
+    })
+  ), [assets, projects, shots, imageTasks, videoTasks, searchQuery, typeFilter, projectFilter, shotFilter, sourceTypeFilter])
+
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const handleOpenModal = (item?: Asset) => {
     if (item) {
-      const inferredProjectId = item.projectId || shots.find((shot) => shot.id === item.shotId)?.projectId || ''
+      const inferredProjectId = getProjectId(item)
       setEditingItem(item)
-      setFormData({ assetName: item.assetName, type: item.type, sourceType: item.sourceType, sourceTaskId: item.sourceTaskId || '', sourceResultIndex: String(item.sourceResultIndex ?? 0), projectId: inferredProjectId, shotId: item.shotId || '', promptId: item.promptId, modelName: item.modelName, modelVersion: item.modelVersion, parentAssetIds: item.parentAssetIds, fileUrl: item.fileUrl })
+      setFormData({
+        assetName: item.assetName,
+        type: item.type,
+        sourceType: item.sourceType,
+        sourceTaskId: item.sourceTaskId || '',
+        sourceResultIndex: String(item.sourceResultIndex ?? 0),
+        projectId: inferredProjectId,
+        shotId: item.shotId || '',
+        promptId: item.promptId,
+        modelName: item.modelName,
+        modelVersion: item.modelVersion,
+        parentAssetIds: item.parentAssetIds,
+        fileUrl: item.fileUrl,
+      })
+    } else {
+      setEditingItem(null)
+      setFormData({
+        assetName: '',
+        type: 'Image',
+        sourceType: 'image-task',
+        sourceTaskId: '',
+        sourceResultIndex: '0',
+        projectId: '',
+        shotId: '',
+        promptId: '',
+        modelName: '',
+        modelVersion: '',
+        parentAssetIds: [],
+        fileUrl: '',
+      })
     }
-    else { setEditingItem(null); setFormData({ assetName: '', type: 'Image', sourceType: 'image-task', sourceTaskId: '', sourceResultIndex: '0', projectId: '', shotId: '', promptId: '', modelName: '', modelVersion: '', parentAssetIds: [], fileUrl: '' }) }
     setIsModalOpen(true)
   }
 
   const handleSave = () => {
-    if (!formData.assetName) { showToast('error', '请输入资产名称'); return }
-    if (formData.type === 'Image' && !formData.sourceTaskId) { showToast('error', '请选择图片来源任务'); return }
-    if (formData.type === 'Video' && !formData.sourceTaskId) { showToast('error', '请选择视频来源任务'); return }
-    if (formData.type === 'Image' && !selectedImageTask) { showToast('error', '图片来源任务不存在'); return }
-    if (formData.type === 'Video' && !selectedVideoTask) { showToast('error', '视频来源任务不存在'); return }
+    if (!formData.assetName) {
+      showToast('error', '请输入资产名称')
+      return
+    }
+    if (formData.type === 'Image' && !formData.sourceTaskId) {
+      showToast('error', '请选择图片来源任务')
+      return
+    }
+    if (formData.type === 'Video' && !formData.sourceTaskId) {
+      showToast('error', '请选择视频来源任务')
+      return
+    }
+    if (formData.type === 'Image' && !selectedImageTask) {
+      showToast('error', '图片来源任务不存在')
+      return
+    }
+    if (formData.type === 'Video' && !selectedVideoTask) {
+      showToast('error', '视频来源任务不存在')
+      return
+    }
     const selectedShot = formData.shotId ? shots.find((shot) => shot.id === formData.shotId) : undefined
     if (selectedShot && formData.projectId && selectedShot.projectId !== formData.projectId) {
       showToast('error', '所选镜头不属于当前项目')
@@ -75,17 +187,23 @@ export default function Assets() {
       projectId: selectedShot?.projectId || formData.projectId || undefined,
       shotId: formData.shotId || undefined,
     }
-    if (editingItem) { updateAsset(editingItem.id, payload); showToast('success', '更新成功') }
-    else { addAsset(payload as Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>); showToast('success', '创建成功') }
+    if (editingItem) {
+      updateAsset(editingItem.id, payload)
+      showToast('success', '更新成功')
+    } else {
+      addAsset(payload as Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>)
+      showToast('success', '创建成功')
+    }
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => { if (window.confirm('确定要删除吗？')) { deleteAsset(id); showToast('success', '删除成功') } }
-  const getProjectName = (asset: Asset) => {
-    const projectId = asset.projectId || shots.find((shot) => shot.id === asset.shotId)?.projectId
-    return projects.find((project) => project.id === projectId)?.projectName || '-'
+  const handleDelete = (id: string) => {
+    if (window.confirm('确定要删除吗？')) {
+      deleteAsset(id)
+      showToast('success', '删除成功')
+    }
   }
-  const getShotName = (shotId?: string) => shotId ? shots.find(s => s.id === shotId)?.shotName || '-' : '-'
+
   const getAssetDetailPath = (asset: Asset) => {
     if (asset.type === 'Image' && asset.sourceTaskId != null && asset.sourceResultIndex != null) {
       return `/content/image-detail/${asset.sourceTaskId}/${asset.sourceResultIndex}`
@@ -101,16 +219,16 @@ export default function Assets() {
       if (asset.fileUrl.startsWith('http') || asset.fileUrl.startsWith('data:') || asset.fileUrl.startsWith('blob:')) return asset.fileUrl
       if (asset.type === 'Video') return VIDEO_PLACEHOLDER
       if (asset.type === 'Image') {
-        const hash = asset.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+        const hash = asset.id.split('').reduce((acc, current) => acc + current.charCodeAt(0), 0)
         return ASSET_PLACEHOLDER_IMAGES[hash % ASSET_PLACEHOLDER_IMAGES.length]
       }
     }
     if (asset.type === 'Video') return VIDEO_PLACEHOLDER
-    const hash = asset.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    const hash = asset.id.split('').reduce((acc, current) => acc + current.charCodeAt(0), 0)
     return ASSET_PLACEHOLDER_IMAGES[hash % ASSET_PLACEHOLDER_IMAGES.length]
   }
 
-  const handleTypeChange = (type: 'Image' | 'Video' | 'Script') => {
+  const handleTypeChange = (type: Asset['type']) => {
     setFormData((prev) => ({
       ...prev,
       type,
@@ -168,7 +286,7 @@ export default function Assets() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">资产管理</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-500 mt-1">管理所有生成资产</p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有生成资产</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建资产</Button>
       </div>
@@ -176,8 +294,40 @@ export default function Assets() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-          <Input placeholder="搜索资产名称..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <Input placeholder="搜索资产、项目、镜头、模型或文件地址..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
+        <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value as 'all' | Asset['type']); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="全部类型" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部类型</SelectItem>
+            <SelectItem value="Image">图片</SelectItem>
+            <SelectItem value="Video">视频</SelectItem>
+            <SelectItem value="Script">脚本</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={projectFilter} onValueChange={(value) => { setProjectFilter(value); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部项目" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部项目</SelectItem>
+            {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={shotFilter} onValueChange={(value) => { setShotFilter(value); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部镜头" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部镜头</SelectItem>
+            {shots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={sourceTypeFilter} onValueChange={(value) => { setSourceTypeFilter(value as 'all' | Asset['sourceType']); setCurrentPage(1) }}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部来源" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部来源</SelectItem>
+            <SelectItem value="image-task">图片任务</SelectItem>
+            <SelectItem value="video-task">视频任务</SelectItem>
+            <SelectItem value="script">脚本录入</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="card overflow-x-auto p-0">
@@ -195,35 +345,27 @@ export default function Assets() {
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map(asset => {
+            {paginatedItems.map((asset) => {
               const thumbnail = getAssetThumbnail(asset)
               const detailPath = getAssetDetailPath(asset)
 
               return (
-                <tr key={asset.id} className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors">
+                <tr key={asset.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
                   <td className="table-cell">
-                    <div
-                      className={`relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 ${detailPath ? 'cursor-pointer ring-1 ring-transparent hover:ring-accent-500' : ''}`}
-                      onClick={() => { if (detailPath) navigate(detailPath) }}
-                    >
-                      <img
-                        src={thumbnail}
-                        alt={asset.assetName}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                    <div className={`relative h-12 w-12 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 ${detailPath ? 'cursor-pointer ring-1 ring-transparent hover:ring-accent-500' : ''}`} onClick={() => { if (detailPath) navigate(detailPath) }}>
+                      <img src={thumbnail} alt={asset.assetName} className="h-full w-full object-cover" loading="lazy" />
                       {asset.type === 'Video' && (
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                           <Play size={12} className="text-white" />
                         </div>
                       )}
                       {asset.type === 'Script' && (
-                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
                           <FileText size={16} className="text-gray-500 dark:text-gray-400" />
                         </div>
                       )}
                       {detailPath && (
-                        <div className="absolute top-1 right-1 bg-black/50 rounded-full p-1">
+                        <div className="absolute right-1 top-1 rounded-full bg-black/50 p-1">
                           <ExternalLink size={10} className="text-white" />
                         </div>
                       )}
@@ -231,22 +373,21 @@ export default function Assets() {
                   </td>
                   <td className="table-cell font-medium text-gray-800 dark:text-gray-200">
                     {detailPath ? (
-                      <button className="hover:text-accent-500 transition-colors text-left" onClick={() => navigate(detailPath)}>
+                      <button className="text-left transition-colors hover:text-accent-500" onClick={() => navigate(detailPath)}>
                         {asset.assetName}
                       </button>
-                    ) : (
-                      asset.assetName
-                    )}
+                    ) : asset.assetName}
                   </td>
-                  <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{asset.type === 'Image' ? '图片' : asset.type === 'Video' ? '视频' : '脚本'}</Badge></td>
+                  <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[asset.type]}</Badge></td>
                   <td className="table-cell">{getProjectName(asset)}</td>
                   <td className="table-cell">{getShotName(asset.shotId)}</td>
-                  <td className="table-cell">{asset.modelName} {asset.modelVersion}</td>
+                  <td className="table-cell">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '-'}</td>
                   <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(asset.createdAt)}</td>
                   <td className="table-cell">
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)}><Edit2 size={14} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)}><Trash2 size={14} className="text-error" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => setViewingItem(asset)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)} title="编辑"><Edit2 size={14} /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)} title="删除"><Trash2 size={14} className="text-error" /></Button>
                     </div>
                   </td>
                 </tr>
@@ -262,31 +403,29 @@ export default function Assets() {
       <Modal title={editingItem ? '编辑资产' : '创建资产'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
           <div className="space-y-2"><Label>资产名称 *</Label><Input value={formData.assetName} onChange={(e) => setFormData({ ...formData, assetName: e.target.value })} placeholder="输入资产名称" /></div>
-          <div className="space-y-2"><Label>类型</Label><Select value={formData.type} onValueChange={(val) => handleTypeChange(val as any)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Image">图片</SelectItem><SelectItem value="Video">视频</SelectItem><SelectItem value="Script">脚本</SelectItem></SelectContent></Select></div>
+          <div className="space-y-2"><Label>类型</Label><Select value={formData.type} onValueChange={(value) => handleTypeChange(value as Asset['type'])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Image">图片</SelectItem><SelectItem value="Video">视频</SelectItem><SelectItem value="Script">脚本</SelectItem></SelectContent></Select></div>
           {formData.type === 'Image' && (
             <>
               <div className="space-y-2">
                 <Label>来源图片任务 *</Label>
-                <Select value={formData.sourceTaskId || 'none'} onValueChange={(val) => {
-                  const nextId = val === 'none' ? '' : val
+                <Select value={formData.sourceTaskId || 'none'} onValueChange={(value) => {
+                  const nextId = value === 'none' ? '' : value
                   if (!nextId) {
                     setFormData({ ...formData, sourceTaskId: '', sourceResultIndex: '0', projectId: '', shotId: '', promptId: '', modelName: '', modelVersion: '', fileUrl: '' })
                     return
                   }
-                  const nextTask = completedImageTasks.find((task) => task.id === nextId)
-                  const nextIndex = '0'
-                  if (nextTask) applyImageSource(nextId, nextIndex)
+                  applyImageSource(nextId, '0')
                 }}>
                   <SelectTrigger><SelectValue placeholder="选择图片任务" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">选择图片任务</SelectItem>
-                    {completedImageTasks.map(task => <SelectItem key={task.id} value={task.id}>{task.prompt.slice(0, 24)} · {task.outputImageUrls.length}张</SelectItem>)}
+                    {completedImageTasks.map((task) => <SelectItem key={task.id} value={task.id}>{task.prompt.slice(0, 24)} · {task.outputImageUrls.length}张</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>来源结果 *</Label>
-                <Select value={formData.sourceResultIndex} onValueChange={(val) => applyImageSource(formData.sourceTaskId, val)} disabled={!selectedImageTask}>
+                <Select value={formData.sourceResultIndex} onValueChange={(value) => applyImageSource(formData.sourceTaskId, value)} disabled={!selectedImageTask}>
                   <SelectTrigger><SelectValue placeholder="选择图片结果" /></SelectTrigger>
                   <SelectContent>
                     {selectedImageTask?.outputImageUrls.map((_, index) => (
@@ -302,8 +441,8 @@ export default function Assets() {
           {formData.type === 'Video' && (
             <div className="space-y-2">
               <Label>来源视频任务 *</Label>
-              <Select value={formData.sourceTaskId || 'none'} onValueChange={(val) => {
-                const nextId = val === 'none' ? '' : val
+              <Select value={formData.sourceTaskId || 'none'} onValueChange={(value) => {
+                const nextId = value === 'none' ? '' : value
                 if (!nextId) {
                   setFormData({ ...formData, sourceTaskId: '', projectId: '', shotId: '', promptId: '', modelName: '', modelVersion: '', fileUrl: '' })
                   return
@@ -313,23 +452,48 @@ export default function Assets() {
                 <SelectTrigger><SelectValue placeholder="选择视频任务" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">选择视频任务</SelectItem>
-                  {completedVideoTasks.map(task => <SelectItem key={task.id} value={task.id}>{task.prompt.slice(0, 24)} · {task.aspectRatio}</SelectItem>)}
+                  {completedVideoTasks.map((task) => <SelectItem key={task.id} value={task.id}>{task.prompt.slice(0, 24)} · {task.aspectRatio}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           )}
-          <div className="space-y-2"><Label>所属项目</Label><Select value={formData.projectId || 'none'} onValueChange={(val) => setFormData({ ...formData, projectId: val === 'none' ? '' : val, shotId: '' })} disabled={formData.type !== 'Script'}><SelectTrigger><SelectValue placeholder="选择项目" /></SelectTrigger><SelectContent><SelectItem value="none">不绑定项目</SelectItem>{projects.map(project => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}</SelectContent></Select></div>
-          <div className="space-y-2"><Label>所属镜头</Label><Select value={formData.shotId || 'none'} onValueChange={(val) => {
-            const nextShotId = val === 'none' ? '' : val
+          <div className="space-y-2"><Label>所属项目</Label><Select value={formData.projectId || 'none'} onValueChange={(value) => setFormData({ ...formData, projectId: value === 'none' ? '' : value, shotId: '' })} disabled={formData.type !== 'Script'}><SelectTrigger><SelectValue placeholder="选择项目" /></SelectTrigger><SelectContent><SelectItem value="none">不绑定项目</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-2"><Label>所属镜头</Label><Select value={formData.shotId || 'none'} onValueChange={(value) => {
+            const nextShotId = value === 'none' ? '' : value
             const nextShot = shots.find((shot) => shot.id === nextShotId)
             setFormData({ ...formData, projectId: nextShot?.projectId || formData.projectId, shotId: nextShotId })
-          }} disabled={formData.type !== 'Script'}><SelectTrigger><SelectValue placeholder="选择镜头" /></SelectTrigger><SelectContent><SelectItem value="none">不绑定镜头</SelectItem>{filteredShots.map(s => <SelectItem key={s.id} value={s.id}>{s.shotName}</SelectItem>)}</SelectContent></Select></div>
+          }} disabled={formData.type !== 'Script'}><SelectTrigger><SelectValue placeholder="选择镜头" /></SelectTrigger><SelectContent><SelectItem value="none">不绑定镜头</SelectItem>{filteredShots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}</SelectContent></Select></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Prompt ID</Label><Input value={formData.promptId} onChange={(e) => setFormData({ ...formData, promptId: e.target.value })} disabled={formData.type !== 'Script'} /></div>
+            <div className="space-y-2"><Label>父资产 IDs</Label><Input value={formData.parentAssetIds.join(', ')} onChange={(e) => setFormData({ ...formData, parentAssetIds: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })} placeholder="asset-1, asset-2" disabled={formData.type !== 'Script'} /></div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><Label>AI模型</Label><Input value={formData.modelName} onChange={(e) => setFormData({ ...formData, modelName: e.target.value })} disabled={formData.type !== 'Script'} /></div>
             <div className="space-y-2"><Label>模型版本</Label><Input value={formData.modelVersion} onChange={(e) => setFormData({ ...formData, modelVersion: e.target.value })} disabled={formData.type !== 'Script'} /></div>
           </div>
           <div className="space-y-2"><Label>文件路径/URL</Label><Input value={formData.fileUrl} onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })} placeholder="如：/assets/video.mp4" disabled={formData.type !== 'Script'} /></div>
         </div>
+      </Modal>
+
+      <Modal title="查看资产" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
+        {viewingItem && (
+          <ReadOnlySection>
+            <ReadOnlyField label="资产名称" value={viewingItem.assetName} />
+            <ReadOnlyField label="类型" value={<Badge variant={viewingItem.type === 'Image' ? 'info' : viewingItem.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[viewingItem.type]}</Badge>} />
+            <ReadOnlyField label="来源类型" value={sourceTypeLabelMap[viewingItem.sourceType]} />
+            <ReadOnlyField label="来源任务" value={getTaskSummary(viewingItem)} />
+            <ReadOnlyField label="结果索引" value={viewingItem.sourceResultIndex != null ? String(viewingItem.sourceResultIndex + 1) : '-'} />
+            <ReadOnlyField label="所属项目" value={getProjectName(viewingItem)} />
+            <ReadOnlyField label="所属镜头" value={getShotName(viewingItem.shotId)} />
+            <ReadOnlyField label="Prompt ID" value={viewingItem.promptId} />
+            <ReadOnlyField label="AI模型" value={viewingItem.modelName} />
+            <ReadOnlyField label="模型版本" value={viewingItem.modelVersion} />
+            <ReadOnlyField label="父资产 IDs" value={viewingItem.parentAssetIds.join(', ')} />
+            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
+            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
+            <ReadOnlyField label="文件路径/URL" value={viewingItem.fileUrl} span="full" />
+          </ReadOnlySection>
+        )}
       </Modal>
     </div>
   )
