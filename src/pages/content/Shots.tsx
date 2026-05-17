@@ -21,7 +21,7 @@ const includesText = (value: unknown, query: string) => {
 
 export default function Shots() {
   const navigate = useNavigate()
-  const { shots, projects, keyFrames, addShot, updateShot, deleteShot } = useAppStore()
+  const { shots, projects, brands, customers, keyFrames, addShot, updateShot, deleteShot } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Shot | null>(null)
   const [filters, setFilters] = useState({
@@ -38,15 +38,14 @@ export default function Shots() {
 
   const [formData, setFormData] = useState({
     shotName: '',
+    customerId: '',
+    brandId: '',
     projectId: '',
-    firstFrameId: '',
-    lastFrameId: '',
-    promptId: '',
-    modelName: '',
-    modelVersion: '',
   })
 
   const getProjectName = (projectId: string) => projects.find((project) => project.id === projectId)?.projectName || '-'
+  const getBrandByProjectId = (projectId: string) => brands.find((brand) => brand.id === projects.find((project) => project.id === projectId)?.brandId)
+  const getCustomerByBrandId = (brandId: string) => customers.find((customer) => customer.id === brands.find((brand) => brand.id === brandId)?.customerId)
   const getFrameName = (frameId: string | null) => !frameId ? '-' : keyFrames.find((keyFrame) => keyFrame.id === frameId)?.name || '-'
 
   const openingFrames = useMemo(() => keyFrames.filter((keyFrame) => keyFrame.type === 'Opening'), [keyFrames])
@@ -74,11 +73,18 @@ export default function Shots() {
 
   const handleOpenModal = (item?: Shot) => {
     if (item) {
+      const brand = getBrandByProjectId(item.projectId)
+      const customer = brand ? customers.find((entry) => entry.id === brand.customerId) || null : null
       setEditingItem(item)
-      setFormData({ shotName: item.shotName, projectId: item.projectId, firstFrameId: item.firstFrameId || '', lastFrameId: item.lastFrameId || '', promptId: item.promptId, modelName: item.modelName, modelVersion: item.modelVersion })
+      setFormData({
+        shotName: item.shotName,
+        customerId: customer?.id || '',
+        brandId: brand?.id || '',
+        projectId: item.projectId,
+      })
     } else {
       setEditingItem(null)
-      setFormData({ shotName: '', projectId: '', firstFrameId: '', lastFrameId: '', promptId: '', modelName: '', modelVersion: '' })
+      setFormData({ shotName: '', customerId: '', brandId: '', projectId: '' })
     }
     setIsModalOpen(true)
   }
@@ -88,11 +94,37 @@ export default function Shots() {
       showToast('error', '请输入镜头名称')
       return
     }
+    if (!formData.customerId) {
+      showToast('error', '请选择所属客户')
+      return
+    }
+    if (!formData.brandId) {
+      showToast('error', '请选择所属品牌')
+      return
+    }
+    if (!formData.projectId) {
+      showToast('error', '请选择所属项目')
+      return
+    }
+
+    const payload = {
+      shotName: formData.shotName,
+      projectId: formData.projectId,
+    }
+
     if (editingItem) {
-      updateShot(editingItem.id, formData)
+      updateShot(editingItem.id, payload)
       showToast('success', '更新成功')
     } else {
-      addShot(formData as Omit<Shot, 'id' | 'createdAt' | 'updatedAt'>)
+      addShot({
+        ...payload,
+        firstFrameId: null,
+        lastFrameId: null,
+        finalVideoTaskId: null,
+        promptId: '',
+        modelName: '',
+        modelVersion: '',
+      } as Omit<Shot, 'id' | 'createdAt' | 'updatedAt'>)
       showToast('success', '创建成功')
     }
     setIsModalOpen(false)
@@ -104,6 +136,16 @@ export default function Shots() {
       showToast('success', '删除成功')
     }
   }
+
+  const filteredBrands = useMemo(
+    () => brands.filter((brand) => brand.customerId === formData.customerId),
+    [brands, formData.customerId],
+  )
+
+  const filteredProjects = useMemo(
+    () => projects.filter((project) => project.brandId === formData.brandId),
+    [projects, formData.brandId],
+  )
 
   return (
     <div className="space-y-6">
@@ -213,15 +255,55 @@ export default function Shots() {
       <Modal title={editingItem ? '编辑镜头' : '创建镜头'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
           <div className="space-y-2"><Label>镜头名称 *</Label><Input value={formData.shotName} onChange={(e) => setFormData({ ...formData, shotName: e.target.value })} placeholder="输入镜头名称" /></div>
-          <div className="space-y-2"><Label>所属项目</Label><Select value={formData.projectId || 'none'} onValueChange={(value) => setFormData({ ...formData, projectId: value === 'none' ? '' : value })}><SelectTrigger><SelectValue placeholder="选择项目" /></SelectTrigger><SelectContent><SelectItem value="none">选择项目</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}</SelectContent></Select></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>首图</Label><Select value={formData.firstFrameId || 'none'} onValueChange={(value) => setFormData({ ...formData, firstFrameId: value === 'none' ? '' : value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">选择首图</SelectItem>{openingFrames.map((keyFrame) => <SelectItem key={keyFrame.id} value={keyFrame.id}>{keyFrame.name}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-2"><Label>尾图</Label><Select value={formData.lastFrameId || 'none'} onValueChange={(value) => setFormData({ ...formData, lastFrameId: value === 'none' ? '' : value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">选择尾图</SelectItem>{endingFrames.map((keyFrame) => <SelectItem key={keyFrame.id} value={keyFrame.id}>{keyFrame.name}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-2">
+            <Label>所属客户 *</Label>
+            <Select
+              value={formData.customerId || 'none'}
+              onValueChange={(value) => setFormData({
+                ...formData,
+                customerId: value === 'none' ? '' : value,
+                brandId: '',
+                projectId: '',
+              })}
+            >
+              <SelectTrigger><SelectValue placeholder="选择客户" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择客户</SelectItem>
+                {customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.customerName}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="space-y-2"><Label>Prompt ID</Label><Input value={formData.promptId} onChange={(e) => setFormData({ ...formData, promptId: e.target.value })} placeholder="输入 Prompt ID" /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>AI模型</Label><Input value={formData.modelName} onChange={(e) => setFormData({ ...formData, modelName: e.target.value })} placeholder="如：Midjourney" /></div>
-            <div className="space-y-2"><Label>模型版本</Label><Input value={formData.modelVersion} onChange={(e) => setFormData({ ...formData, modelVersion: e.target.value })} placeholder="如：v6.0" /></div>
+          <div className="space-y-2">
+            <Label>所属品牌 *</Label>
+            <Select
+              value={formData.brandId || 'none'}
+              onValueChange={(value) => setFormData({
+                ...formData,
+                brandId: value === 'none' ? '' : value,
+                projectId: '',
+              })}
+              disabled={!formData.customerId}
+            >
+              <SelectTrigger><SelectValue placeholder="选择品牌" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择品牌</SelectItem>
+                {filteredBrands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>所属项目 *</Label>
+            <Select
+              value={formData.projectId || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, projectId: value === 'none' ? '' : value })}
+              disabled={!formData.brandId}
+            >
+              <SelectTrigger><SelectValue placeholder="选择项目" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择项目</SelectItem>
+                {filteredProjects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Modal>

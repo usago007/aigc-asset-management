@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Play, Download, Eye, AlertCircle, RefreshCw, Zap } from 'lucide-react'
 import type { VideoGenerationTask } from '@/types/generation'
 import { formatDate } from '@/utils/date'
@@ -8,6 +9,7 @@ interface TaskCardProps {
   onDownload?: () => void
   onCancel?: () => void
   onRetry?: () => void
+  extraActions?: ReactNode
 }
 
 function getStatusBadge(status: VideoGenerationTask['status']) {
@@ -32,7 +34,7 @@ function getStatusBadge(status: VideoGenerationTask['status']) {
   )
 }
 
-export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onRetry }: TaskCardProps) {
+export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onRetry, extraActions }: TaskCardProps) {
   return (
     <div className="card space-y-4">
       {task.videoUrl && (
@@ -114,6 +116,8 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
             重试
           </button>
         )}
+
+        {extraActions}
       </div>
     </div>
   )

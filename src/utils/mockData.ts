@@ -415,6 +415,7 @@ function buildDemoDataset(): DemoDataset {
         projectId,
         firstFrameId: openingFrameId,
         lastFrameId: endingFrameId,
+        finalVideoTaskId: null,
         promptId,
         modelName,
         modelVersion,
@@ -531,6 +532,8 @@ function buildDemoDataset(): DemoDataset {
         completedAt: isoOffset(projectIndex * 3 + shotIndex, 320),
         tokensUsed: 1800 + projectIndex * 120 + shotIndex * 90,
       })
+
+      shots[shots.length - 1].finalVideoTaskId = videoTaskId
 
       const versionSpecs = [
         { frameId: openingFrameId, total: 2 },

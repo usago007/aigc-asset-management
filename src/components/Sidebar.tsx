@@ -25,7 +25,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     {
       path: '/content',
       icon: <Image size={20} />,
-      label: '内容创作',
+      label: '内容中心',
       children: [
         { path: '/content/image-generation', label: '图片创作' },
         { path: '/content/video-generation', label: '视频创作' },
@@ -36,7 +36,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     {
       path: '/projects',
       icon: <FolderOpen size={20} />,
-      label: '项目管理',
+      label: '项目中心',
       children: [
         { path: '/projects/projects', label: '项目列表' },
         { path: '/projects/customers', label: '客户管理' },
@@ -60,7 +60,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     {
       path: '/system',
       icon: <Settings size={20} />,
-      label: '系统配置',
+      label: '系统管理',
       children: [
         { path: '/system/members', label: '成员管理' },
         { path: '/system/roles', label: '角色权限' },
@@ -135,8 +135,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <Users size={16} />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-300">管理员</p>
-              <p className="text-xs text-gray-500">项目经理</p>
+              <p className="text-sm font-medium text-gray-300">admin</p>
+              <p className="text-xs text-gray-500">管理员账号</p>
             </div>
           </div>
         )}

@@ -581,7 +581,7 @@ export default function ProjectDetail() {
                         <Badge variant="outline">镜头 {slot.position}</Badge>
                         <span className="text-sm text-gray-500 dark:text-gray-400">未关联镜头</span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">这个排序位已经预留，可以从内容创作中心挑一个现有镜头关联进来。</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">这个排序位已经预留，可以从内容中心挑一个现有镜头关联进来。</p>
                     </div>
                     <Button variant="secondary" className="gap-2" onClick={() => openLinkModal(slot.id)}>
                       <Link2 size={14} />
@@ -844,7 +844,7 @@ export default function ProjectDetail() {
             })}
             {candidateShots.length === 0 && (
               <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                暂无匹配镜头，可先去内容创作中心创建镜头后再回来关联。
+                暂无匹配镜头，可先去内容中心创建镜头后再回来关联。
               </div>
             )}
           </div>

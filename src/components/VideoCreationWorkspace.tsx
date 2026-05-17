@@ -39,7 +39,7 @@ export default function VideoCreationWorkspace({
 }: VideoCreationWorkspaceProps) {
   const navigate = useNavigate()
   const { tasks, submitTask, retryTask, cancelTask } = useGenerationStore()
-  const { projects, shots } = useAppStore()
+  const { projects, shots, updateShot } = useAppStore()
 
   const [mode, setMode] = useState<GenerationMode>('image-to-video-first-tail')
   const [prompt, setPrompt] = useState('')
@@ -86,6 +86,10 @@ export default function VideoCreationWorkspace({
     [scopedTasks]
   )
   const filteredShots = useMemo(() => shots.filter((shot) => shot.projectId === projectId), [shots, projectId])
+  const currentContextShot = useMemo(
+    () => (defaultShotId ? shots.find((shot) => shot.id === defaultShotId) || null : null),
+    [defaultShotId, shots],
+  )
 
   useEffect(() => {
     if (shotId && !filteredShots.some((shot) => shot.id === shotId)) {
@@ -156,6 +160,11 @@ export default function VideoCreationWorkspace({
     setLastAspectRatio(null)
     setAspectRatioMismatch(false)
   }, [mode, prompt, firstFrame, lastFrame, useCustomSeed, seed, frames, aspectRatio, projectId, shotId, shots, submitTask])
+
+  const handleSelectFinalVideo = useCallback((taskId: string) => {
+    if (!defaultShotId) return
+    updateShot(defaultShotId, { finalVideoTaskId: taskId })
+  }, [defaultShotId, updateShot])
 
   const paramSections = [
     {
@@ -424,6 +433,20 @@ export default function VideoCreationWorkspace({
                 onViewDetail={() => navigate(`/content/video-detail/${task.id}`)}
                 onRetry={() => retryTask(task.id)}
                 onCancel={() => cancelTask(task.id)}
+                extraActions={
+                  contextMode === 'shot-detail' && defaultShotId ? (
+                    currentContextShot?.finalVideoTaskId === task.id ? (
+                      <span className="badge badge-success text-xs">当前最终视频</span>
+                    ) : (
+                      <button
+                        onClick={() => handleSelectFinalVideo(task.id)}
+                        className="btn-primary text-xs px-3 py-1.5"
+                      >
+                        设为最终视频
+                      </button>
+                    )
+                  ) : undefined
+                }
               />
             ))}
           </div>

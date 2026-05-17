@@ -40,6 +40,7 @@ export interface Shot extends BaseEntity {
   projectId: UUID;
   firstFrameId: UUID | null;
   lastFrameId: UUID | null;
+  finalVideoTaskId: UUID | null;
   promptId: string;
   modelName: string;
   modelVersion: string;

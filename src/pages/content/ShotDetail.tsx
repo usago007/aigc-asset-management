@@ -26,6 +26,7 @@ type FrameLookup = {
 type VideoLookup = {
   task: VideoGenerationTask | null
   previewUrl: string | null
+  isSelected: boolean
 }
 
 const summarizeText = (value: string, max = 96) => {
@@ -124,9 +125,12 @@ const ShotVideoCard = ({
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
           <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
         </div>
-        <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
-          {lookup.task.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {lookup.isSelected && <Badge variant="success">最终视频</Badge>}
+          <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
+            {lookup.task.status}
+          </Badge>
+        </div>
       </div>
       <video src={lookup.previewUrl} controls preload="metadata" className="mt-4 h-56 w-full rounded-lg bg-black object-cover" />
       <div className="mt-4 space-y-2 text-sm">
@@ -174,6 +178,7 @@ export default function ShotDetail() {
     shots,
     projects,
     brands,
+    customers,
     keyFrames,
     assets,
     imageTasks,
@@ -186,24 +191,29 @@ export default function ShotDetail() {
   const [activeCreationTab, setActiveCreationTab] = useState<'image' | 'video'>('image')
   const [shotForm, setShotForm] = useState({
     shotName: '',
-    firstFrameId: '',
-    lastFrameId: '',
-    promptId: '',
-    modelName: '',
-    modelVersion: '',
+    customerId: '',
+    brandId: '',
+    projectId: '',
   })
 
   const shot = shots.find((item) => item.id === id) || null
   const project = shot ? projects.find((item) => item.id === shot.projectId) || null : null
   const brand = project ? brands.find((item) => item.id === project.brandId) || null : null
+  const customer = brand ? customers.find((item) => item.id === brand.customerId) || null : null
   const shotFrames = useMemo(() => keyFrames.filter((frame) => frame.parentShotId === shot?.id), [keyFrames, shot?.id])
   const shotAssets = useMemo(() => assets.filter((asset) => asset.shotId === shot?.id), [assets, shot?.id])
   const shotImageTasks = useMemo(() => imageTasks.filter((task) => task.shotId === shot?.id), [imageTasks, shot?.id])
   const shotVideoTasks = useMemo(() => videoTasks.filter((task) => task.shotId === shot?.id), [videoTasks, shot?.id])
 
-  const openingFrameOptions = useMemo(() => shotFrames.filter((frame) => frame.type === 'Opening'), [shotFrames])
-  const endingFrameOptions = useMemo(() => shotFrames.filter((frame) => frame.type === 'Ending'), [shotFrames])
   const keyFrameById = useMemo(() => new Map(keyFrames.map((frame) => [frame.id, frame])), [keyFrames])
+  const filteredBrands = useMemo(
+    () => brands.filter((item) => item.customerId === shotForm.customerId),
+    [brands, shotForm.customerId],
+  )
+  const filteredProjects = useMemo(
+    () => projects.filter((item) => item.brandId === shotForm.brandId),
+    [projects, shotForm.brandId],
+  )
 
   const latestVideoTask = useMemo(() => {
     return [...shotVideoTasks].sort((a, b) => {
@@ -214,6 +224,10 @@ export default function ShotDetail() {
       return bTime - aTime
     })[0] || null
   }, [shotVideoTasks])
+  const selectedVideoTask = useMemo(() => {
+    if (!shot?.finalVideoTaskId) return null
+    return shotVideoTasks.find((task) => task.id === shot.finalVideoTaskId) || null
+  }, [shot?.finalVideoTaskId, shotVideoTasks])
 
   const latestImageTask = useMemo(() => {
     return [...shotImageTasks].sort((a, b) => {
@@ -233,10 +247,14 @@ export default function ShotDetail() {
     return { frame, previewUrl, sourceTask }
   }
 
-  const getVideoLookup = (): VideoLookup => ({
-    task: latestVideoTask,
-    previewUrl: latestVideoTask?.videoUrl || null,
-  })
+  const getVideoLookup = (): VideoLookup => {
+    const displayTask = selectedVideoTask || latestVideoTask
+    return {
+      task: displayTask,
+      previewUrl: displayTask?.videoUrl || null,
+      isSelected: Boolean(selectedVideoTask && displayTask?.id === selectedVideoTask.id),
+    }
+  }
 
   const processRecords = useMemo<ProcessRecord[]>(() => {
     if (!shot) return []
@@ -287,14 +305,15 @@ export default function ShotDetail() {
   }, [shot, shotFrames, shotImageTasks, shotVideoTasks])
 
   const openShotModal = (currentShot: Shot) => {
+    const currentProject = projects.find((item) => item.id === currentShot.projectId) || null
+    const currentBrand = currentProject ? brands.find((item) => item.id === currentProject.brandId) || null : null
+    const currentCustomer = currentBrand ? customers.find((item) => item.id === currentBrand.customerId) || null : null
     setEditingShot(currentShot)
     setShotForm({
       shotName: currentShot.shotName,
-      firstFrameId: currentShot.firstFrameId || '',
-      lastFrameId: currentShot.lastFrameId || '',
-      promptId: currentShot.promptId || '',
-      modelName: currentShot.modelName || '',
-      modelVersion: currentShot.modelVersion || '',
+      customerId: currentCustomer?.id || '',
+      brandId: currentBrand?.id || '',
+      projectId: currentProject?.id || '',
     })
     setShotModalOpen(true)
   }
@@ -304,14 +323,22 @@ export default function ShotDetail() {
       showToast('error', '请输入镜头名称')
       return
     }
+    if (!shotForm.customerId) {
+      showToast('error', '请选择所属客户')
+      return
+    }
+    if (!shotForm.brandId) {
+      showToast('error', '请选择所属品牌')
+      return
+    }
+    if (!shotForm.projectId) {
+      showToast('error', '请选择所属项目')
+      return
+    }
 
     updateShot(editingShot.id, {
       shotName: shotForm.shotName.trim(),
-      firstFrameId: shotForm.firstFrameId || null,
-      lastFrameId: shotForm.lastFrameId || null,
-      promptId: shotForm.promptId.trim(),
-      modelName: shotForm.modelName.trim(),
-      modelVersion: shotForm.modelVersion.trim(),
+      projectId: shotForm.projectId,
     })
     setShotModalOpen(false)
   }
@@ -337,7 +364,15 @@ export default function ShotDetail() {
   const hasFrames = Boolean(shot.firstFrameId || shot.lastFrameId)
   const statusCards = [
     { label: '首尾帧绑定', value: hasFrames ? `${[shot.firstFrameId && '首图', shot.lastFrameId && '尾图'].filter(Boolean).join(' / ')}` : '未绑定', hint: `共 ${shotFrames.length} 条关键帧记录` },
-    { label: '视频结果', value: latestVideoTask ? latestVideoTask.status : '暂无', hint: latestVideoTask ? formatDate(latestVideoTask.completedAt || latestVideoTask.updatedAt || latestVideoTask.createdAt) : '尚未生成视频' },
+    {
+      label: '视频结果',
+      value: selectedVideoTask ? '已选定' : latestVideoTask ? latestVideoTask.status : '暂无',
+      hint: selectedVideoTask
+        ? `最终视频：${formatDate(selectedVideoTask.completedAt || selectedVideoTask.updatedAt || selectedVideoTask.createdAt)}`
+        : latestVideoTask
+          ? `候选结果：${formatDate(latestVideoTask.completedAt || latestVideoTask.updatedAt || latestVideoTask.createdAt)}`
+          : '尚未生成视频',
+    },
     { label: '图片结果', value: latestImageTask ? `${latestImageTask.outputImageUrls.length} 张` : '暂无', hint: latestImageTask ? formatDate(latestImageTask.completedAt || latestImageTask.updatedAt || latestImageTask.createdAt) : '尚未生成图片' },
     { label: '关联资产', value: `${shotAssets.length}`, hint: shotAssets.length > 0 ? `${shotAssets.filter((asset) => asset.type === 'Video').length} 个视频 / ${shotAssets.filter((asset) => asset.type === 'Image').length} 张图片` : '还未沉淀为资产' },
   ]
@@ -381,6 +416,10 @@ export default function ShotDetail() {
             <div>
               <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">所属品牌</div>
               <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{brand?.brandName || '-'}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">所属客户</div>
+              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{customer?.customerName || '-'}</div>
             </div>
             <div>
               <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头提示词标识</div>
@@ -551,48 +590,66 @@ export default function ShotDetail() {
             <Input value={shotForm.shotName} onChange={(event) => setShotForm({ ...shotForm, shotName: event.target.value })} placeholder="输入镜头名称" />
           </div>
           <div className="space-y-2">
-            <Label>镜头提示词标识</Label>
-            <Input value={shotForm.promptId} onChange={(event) => setShotForm({ ...shotForm, promptId: event.target.value })} placeholder="输入 promptId 或内部标识" />
+            <Label>所属客户 *</Label>
+            <Select
+              value={shotForm.customerId || 'none'}
+              onValueChange={(value) => setShotForm({
+                ...shotForm,
+                customerId: value === 'none' ? '' : value,
+                brandId: '',
+                projectId: '',
+              })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择客户" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择客户</SelectItem>
+                {customers.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>{item.customerName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>首图</Label>
-              <Select value={shotForm.firstFrameId || 'none'} onValueChange={(value) => setShotForm({ ...shotForm, firstFrameId: value === 'none' ? '' : value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择首图" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">未绑定首图</SelectItem>
-                  {openingFrameOptions.map((frame) => (
-                    <SelectItem key={frame.id} value={frame.id}>{frame.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>尾图</Label>
-              <Select value={shotForm.lastFrameId || 'none'} onValueChange={(value) => setShotForm({ ...shotForm, lastFrameId: value === 'none' ? '' : value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择尾图" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">未绑定尾图</SelectItem>
-                  {endingFrameOptions.map((frame) => (
-                    <SelectItem key={frame.id} value={frame.id}>{frame.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>所属品牌 *</Label>
+            <Select
+              value={shotForm.brandId || 'none'}
+              onValueChange={(value) => setShotForm({
+                ...shotForm,
+                brandId: value === 'none' ? '' : value,
+                projectId: '',
+              })}
+              disabled={!shotForm.customerId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择品牌" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择品牌</SelectItem>
+                {filteredBrands.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>{item.brandName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>基础模型</Label>
-              <Input value={shotForm.modelName} onChange={(event) => setShotForm({ ...shotForm, modelName: event.target.value })} placeholder="如：Midjourney" />
-            </div>
-            <div className="space-y-2">
-              <Label>模型版本</Label>
-              <Input value={shotForm.modelVersion} onChange={(event) => setShotForm({ ...shotForm, modelVersion: event.target.value })} placeholder="如：v6.0" />
-            </div>
+          <div className="space-y-2">
+            <Label>所属项目 *</Label>
+            <Select
+              value={shotForm.projectId || 'none'}
+              onValueChange={(value) => setShotForm({ ...shotForm, projectId: value === 'none' ? '' : value })}
+              disabled={!shotForm.brandId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择项目" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">选择项目</SelectItem>
+                {filteredProjects.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>{item.projectName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Modal>

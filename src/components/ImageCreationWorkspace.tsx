@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Loader2, AlertCircle, Eye, ExternalLink, X } from 'lucide-react'
+import { Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Loader2, AlertCircle, Eye, ExternalLink, X, CheckCircle2 } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useAIConfigStore } from '@/store/aiConfigStore'
 import { getImageReqKeyForMode } from '@/services/imageGeneration'
@@ -60,7 +60,7 @@ export default function ImageCreationWorkspace({
   filterTasksByShot = false,
 }: ImageCreationWorkspaceProps) {
   const navigate = useNavigate()
-  const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, cancelImageTask } = useAppStore()
+  const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, cancelImageTask, updateShot } = useAppStore()
   const { updateImageEndpoint } = useAIConfigStore()
 
   const [prompt, setPrompt] = useState('')
@@ -101,6 +101,10 @@ export default function ImageCreationWorkspace({
   )
   const maxImages = forceSingle ? 1 : MAX_IMAGES[mode]
   const filteredShots = useMemo(() => shots.filter((shot) => shot.projectId === projectId), [shots, projectId])
+  const currentContextShot = useMemo(
+    () => (defaultShotId ? shots.find((shot) => shot.id === defaultShotId) || null : null),
+    [defaultShotId, shots],
+  )
 
   const handleImageUpload = useCallback(async (files: FileList | null) => {
     if (!files) return
@@ -174,6 +178,13 @@ export default function ImageCreationWorkspace({
     anchor.click()
     document.body.removeChild(anchor)
   }
+
+  const handleSelectFrame = useCallback((task: ImageGenerationTask, resultIndex: number, frameType: 'Opening' | 'Ending') => {
+    if (!defaultShotId) return
+    const keyFrameId = task.keyFrameIds[resultIndex]
+    if (!keyFrameId) return
+    updateShot(defaultShotId, frameType === 'Opening' ? { firstFrameId: keyFrameId } : { lastFrameId: keyFrameId })
+  }, [defaultShotId, updateShot])
 
   const paramSections = [
     {
@@ -384,6 +395,22 @@ export default function ImageCreationWorkspace({
       className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-100 shadow-sm transition-all hover:ring-2 hover:ring-accent-500 hover:shadow-lg dark:bg-gray-800"
       onClick={() => navigate(`/content/image-detail/${task.id}/${resultIndex}`)}
     >
+      {currentContextShot?.firstFrameId === task.keyFrameIds[resultIndex] && (
+        <div className="absolute left-2 bottom-2 z-10">
+          <span className="badge badge-info border-0 bg-accent-500/90 text-[10px] text-white">
+            <CheckCircle2 size={10} />
+            当前首图
+          </span>
+        </div>
+      )}
+      {currentContextShot?.lastFrameId === task.keyFrameIds[resultIndex] && (
+        <div className="absolute right-2 bottom-2 z-10">
+          <span className="badge badge-success border-0 bg-emerald-500/90 text-[10px] text-white">
+            <CheckCircle2 size={10} />
+            当前尾图
+          </span>
+        </div>
+      )}
       <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/60 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
         <p className="mb-1 line-clamp-1 text-xs text-white/90">{task.prompt}</p>
@@ -409,6 +436,28 @@ export default function ImageCreationWorkspace({
             下载
           </button>
         </div>
+        {contextMode === 'shot-detail' && defaultShotId && task.keyFrameIds[resultIndex] && (
+          <div className="mt-1 flex items-center gap-1">
+            <button
+              className="flex flex-1 items-center justify-center gap-1 rounded border border-cyan-400/30 bg-cyan-500/30 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-cyan-500/50"
+              onClick={(event) => {
+                event.stopPropagation()
+                handleSelectFrame(task, resultIndex, 'Opening')
+              }}
+            >
+              设为首图
+            </button>
+            <button
+              className="flex flex-1 items-center justify-center gap-1 rounded border border-emerald-400/30 bg-emerald-500/30 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-emerald-500/50"
+              onClick={(event) => {
+                event.stopPropagation()
+                handleSelectFrame(task, resultIndex, 'Ending')
+              }}
+            >
+              设为尾图
+            </button>
+          </div>
+        )}
       </div>
       <div className="absolute left-2 top-2">
         <span className="badge badge-info border-0 bg-black/50 text-[10px] text-white">

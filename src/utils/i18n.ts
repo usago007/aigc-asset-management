@@ -1,15 +1,15 @@
 const translations: Record<string, Record<string, string>> = {
   zh: {
     dashboard: '仪表盘',
-    content_creation: '内容创作',
+    content_creation: '内容中心',
     keyframes: '首图/尾图',
     shots: '镜头管理',
     assets: '资产管理',
     generation_history: '生成记录',
-    project_management: '项目管理',
+    project_management: '项目中心',
     customers: '客户管理',
     brands: '品牌管理',
-    projects: '项目管理',
+    projects: '项目中心',
     briefs: '提案管理',
     tasks: '任务管理',
     reviews: '审核管理',
