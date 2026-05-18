@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { Image, Video, Layers, PieChart, Zap, ZapOff } from 'lucide-react'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
 function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
       <span className={`text-3xl font-bold ${color}`}>{value}</span>
-      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</span>
+      <span className="helper-text mt-1">{label}</span>
     </div>
   )
 }
@@ -16,14 +17,14 @@ function ProgressBar({ value, max, label, colorClass }: { value: number; max: nu
   const pct = max > 0 ? Math.round((value / max) * 100) : 0
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-700 dark:text-gray-300 w-16 shrink-0">{label}</span>
+      <span className="panel-value w-16 shrink-0">{label}</span>
       <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-sm text-gray-500 dark:text-gray-400 w-10 text-right">{value}</span>
+      <span className="helper-text w-10 text-right">{value}</span>
     </div>
   )
 }
@@ -34,13 +35,13 @@ function StatusRow({ label, value, total, colorClass }: { label: string; value: 
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${colorClass}`} />
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="panel-value">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div className={`h-full ${colorClass} rounded-full`} style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-sm text-gray-500 dark:text-gray-400 w-16 text-right">{value} ({pct}%)</span>
+        <span className="helper-text w-16 text-right">{value} ({pct}%)</span>
       </div>
     </div>
   )
@@ -131,16 +132,10 @@ export default function Generation() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">生成</h1>
-          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
-        </div>
-        <p className="text-gray-500 mt-1">图片与视频生成任务统计</p>
-      </div>
+    <PageShell>
+      <PageIntro eyebrow="仪表盘" title="生成概览" description={`图片与视频生成任务统计，最后更新 ${lastUpdated}`} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <MiniStatCard label="图片任务" value={imageTasks.length} color="text-blue-500" />
         <MiniStatCard label="视频任务" value={videoTasks.length} color="text-purple-500" />
         <MiniStatCard label="成功率" value={successRate} color="text-green-500" />
@@ -150,20 +145,20 @@ export default function Generation() {
             <Zap size={16} className="text-yellow-500" />
             <span className="text-3xl font-bold text-yellow-500">{formatTokens(totalTokensUsed)}</span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">总 Token 消耗</span>
+          <span className="helper-text mt-1">总 Token 消耗</span>
         </div>
         <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-1 mb-1">
             <ZapOff size={16} className="text-cyan-500" />
             <span className="text-3xl font-bold text-cyan-500">{formatTokens(avgTokens)}</span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">平均 Token 消耗</span>
+          <span className="helper-text mt-1">平均 Token 消耗</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <Image size={18} className="text-blue-600 dark:text-blue-400" />
             图片生成任务状态
           </h2>
@@ -182,10 +177,10 @@ export default function Generation() {
               )
             })}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <Video size={18} className="text-purple-600 dark:text-purple-400" />
             视频生成任务状态
           </h2>
@@ -204,13 +199,13 @@ export default function Generation() {
               )
             })}
           </div>
-        </div>
+        </PageSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Layers size={18} className="text-accent-500" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
+            <Layers size={18} className="text-gray-700 dark:text-gray-300" />
             模型使用排行
           </h2>
           <div className="space-y-3">
@@ -224,10 +219,10 @@ export default function Generation() {
               />
             ))}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <PieChart size={18} className="text-green-600 dark:text-green-400" />
             生成成功率概览
           </h2>
@@ -244,26 +239,26 @@ export default function Generation() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{successRate}%</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">成功率</span>
+                <span className="helper-text">成功率</span>
               </div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="text-lg font-semibold text-green-500">{totalGenerated}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">已完成</p>
+              <p className="metric-value text-green-500">{totalGenerated}</p>
+              <p className="helper-text">已完成</p>
             </div>
             <div>
-              <p className="text-lg font-semibold text-red-500">{totalFailed}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">失败</p>
+              <p className="metric-value text-red-500">{totalFailed}</p>
+              <p className="helper-text">失败</p>
             </div>
             <div>
-              <p className="text-lg font-semibold text-yellow-500">{totalPending}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">待处理</p>
+              <p className="metric-value text-yellow-500">{totalPending}</p>
+              <p className="helper-text">待处理</p>
             </div>
           </div>
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </PageShell>
   )
 }

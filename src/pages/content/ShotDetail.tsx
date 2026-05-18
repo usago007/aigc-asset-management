@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit2, Film, FolderKanban, ImageIcon, Sparkles, Video, Clapperboard } from 'lucide-react'
+import { ArrowLeft, Edit2, FolderKanban, ImageIcon, Sparkles, Video, Clapperboard } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { PageSection, PageShell } from '@/components/PageShell'
 import type { KeyFrame, Shot } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask } from '@/types/generation'
 
@@ -34,6 +34,35 @@ const summarizeText = (value: string, max = 96) => {
   return value.length > max ? `${value.slice(0, max)}...` : value
 }
 
+const ResultShell = ({
+  title,
+  subtitle,
+  badge,
+  media,
+  children,
+  footer,
+}: {
+  title: string
+  subtitle: string
+  badge?: ReactNode
+  media: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+}) => (
+  <div className="card space-y-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="space-y-1">
+        <p className="field-label">{title}</p>
+        <h3 className="card-title">{subtitle}</h3>
+      </div>
+      {badge}
+    </div>
+    {media}
+    <div className="body-muted space-y-2">{children}</div>
+    {footer ? <div className="border-t border-gray-200 pt-3 dark:border-gray-800">{footer}</div> : null}
+  </div>
+)
+
 const FrameTraceCard = ({
   label,
   lookup,
@@ -45,60 +74,52 @@ const FrameTraceCard = ({
 }) => {
   if (!lookup.frame) {
     return (
-      <div className="surface-muted p-4">
-        <div className="body-text font-medium">{label}</div>
-        <p className="body-muted mt-3">未绑定{label}记录</p>
-      </div>
+      <ResultShell
+        title={label}
+        subtitle={`未绑定${label}`}
+        media={<div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">暂无结果</div>}
+      >
+        <div>当前镜头还没有绑定{label}记录。</div>
+      </ResultShell>
     )
   }
 
   const resultIndex = lookup.sourceTask ? lookup.sourceTask.keyFrameIds.indexOf(lookup.frame.id) : -1
 
   return (
-    <div className="surface-muted p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="body-text font-medium">{label}</div>
-          <p className="body-text mt-1 font-semibold text-gray-900 dark:text-gray-100">{lookup.frame.name}</p>
-        </div>
-        <Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>
-      </div>
-      {lookup.previewUrl ? (
+    <ResultShell
+      title={label}
+      subtitle={lookup.frame.name}
+      badge={<Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>}
+      media={lookup.previewUrl ? (
         <button
           type="button"
-          className="mt-4 block w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800"
+          className="block w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800"
           onClick={() => {
             if (lookup.sourceTask && resultIndex >= 0) {
               onOpenDetail(lookup.sourceTask.id, resultIndex)
             }
           }}
         >
-          <img src={lookup.previewUrl} alt={lookup.frame.name} className="h-40 w-full object-cover" />
+          <img src={lookup.previewUrl} alt={lookup.frame.name} className="h-48 w-full object-cover" />
         </button>
       ) : (
-        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+        <div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">
           暂无可追溯图片
         </div>
       )}
-      <div className="mt-4 space-y-2 body-text">
-        <div className="body-muted">
-          <span className="body-text font-medium">提示词：</span>
-          {summarizeText(lookup.frame.promptText, 120)}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">模型：</span>
-          {lookup.frame.modelName} {lookup.frame.modelVersion}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">生成时间：</span>
-          {formatDate(lookup.frame.createdAt)}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">来源任务：</span>
-          {lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}
-        </div>
-      </div>
-    </div>
+      footer={lookup.sourceTask && resultIndex >= 0 ? (
+        <Button variant="secondary" size="sm" className="gap-2" onClick={() => onOpenDetail(lookup.sourceTask!.id, resultIndex)}>
+          <ImageIcon size={14} />
+          查看图片详情
+        </Button>
+      ) : undefined}
+    >
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">提示词：</span>{summarizeText(lookup.frame.promptText, 120)}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">模型：</span>{lookup.frame.modelName} {lookup.frame.modelVersion}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">生成时间：</span>{formatDate(lookup.frame.createdAt)}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">来源任务：</span>{lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}</div>
+    </ResultShell>
   )
 }
 
@@ -111,53 +132,41 @@ const ShotVideoCard = ({
 }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
-      <div className="surface-muted p-4">
-        <div className="body-text font-medium">视频预览</div>
-        <p className="body-muted mt-3">当前镜头还没有可播放的视频预览。</p>
-      </div>
+      <ResultShell
+        title="最终视频"
+        subtitle="暂无视频结果"
+        media={<div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">当前镜头还没有可播放的视频预览。</div>}
+      >
+        <div>先在下方工作区生成视频，再回到这里确认最终版本。</div>
+      </ResultShell>
     )
   }
 
   return (
-    <div className="surface-muted p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="body-text font-medium">视频预览</div>
-          <p className="body-text mt-1 font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
-        </div>
+    <ResultShell
+      title="最终视频"
+      subtitle={lookup.task.mode}
+      badge={(
         <div className="flex items-center gap-2">
           {lookup.isSelected && <Badge variant="success">最终视频</Badge>}
           <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
             {lookup.task.status}
           </Badge>
         </div>
-      </div>
-      <video src={lookup.previewUrl} controls preload="metadata" className="mt-4 h-56 w-full rounded-lg bg-black object-cover" />
-      <div className="mt-4 space-y-2 body-text">
-        <div className="body-muted">
-          <span className="body-text font-medium">提示词：</span>
-          {summarizeText(lookup.task.prompt, 120)}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">任务模型：</span>
-          {lookup.task.reqKey}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">生成时间：</span>
-          {formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}
-        </div>
-        <div className="body-muted">
-          <span className="body-text font-medium">Tokens：</span>
-          {lookup.task.tokensUsed ?? '-'}
-        </div>
-      </div>
-      <div className="mt-4">
+      )}
+      media={<video src={lookup.previewUrl} controls preload="metadata" className="h-56 w-full rounded-2xl bg-black object-cover" />}
+      footer={(
         <Button variant="secondary" size="sm" className="gap-2" onClick={() => onOpenDetail(lookup.task!.id)}>
           <Video size={14} />
           查看视频详情
         </Button>
-      </div>
-    </div>
+      )}
+    >
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">提示词：</span>{summarizeText(lookup.task.prompt, 120)}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">任务模型：</span>{lookup.task.reqKey}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">生成时间：</span>{formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}</div>
+      <div><span className="font-medium text-gray-900 dark:text-gray-100">Tokens：</span>{lookup.task.tokensUsed ?? '-'}</div>
+    </ResultShell>
   )
 }
 
@@ -352,7 +361,7 @@ export default function ShotDetail() {
         </Button>
         <div className="card p-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">镜头不存在</h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">当前链接没有找到可用的镜头记录。</p>
+          <p className="body-muted mt-2">当前链接没有找到可用的镜头记录。</p>
         </div>
       </div>
     )
@@ -378,16 +387,16 @@ export default function ShotDetail() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <PageShell>
+      <div className="page-intro">
         <div className="space-y-2">
           <Button variant="secondary" className="gap-2" onClick={() => navigate('/content/shots')}>
             <ArrowLeft size={16} />
             返回镜头列表
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shot.shotName}</h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">镜头详情工作台，集中管理首尾帧、创作任务、结果追溯与资产沉淀。</p>
+            <h1 className="page-title-compact">{shot.shotName}</h1>
+            <p className="page-subtitle mt-1">镜头详情工作台，集中管理首尾帧、创作任务、结果追溯与资产沉淀。</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -402,52 +411,51 @@ export default function ShotDetail() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
-        <div className="card space-y-4 lg:col-span-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            <Clapperboard size={16} />
-            镜头概览
-          </div>
+      <PageSection className="space-y-6">
+        <div className="panel-title flex items-center gap-2">
+          <Clapperboard size={16} />
+          镜头概览
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">所属项目</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{project.projectName}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">所属项目</div>
+              <div className="panel-value mt-2 font-medium">{project.projectName}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">所属品牌</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{brand?.brandName || '-'}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">所属品牌</div>
+              <div className="panel-value mt-2 font-medium">{brand?.brandName || '-'}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">所属客户</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{customer?.customerName || '-'}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">所属客户</div>
+              <div className="panel-value mt-2 font-medium">{customer?.customerName || '-'}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头提示词标识</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">镜头提示词标识</div>
+              <div className="panel-value mt-2 font-medium">{shot.promptId || '未填写'}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">基础模型</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">基础模型</div>
+              <div className="panel-value mt-2 font-medium">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">创建时间</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(shot.createdAt)}</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="field-label">创建 / 更新时间</div>
+              <div className="panel-value mt-2 font-medium">{formatDate(shot.createdAt)}</div>
+              <div className="helper-text mt-1">{formatDate(shot.updatedAt)}</div>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">更新时间</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(shot.updatedAt)}</div>
-            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {statusCards.map((card) => (
+              <div key={card.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900">
+                <div className="field-label">{card.label}</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-gray-950 dark:text-gray-50">{card.value}</div>
+                <p className="body-muted mt-2">{card.hint}</p>
+              </div>
+            ))}
           </div>
         </div>
-
-        {statusCards.map((card) => (
-          <div key={card.label} className="card space-y-3">
-            <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{card.label}</div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{card.value}</div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{card.hint}</p>
-          </div>
-        ))}
-      </div>
+      </PageSection>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <ShotVideoCard lookup={videoLookup} onOpenDetail={(taskId) => navigate(`/content/video-detail/${taskId}`)} />
@@ -455,23 +463,23 @@ export default function ShotDetail() {
         <FrameTraceCard label="尾图" lookup={ending} onOpenDetail={(taskId, resultIndex) => navigate(`/content/image-detail/${taskId}/${resultIndex}`)} />
       </div>
 
-      <section className="card space-y-6">
+      <PageSection className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">创作工作区</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">当前页面已锁定在此镜头上下文，直接承接图片与视频创作能力。</p>
+            <h2 className="section-title">创作工作区</h2>
+            <p className="section-subtitle">当前页面已锁定在此镜头上下文，直接承接图片与视频创作能力。</p>
           </div>
-          <div className="flex rounded-xl border border-gray-200 p-1 dark:border-gray-700">
+          <div className="flex rounded-2xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-950">
             <button
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeCreationTab === 'image' ? 'bg-accent-500 text-white' : 'text-gray-600 dark:text-gray-400'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${activeCreationTab === 'image' ? 'bg-gray-950 text-white dark:bg-white dark:text-gray-950' : 'text-gray-500 dark:text-gray-400'}`}
               onClick={() => setActiveCreationTab('image')}
             >
               图片创作
             </button>
             <button
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeCreationTab === 'video' ? 'bg-accent-500 text-white' : 'text-gray-600 dark:text-gray-400'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${activeCreationTab === 'video' ? 'bg-gray-950 text-white dark:bg-white dark:text-gray-950' : 'text-gray-500 dark:text-gray-400'}`}
               onClick={() => setActiveCreationTab('video')}
             >
               视频创作
@@ -496,33 +504,34 @@ export default function ShotDetail() {
             filterTasksByShot
           />
         )}
-      </section>
+      </PageSection>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="card space-y-6">
+        <PageSection className="space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">关联资产</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">沉淀当前镜头已经产出的图片、视频和脚本资产。</p>
+            <h2 className="section-title">关联资产</h2>
+            <p className="section-subtitle">沉淀当前镜头已经产出的图片、视频和脚本资产。</p>
           </div>
 
           {shotAssets.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <div className="body-muted rounded-2xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-800">
               当前镜头还没有关联资产。
             </div>
           ) : (
             <div className="space-y-3">
               {shotAssets.map((asset) => (
-                <div key={asset.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-primary-900/40">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                <div key={asset.id} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>
                           {asset.type === 'Image' ? '图片' : asset.type === 'Video' ? '视频' : '脚本'}
                         </Badge>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{asset.sourceType}</span>
+                        <Badge variant="outline">{asset.sourceType}</Badge>
                       </div>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{asset.assetName}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{asset.modelName} {asset.modelVersion}</p>
+                      <h3 className="card-title">{asset.assetName}</h3>
+                      <div className="helper-text">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '未记录模型信息'}</div>
+                      <div className="helper-text">文件：<span className="break-all">{asset.fileUrl || '未记录'}</span></div>
                     </div>
                     {asset.sourceTaskId && asset.type === 'Image' && asset.sourceResultIndex != null ? (
                       <Button variant="secondary" size="sm" className="gap-2" onClick={() => navigate(`/content/image-detail/${asset.sourceTaskId}/${asset.sourceResultIndex}`)}>
@@ -536,39 +545,34 @@ export default function ShotDetail() {
                       </Button>
                     ) : null}
                   </div>
-                  <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                    文件：<span className="break-all">{asset.fileUrl || '未记录'}</span>
-                  </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </PageSection>
 
-        <div className="card space-y-6">
+        <PageSection className="space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">过程记录 / 模型记录</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">汇总当前镜头使用过的模型、关键帧记录以及图片/视频生成任务。</p>
+            <h2 className="section-title">过程记录 / 模型记录</h2>
+            <p className="section-subtitle">汇总当前镜头使用过的模型、关键帧记录以及图片/视频生成任务。</p>
           </div>
 
           {processRecords.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <div className="body-muted rounded-2xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-800">
               当前镜头还没有可追溯的模型或生成过程记录。
             </div>
           ) : (
             <div className="space-y-3">
               {processRecords.map((record) => (
-                <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-primary-900/40">
+                <div key={record.id} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{record.category}</Badge>
-                      </div>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{summarizeText(record.title, 80)}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{summarizeText(record.prompt, 180)}</p>
+                      <Badge variant="outline">{record.category}</Badge>
+                      <h3 className="card-title">{summarizeText(record.title, 80)}</h3>
+                      <p className="body-muted">{summarizeText(record.prompt, 180)}</p>
                     </div>
-                    <div className="min-w-[220px] space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <div className="helper-text min-w-[220px] space-y-2">
+                      <div className="panel-value flex items-center gap-2">
                         <Sparkles size={14} />
                         <span>{record.model || '-'}</span>
                       </div>
@@ -580,7 +584,7 @@ export default function ShotDetail() {
               ))}
             </div>
           )}
-        </div>
+        </PageSection>
       </section>
 
       <Modal title="编辑镜头" isOpen={shotModalOpen} onClose={() => setShotModalOpen(false)} onSave={saveShot}>
@@ -653,6 +657,6 @@ export default function ShotDetail() {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   )
 }

@@ -7,6 +7,7 @@ import { showToast } from '@/utils/toast'
 import { normalizeSearchText } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -148,16 +149,35 @@ export default function Shots() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">镜头管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有视频镜头</p>
-        </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建镜头</Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="内容中心"
+        title="镜头列表"
+        description="统一查看镜头归属、关键帧绑定、模型记录和结果产出，作为内容链路的主入口。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建镜头</Button>}
+      />
 
-      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/40 md:grid-cols-2 xl:grid-cols-4">
+      <PageSection className="space-y-5">
+        <div className="summary-grid">
+          <div className="summary-card">
+            <p className="summary-label">镜头总数</p>
+            <p className="summary-value">{shots.length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">已绑定首图</p>
+            <p className="summary-value">{shots.filter((item) => item.firstFrameId).length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">已绑定尾图</p>
+            <p className="summary-value">{shots.filter((item) => item.lastFrameId).length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">已选最终视频</p>
+            <p className="summary-value">{shots.filter((item) => item.finalVideoTaskId).length}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="shot-filter-name">镜头名称</Label>
           <Input id="shot-filter-name" value={filters.shotName} onChange={(e) => updateFilter('shotName', e.target.value)} placeholder="按镜头名称筛选" />
@@ -204,9 +224,14 @@ export default function Shots() {
           <Label htmlFor="shot-filter-version">模型版本</Label>
           <Input id="shot-filter-version" value={filters.modelVersion} onChange={(e) => updateFilter('modelVersion', e.target.value)} placeholder="按模型版本筛选" />
         </div>
-      </div>
+        </div>
 
-      <div className="card overflow-x-auto p-0">
+        <div className="filter-meta">
+          <span>共 {filteredItems.length} 个镜头</span>
+          <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+        </div>
+
+        <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -221,11 +246,11 @@ export default function Shots() {
           </thead>
           <tbody>
             {paginatedItems.map((shot) => (
-              <tr key={shot.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
+              <tr key={shot.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
                 <td className="table-cell">
                   <button
                     type="button"
-                    className="font-medium text-gray-800 transition-colors hover:text-accent-600 dark:text-gray-200 dark:hover:text-accent-400"
+                    className="font-medium text-gray-900 transition-colors hover:text-black dark:text-gray-100"
                     onClick={() => navigate(`/content/shots/${shot.id}`)}
                   >
                     {shot.shotName}
@@ -247,10 +272,11 @@ export default function Shots() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>}
-      </div>
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
+        </div>
 
-      <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+        <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑镜头' : '创建镜头'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -307,6 +333,6 @@ export default function Shots() {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   )
 }

@@ -27,7 +27,7 @@ export default function Modal({ title, isOpen, onClose, onSave, children, width 
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto pr-2 py-2">
+        <div className="max-h-[60vh] overflow-y-auto py-2 pr-1">
           {children}
         </div>
         <DialogFooter>

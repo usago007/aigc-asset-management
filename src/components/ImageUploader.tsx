@@ -113,17 +113,17 @@ export default function ImageUploader({ label, value, onChange, aspectRatio, onA
       <label className="label-field">{label}</label>
 
       {value ? (
-        <div className="relative card p-2">
+        <div className="relative rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_8px_24px_rgba(15,23,42,0.04)] dark:border-gray-800 dark:bg-gray-900">
           <button
             onClick={handleRemove}
-            className="absolute top-3 right-3 z-10 p-1 bg-gray-900/80 rounded-full hover:bg-gray-900 transition-colors"
+            className="absolute right-3 top-3 z-10 rounded-full border border-black/10 bg-white/90 p-1 text-gray-700 shadow-sm transition-colors hover:bg-white dark:border-white/10 dark:bg-gray-950/90 dark:text-gray-200"
           >
             <X size={16} />
           </button>
           <img src={value} alt={label} className="w-full h-auto rounded-lg" />
           {aspectRatio && (
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-500">
+              <span className="helper-text">
                 宽高比: {formatAspectRatio(aspectRatio)}
               </span>
             </div>
@@ -135,13 +135,15 @@ export default function ImageUploader({ label, value, onChange, aspectRatio, onA
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`card flex flex-col items-center justify-center py-8 cursor-pointer transition-colors ${
-            dragOver ? 'border-accent-500 bg-accent-500/10' : 'hover:border-gray-600'
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-10 text-center transition-colors ${
+            dragOver
+              ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-900'
+              : 'border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600 dark:hover:bg-gray-950'
           }`}
         >
-          <UploadCloud size={32} className="text-gray-500 mb-3" />
-          <p className="text-sm text-gray-300 mb-1">点击或拖拽上传图片</p>
-          <p className="text-xs text-gray-500">支持 JPEG/PNG，最大 4.7MB</p>
+          <UploadCloud size={32} className="mb-3 text-gray-500" />
+          <p className="panel-title mb-1">点击或拖拽上传图片</p>
+          <p className="helper-text">支持 JPEG/PNG，最大 4.7MB</p>
         </label>
       )}
 

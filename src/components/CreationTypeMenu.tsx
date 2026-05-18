@@ -40,21 +40,21 @@ export default function CreationTypeMenu({ options, value, onChange }: CreationT
       key={option.id}
       className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
         value === option.id
-          ? 'bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400'
-          : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+          ? 'bg-gray-100 text-gray-950 dark:bg-gray-800 dark:text-gray-50'
+          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
       }`}
       style={{ paddingLeft: `${depth * 12 + 12}px` }}
       onClick={() => handleSelect(option.id)}
     >
       {option.icon}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium">{option.label}</div>
+        <div className="flex-1 min-w-0">
+        <div className="panel-value font-medium">{option.label}</div>
         {option.description && (
-          <div className="text-xs text-gray-400 truncate">{option.description}</div>
+          <div className="helper-text truncate">{option.description}</div>
         )}
       </div>
       {value === option.id && (
-        <div className="w-1.5 h-1.5 rounded-full bg-accent-500" />
+        <div className="h-1.5 w-1.5 rounded-full bg-gray-950 dark:bg-white" />
       )}
     </button>
   )
@@ -62,7 +62,7 @@ export default function CreationTypeMenu({ options, value, onChange }: CreationT
   return (
     <div ref={ref} className="relative">
       <button
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="helper-text flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 transition-colors hover:border-gray-200 hover:bg-gray-100 hover:text-gray-900 dark:hover:border-gray-800 dark:hover:bg-gray-900 dark:hover:text-gray-50"
         onClick={() => setOpen(!open)}
       >
         {selected?.icon}
@@ -71,13 +71,13 @@ export default function CreationTypeMenu({ options, value, onChange }: CreationT
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50">
+        <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_16px_40px_rgba(15,23,42,0.08)] dark:border-gray-700 dark:bg-gray-900">
           <div className="space-y-0.5">
             {options.map((option) => {
               if (option.subOptions) {
                 return (
                   <div key={option.id}>
-                    <div className="px-3 py-1 text-xs text-gray-400 font-medium">{option.label}</div>
+                    <div className="field-label px-3 py-1">{option.label}</div>
                     {option.subOptions.map((sub) => renderOption(sub, 1))}
                   </div>
                 )

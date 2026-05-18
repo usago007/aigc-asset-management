@@ -6,6 +6,7 @@ import { formatDate } from '@/utils/date'
 import { normalizeSearchText } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,18 +95,35 @@ export default function Brands() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">品牌管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有品牌信息</p>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title="品牌管理"
+        description="统一管理品牌、客户归属、负责人和备注信息，保持项目归属链路的展示密度一致。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建品牌</Button>}
+      />
+
+      <PageSection className="space-y-5">
+      <div className="summary-grid">
+        <div className="summary-card">
+          <p className="summary-label">品牌总数</p>
+          <p className="summary-value">{brands.length}</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2">
-          <Plus size={16} /> 创建品牌
-        </Button>
+        <div className="summary-card">
+          <p className="summary-label">已绑定客户</p>
+          <p className="summary-value">{brands.filter((item) => item.customerId).length}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">已配置负责人</p>
+          <p className="summary-value">{brands.filter((item) => item.owner).length}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">当前筛中</p>
+          <p className="summary-value">{filteredItems.length}</p>
+        </div>
       </div>
 
-      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/40 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="brand-filter-name">品牌名称</Label>
           <Input id="brand-filter-name" value={filters.brandName} onChange={(e) => updateFilter('brandName', e.target.value)} placeholder="按品牌名称筛选" />
@@ -132,7 +150,12 @@ export default function Brands() {
         </div>
       </div>
 
-      <div className="card overflow-x-auto p-0">
+      <div className="filter-meta">
+        <span>共 {filteredItems.length} 个品牌</span>
+        <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+      </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -146,8 +169,8 @@ export default function Brands() {
           </thead>
           <tbody>
             {paginatedItems.map((brand) => (
-              <tr key={brand.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{brand.brandName}</td>
+              <tr key={brand.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{brand.brandName}</td>
                 <td className="table-cell">{getCustomerName(brand.customerId)}</td>
                 <td className="table-cell">{brand.owner || '-'}</td>
                 <td className="table-cell max-w-[200px] truncate">{brand.notes || '-'}</td>
@@ -169,10 +192,11 @@ export default function Brands() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑品牌' : '创建品牌'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -215,6 +239,6 @@ export default function Brands() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

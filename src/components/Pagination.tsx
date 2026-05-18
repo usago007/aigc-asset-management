@@ -29,8 +29,8 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
   if (totalPages > 1) pages.push(totalPages)
 
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-500">
+    <div className="flex flex-col gap-3 px-1 py-4 md:flex-row md:items-center md:justify-between">
+      <div className="filter-meta">
         <span>共 {totalItems} 条记录</span>
         {onPageSizeChange && (
           <NativeSelect
@@ -45,11 +45,11 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
           </NativeSelect>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          variant="secondary"
+          variant="outline"
           size="sm"
           className="gap-1"
         >
@@ -63,9 +63,9 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
             <Button
               key={page}
               onClick={() => onPageChange(page)}
-              variant={page === currentPage ? 'default' : 'secondary'}
+              variant={page === currentPage ? 'default' : 'outline'}
               size="icon"
-              className={page === currentPage ? 'shadow-md shadow-primary-500/30' : ''}
+              className="h-9 w-9"
             >
               {page}
             </Button>
@@ -74,7 +74,7 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
         <Button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          variant="secondary"
+          variant="outline"
           size="sm"
           className="gap-1"
         >

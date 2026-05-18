@@ -18,12 +18,12 @@ const ImagePreview = forwardRef<HTMLImageElement, ImagePreviewProps>(
 
     return (
       <div
-        className="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800"
+        className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
         style={aspectRatio ? { aspectRatio } : undefined}
       >
         {isLoading && !hasError && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
-            <Loader2 size={24} className="text-primary-500 animate-spin" />
+            <Loader2 size={24} className="animate-spin text-gray-500 dark:text-gray-400" />
           </div>
         )}
 
@@ -37,7 +37,7 @@ const ImagePreview = forwardRef<HTMLImageElement, ImagePreviewProps>(
         ) : hasError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <AlertCircle size={24} className="text-error" />
-            <span className="text-xs text-gray-500">图片加载失败</span>
+            <span className="helper-text">图片加载失败</span>
           </div>
         ) : null}
 
@@ -53,10 +53,10 @@ const ImagePreview = forwardRef<HTMLImageElement, ImagePreviewProps>(
 
         {showOverlay && !isLoading && !hasError && onClick && (
           <div
-            className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 hover:opacity-100 cursor-pointer"
+            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/0 opacity-0 transition-all duration-300 hover:bg-black/30 hover:opacity-100"
             onClick={onClick}
           >
-            <div className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-colors">
+            <div className="rounded-full border border-white/20 bg-white/20 p-2 backdrop-blur-sm transition-colors hover:bg-white/30">
               <Maximize2 size={16} className="text-white" />
             </div>
           </div>

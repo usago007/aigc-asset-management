@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button'
 
 const breadcrumbs: Record<string, string[]> = {
   '/dashboard': ['仪表盘'],
-  '/dashboard/overview': ['仪表盘', '总览'],
-  '/dashboard/generation': ['仪表盘', '生成'],
-  '/dashboard/assets': ['仪表盘', '资产'],
-  '/dashboard/tasks': ['仪表盘', '任务'],
+  '/dashboard/overview': ['仪表盘', '经营总览'],
+  '/dashboard/generation': ['仪表盘', '生成概览'],
+  '/dashboard/assets': ['仪表盘', '资产概览'],
+  '/dashboard/tasks': ['仪表盘', '任务概览'],
   '/content/keyframes': ['内容中心', '关键帧'],
   '/content/shots': ['内容中心', '镜头管理'],
   '/content/assets': ['内容中心', '资产库'],
@@ -50,8 +50,8 @@ export default function Header() {
   const crumbs = getBreadcrumbs()
 
   return (
-    <header className="header-shell px-6 py-4">
-      <div className="flex items-center justify-between">
+    <header className="header-shell px-6 py-4 lg:px-10">
+      <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4">
         <nav className="flex items-center gap-2 text-sm">
           {crumbs.map((crumb, index) => (
             <span key={index} className="flex items-center gap-2">
@@ -63,17 +63,17 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <Input
               placeholder="搜索..."
-              className="w-64 border-gray-200 bg-gray-100 pl-10 dark:border-gray-700 dark:bg-primary-900/50"
+              className="h-10 w-56 border-gray-200 bg-white pl-9 dark:bg-gray-900"
             />
           </div>
-          <Button variant="ghost" size="icon" className="relative text-gray-500 dark:text-gray-400">
-            <Bell size={18} className="text-gray-500 dark:text-gray-400" />
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary-400"></span>
+          <Button variant="secondary" size="icon" className="relative h-10 w-10">
+            <Bell size={16} className="text-gray-500 dark:text-gray-400" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gray-900 dark:bg-white"></span>
           </Button>
         </div>
       </div>

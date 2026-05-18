@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { BarChart3, Clock, AlertTriangle, TrendingUp, FolderTree, FileText, ClipboardCheck, Users, Tags, Video, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
 function getRelativeTime(dateStr: string): string {
   const now = new Date().getTime()
@@ -25,14 +26,14 @@ const STAGE_LABELS: Record<string, string> = {
 
 function StatCard({ label, value, icon: Icon, color, bg }: { label: string; value: number; icon: React.ElementType; color: string; bg: string }) {
   return (
-    <div className="card">
+    <div className="summary-card">
       <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg ${bg}`}>
+        <div className={`summary-icon ${bg}`}>
           <Icon size={24} className={color} />
         </div>
         <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-500">{label}</p>
+          <p className="summary-value">{value}</p>
+          <p className="summary-label">{label}</p>
         </div>
       </div>
     </div>
@@ -43,14 +44,14 @@ function ProgressBar({ value, max, label, colorClass }: { value: number; max: nu
   const pct = max > 0 ? Math.round((value / max) * 100) : 0
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-700 dark:text-gray-300 w-16 shrink-0">{label}</span>
+      <span className="panel-value w-16 shrink-0">{label}</span>
       <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-sm text-gray-500 dark:text-gray-400 w-10 text-right">{value}</span>
+      <span className="helper-text w-10 text-right">{value}</span>
     </div>
   )
 }
@@ -76,7 +77,7 @@ export default function Overview() {
     { label: '项目', value: projects.length, icon: FolderTree, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-400/10' },
     { label: '镜头', value: shots.length, icon: Video, color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-400/10' },
     { label: '资产', value: assets.length, icon: ImageIcon, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-100 dark:bg-pink-400/10' },
-    { label: '待审核', value: pendingReviews, icon: ClipboardCheck, color: 'text-accent-600 dark:text-accent-500', bg: 'bg-accent-100 dark:bg-accent-500/10' },
+    { label: '待审核', value: pendingReviews, icon: ClipboardCheck, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-gray-800' },
     { label: '生成中', value: generatingCount, icon: Loader2, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100 dark:bg-cyan-400/10' },
   ]
 
@@ -94,26 +95,24 @@ export default function Overview() {
   ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">总览</h1>
-          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
-        </div>
-        <p className="text-gray-500 mt-1">AIGC数字资产管理系统概览</p>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="仪表盘"
+        title="经营总览"
+        description={`AIGC 数字资产管理系统整体概览，最后更新 ${lastUpdated}`}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="summary-grid xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return <StatCard key={stat.label} {...stat} />
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-accent-500" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
+            <BarChart3 size={18} className="text-gray-700 dark:text-gray-300" />
             项目阶段分布
           </h2>
           <div className="space-y-3">
@@ -127,34 +126,34 @@ export default function Overview() {
               />
             ))}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <AlertTriangle size={18} className="text-red-500" />
             风险预警
           </h2>
           {highRiskProjects.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">暂无高风险项目</p>
+            <p className="body-muted py-4 text-center">暂无高风险项目</p>
           ) : (
             <div className="space-y-3">
               {highRiskProjects.map(project => (
                 <div key={project.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">{project.projectName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{project.projectOwner}</p>
+                    <p className="panel-value font-medium text-gray-800 dark:text-gray-300">{project.projectName}</p>
+                    <p className="helper-text">{project.projectOwner}</p>
                   </div>
                   <span className="badge badge-error">高风险</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </PageSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <Clock size={18} className="text-blue-600 dark:text-blue-400" />
             近期活动
           </h2>
@@ -167,17 +166,17 @@ export default function Overview() {
                     <Icon size={14} className={activity.color} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800 dark:text-gray-300 truncate">{activity.label}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{getRelativeTime(activity.time)}</p>
+                    <p className="body-text truncate text-gray-800 dark:text-gray-300">{activity.label}</p>
+                    <p className="helper-text">{getRelativeTime(activity.time)}</p>
                   </div>
                 </div>
               )
             })}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <TrendingUp size={18} className="text-green-600 dark:text-green-400" />
             项目进度
           </h2>
@@ -190,15 +189,15 @@ export default function Overview() {
                 </div>
                 <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-accent-500 rounded-full transition-all duration-300"
+                    className="h-full rounded-full bg-gray-900 transition-all duration-300 dark:bg-white"
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </PageShell>
   )
 }

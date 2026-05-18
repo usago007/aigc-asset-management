@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ActionIconButton } from '@/components/ui/action-icon-button'
+import { Badge } from '@/components/ui/badge'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
 import type { Member, MemberStatus } from '@/types'
@@ -41,6 +43,10 @@ function Avatar({ name }: { name: string }) {
       {initials}
     </div>
   )
+}
+
+function RolePill({ name }: { name: string }) {
+  return <Badge variant="secondary">{name}</Badge>
 }
 
 export default function Members() {
@@ -143,24 +149,22 @@ export default function Members() {
   const paginatedMembers = filteredMembers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            <Users size={20} className="text-primary-500" />
-            成员管理
-          </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统成员、角色分配和状态</p>
-        </div>
-        <Button className="gap-2" onClick={() => handleOpenModal()}>
-          <UserPlus size={16} />
-          邀请成员
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="系统管理"
+        title="成员管理"
+        description="统一管理系统成员、角色分配、激活状态与基本身份信息。"
+        actions={(
+          <Button className="gap-2" onClick={() => handleOpenModal()}>
+            <UserPlus size={16} />
+            邀请成员
+          </Button>
+        )}
+      />
 
-      <div className="card">
-        <div className="mb-4 flex flex-wrap gap-4">
-          <div className="min-w-[200px] flex-1">
+      <PageSection className="space-y-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="min-w-[220px] flex-1">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
@@ -174,6 +178,8 @@ export default function Members() {
           <NativeSelect
             value={filterRole}
             onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1) }}
+            className="w-[180px]"
+            wrapperClassName="w-auto"
           >
             <option value="all">全部角色</option>
             {roles.map((role) => (
@@ -183,6 +189,8 @@ export default function Members() {
           <NativeSelect
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1) }}
+            className="w-[160px]"
+            wrapperClassName="w-auto"
           >
             <option value="all">全部状态</option>
             <option value="active">活跃</option>
@@ -191,77 +199,70 @@ export default function Members() {
           </NativeSelect>
         </div>
 
-        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-          共 {filteredMembers.length} 名成员，当前第 {currentPage}/{totalPages || 1} 页
-        </p>
+        <div className="filter-meta">
+          <span>共 {filteredMembers.length} 名成员</span>
+          <span>当前第 {currentPage}/{totalPages || 1} 页</span>
+        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto p-0 shadow-none">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">成员</th>
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">邮箱</th>
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">角色</th>
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">部门</th>
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">状态</th>
-                <th className="px-2 py-3 text-left font-medium text-gray-500 dark:text-gray-400">最后登录</th>
-                <th className="px-2 py-3 text-right font-medium text-gray-500 dark:text-gray-400">操作</th>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <th className="table-header">成员</th>
+                <th className="table-header">邮箱</th>
+                <th className="table-header">角色</th>
+                <th className="table-header">部门</th>
+                <th className="table-header">状态</th>
+                <th className="table-header">最后登录</th>
+                <th className="table-header text-right">操作</th>
               </tr>
             </thead>
             <tbody>
               {paginatedMembers.map((member) => (
-                <tr key={member.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/30">
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-2.5">
+                <tr key={member.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                  <td className="table-cell">
+                    <div className="flex items-center gap-3">
                       <Avatar name={member.name} />
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{member.phone}</p>
+                      <div className="space-y-1">
+                        <p className="panel-value font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
+                        <p className="helper-text">{member.phone || '未填写手机号'}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-2 py-2.5 text-gray-600 dark:text-gray-400">{member.email}</td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex flex-wrap gap-1">
-                      {getRoleNames(member.roleIds).map((name, index) => (
-                        <span key={index} className="rounded bg-primary-500/10 px-2 py-0.5 text-xs text-primary-600 dark:text-primary-400">
-                          {name}
-                        </span>
-                      ))}
+                  <td className="table-cell">
+                    <div className="max-w-[220px] truncate text-gray-600 dark:text-gray-400">{member.email}</div>
+                  </td>
+                  <td className="table-cell">
+                    <div className="flex flex-wrap gap-1.5">
+                      {getRoleNames(member.roleIds).length > 0 ? getRoleNames(member.roleIds).map((name) => (
+                        <RolePill key={name} name={name} />
+                      )) : <span className="text-gray-400">未分配</span>}
                     </div>
                   </td>
-                  <td className="px-2 py-2.5 text-gray-600 dark:text-gray-400">{member.department || '-'}</td>
-                  <td className="px-2 py-2.5">
-                    <span className={`badge ${statusMap[member.status]?.className}`}>
+                  <td className="table-cell text-gray-600 dark:text-gray-400">{member.department || '-'}</td>
+                  <td className="table-cell">
+                    <Badge variant={member.status === 'active' ? 'success' : member.status === 'disabled' ? 'destructive' : 'warning'}>
                       {statusMap[member.status]?.label}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="px-2 py-2.5 text-xs text-gray-600 dark:text-gray-400">{member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未'}</td>
-                  <td className="px-2 py-2.5 text-right">
+                  <td className="table-cell helper-text">
+                    {member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未'}
+                  </td>
+                  <td className="table-cell">
                     <div className="flex items-center justify-end gap-1">
                       <ActionIconButton
                         onClick={() => toggleMemberStatus(member.id)}
                         title={member.status === 'active' ? '禁用' : '启用'}
                       >
-                        <Power size={14} className={member.status === 'active' ? 'text-yellow-500' : 'text-green-500'} />
+                        <Power size={14} className={member.status === 'active' ? 'text-amber-500' : 'text-emerald-500'} />
                       </ActionIconButton>
-                      <ActionIconButton
-                        onClick={() => setViewingMember(member)}
-                        title="查看"
-                      >
-                        <Eye size={14} className="text-gray-600 dark:text-gray-400" />
+                      <ActionIconButton onClick={() => setViewingMember(member)} title="查看">
+                        <Eye size={14} />
                       </ActionIconButton>
-                      <ActionIconButton
-                        onClick={() => handleOpenModal(member)}
-                        title="编辑"
-                      >
-                        <Edit size={14} className="text-gray-600 dark:text-gray-400" />
+                      <ActionIconButton onClick={() => handleOpenModal(member)} title="编辑">
+                        <Edit size={14} />
                       </ActionIconButton>
-                      <ActionIconButton
-                        tone="danger"
-                        onClick={() => handleDelete(member)}
-                        title="移除"
-                      >
+                      <ActionIconButton tone="danger" onClick={() => handleDelete(member)} title="移除">
                         <Trash2 size={14} />
                       </ActionIconButton>
                     </div>
@@ -270,8 +271,8 @@ export default function Members() {
               ))}
               {paginatedMembers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-gray-500 dark:text-gray-400">
-                    <Users size={32} className="mx-auto mb-2 opacity-30" />
+                  <td colSpan={7} className="py-14 text-center text-gray-500 dark:text-gray-400">
+                    <Users size={30} className="mx-auto mb-3 opacity-30" />
                     暂无匹配的成员
                   </td>
                 </tr>
@@ -281,7 +282,7 @@ export default function Members() {
         </div>
 
         <Pagination currentPage={currentPage} pageSize={ITEMS_PER_PAGE} totalItems={filteredMembers.length} onPageChange={setCurrentPage} />
-      </div>
+      </PageSection>
 
       <Modal
         title={editingMember ? '编辑成员' : '邀请成员'}
@@ -337,17 +338,17 @@ export default function Members() {
                   <button
                     key={role.id}
                     type="button"
-                    onClick={() => {
+              onClick={() => {
                       if (selected) {
                         setFormRoleIds(formRoleIds.filter((id) => id !== role.id))
                       } else {
                         setFormRoleIds([...formRoleIds, role.id])
                       }
                     }}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
                       selected
-                        ? 'border-primary-500/30 bg-primary-500/20 text-primary-600 dark:text-primary-400'
-                        : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
+                        ? 'border-gray-950 bg-gray-100 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-gray-600'
                     }`}
                   >
                     {selected && (
@@ -362,8 +363,8 @@ export default function Members() {
             </div>
           </div>
           {!editingMember && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-              <p className="text-sm text-blue-700 dark:text-blue-400">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="body-muted">
                 邀请后成员将收到激活邮件，初始状态为「待激活」
               </p>
             </div>
@@ -378,14 +379,14 @@ export default function Members() {
             <ReadOnlyField label="邮箱" value={viewingMember.email} />
             <ReadOnlyField label="手机号" value={viewingMember.phone} />
             <ReadOnlyField label="部门" value={viewingMember.department} />
-            <ReadOnlyField label="状态" value={<span className={`badge ${statusMap[viewingMember.status]?.className}`}>{statusMap[viewingMember.status]?.label}</span>} />
-            <ReadOnlyField label="角色" value={<div className="flex flex-wrap gap-1">{getRoleNames(viewingMember.roleIds).map((name) => <span key={name} className="rounded bg-primary-500/10 px-2 py-0.5 text-xs text-primary-600 dark:text-primary-400">{name}</span>)}</div>} />
+            <ReadOnlyField label="状态" value={<Badge variant={viewingMember.status === 'active' ? 'success' : viewingMember.status === 'disabled' ? 'destructive' : 'warning'}>{statusMap[viewingMember.status]?.label}</Badge>} />
+            <ReadOnlyField label="角色" value={<div className="flex flex-wrap gap-1.5">{getRoleNames(viewingMember.roleIds).map((name) => <RolePill key={name} name={name} />)}</div>} />
             <ReadOnlyField label="最后登录" value={viewingMember.lastLoginAt ? new Date(viewingMember.lastLoginAt).toLocaleString('zh-CN') : '从未'} />
             <ReadOnlyField label="加入时间" value={viewingMember.joinedAt ? new Date(viewingMember.joinedAt).toLocaleString('zh-CN') : '-'} />
             <ReadOnlyField label="邀请人" value={viewingMember.invitedBy} />
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

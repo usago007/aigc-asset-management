@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { Video, PieChart, Activity, FileText, Image } from 'lucide-react'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
 function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
       <span className={`text-3xl font-bold ${color}`}>{value}</span>
-      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</span>
+      <span className="helper-text mt-1">{label}</span>
     </div>
   )
 }
@@ -54,33 +55,27 @@ export default function DashboardAssets() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">资产</h1>
-          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
-        </div>
-        <p className="text-gray-500 mt-1">资产类型分布与最新资产</p>
-      </div>
+    <PageShell>
+      <PageIntro eyebrow="仪表盘" title="资产概览" description={`资产类型分布与最新资产，最后更新 ${lastUpdated}`} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MiniStatCard label="总资产" value={totalAssets} color="text-accent-500" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStatCard label="总资产" value={totalAssets} color="text-gray-900 dark:text-white" />
         <MiniStatCard label="图片" value={typeCounts.Image} color="text-blue-500" />
         <MiniStatCard label="视频" value={typeCounts.Video} color="text-purple-500" />
         <MiniStatCard label="脚本" value={typeCounts.Script} color="text-green-500" />
       </div>
 
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+      <PageSection>
+        <h2 className="card-title mb-4 flex items-center gap-2">
           <PieChart size={18} className="text-blue-600 dark:text-blue-400" />
           资产类型分布
         </h2>
         <div className="space-y-3">
           {Object.entries(typeCounts).map(([type, count]) => (
             <div key={type}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-800 dark:text-gray-300">{type}</span>
-                <span className="text-gray-600 dark:text-gray-500">{count} ({totalAssets > 0 ? Math.round((count / totalAssets) * 100) : 0}%)</span>
+              <div className="mb-1 flex justify-between">
+                <span className="panel-value">{type}</span>
+                <span className="helper-text">{count} ({totalAssets > 0 ? Math.round((count / totalAssets) * 100) : 0}%)</span>
               </div>
               <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
@@ -91,11 +86,11 @@ export default function DashboardAssets() {
             </div>
           ))}
         </div>
-      </div>
+      </PageSection>
 
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-          <Activity size={18} className="text-accent-500" />
+      <PageSection>
+        <h2 className="card-title mb-4 flex items-center gap-2">
+          <Activity size={18} className="text-gray-700 dark:text-gray-300" />
           最新资产
         </h2>
         <div className="space-y-3">
@@ -108,16 +103,16 @@ export default function DashboardAssets() {
                     <Icon size={16} className={TYPE_COLORS[asset.type] || 'text-gray-400'} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">{asset.assetName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{getRelativeTime(asset.createdAt)}</p>
+                    <p className="panel-value font-medium text-gray-800 dark:text-gray-300">{asset.assetName}</p>
+                    <p className="helper-text">{getRelativeTime(asset.createdAt)}</p>
                   </div>
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{asset.type}</span>
+                <span className="helper-text">{asset.type}</span>
               </div>
             )
           })}
         </div>
-      </div>
-    </div>
+      </PageSection>
+    </PageShell>
   )
 }

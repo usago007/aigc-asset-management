@@ -64,7 +64,7 @@ export default function TimelineGrid({
 
   if (groupedItems.length === 0) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <div className="empty-state">
         <div className="text-center">
           <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
         </div>
@@ -88,7 +88,7 @@ export default function TimelineGrid({
     <div className="space-y-8">
       {groupedItems.map((group) => (
         <div key={group.date}>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="card-title mb-4">
             {group.date}
           </h3>
           <div className={`grid gap-3 ${columnClass}`}>
@@ -121,7 +121,7 @@ function TimelineCard({
 }) {
   return (
     <div
-      className="group relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square cursor-pointer hover:ring-2 hover:ring-accent-500 transition-all hover:shadow-lg hover:shadow-accent-500/20"
+      className="group media-tile aspect-square cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.08)]"
       onClick={() => onOpen?.(item)}
     >
       <img
@@ -132,11 +132,11 @@ function TimelineCard({
       />
 
       {/* Hover overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+      <div className="media-tile-overlay">
         {/* Badge */}
         {item.badge && (
           <div className="absolute top-2 left-2">
-            <span className={`badge text-[10px] px-1.5 py-0.5 ${item.badgeClassName || 'badge-info'}`}>
+            <span className={`badge micro-text px-1.5 py-0.5 ${item.badgeClassName || 'badge-info'}`}>
               {item.badge}
             </span>
           </div>
@@ -149,7 +149,7 @@ function TimelineCard({
         <div className="flex items-center gap-1">
           {onOpen && (
             <button
-              className="flex-1 py-1 bg-accent-500/30 hover:bg-accent-500/50 rounded text-xs text-white backdrop-blur-sm transition-colors border border-accent-500/20"
+              className="media-action flex-1"
               onClick={(e) => { e.stopPropagation(); onOpen(item) }}
             >
               打开
@@ -157,7 +157,7 @@ function TimelineCard({
           )}
           {onDownload && (
             <button
-              className="py-1 px-2 bg-accent-500/30 hover:bg-accent-500/50 rounded text-xs text-white backdrop-blur-sm transition-colors border border-accent-500/20"
+              className="media-action px-2"
               onClick={(e) => { e.stopPropagation(); onDownload(item) }}
             >
               下载
@@ -165,7 +165,7 @@ function TimelineCard({
           )}
           {onDelete && (
             <button
-              className="py-1 px-2 bg-error/30 hover:bg-error/50 rounded text-xs text-white backdrop-blur-sm transition-colors border border-error/20"
+              className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-red-500/35 px-2 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-red-500/55"
               onClick={(e) => { e.stopPropagation(); onDelete(item) }}
             >
               删除

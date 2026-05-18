@@ -7,6 +7,7 @@ import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -119,18 +120,16 @@ export default function Briefs() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">提案管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有提案信息</p>
-        </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2">
-          <Plus size={16} /> 创建提案
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title="提案管理"
+        description="统一管理项目提案、目标受众、交付平台和版本关联，保持列表页与详情页节奏一致。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建提案</Button>}
+      />
 
-      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/40 md:grid-cols-2 xl:grid-cols-4">
+      <PageSection className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="brief-filter-title">提案标题</Label>
           <Input id="brief-filter-title" value={filters.briefTitle} onChange={(e) => updateFilter('briefTitle', e.target.value)} placeholder="按提案标题筛选" />
@@ -168,7 +167,12 @@ export default function Briefs() {
         </div>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="filter-meta">
+        <span>共 {filteredItems.length} 个提案</span>
+        <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+      </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -182,8 +186,8 @@ export default function Briefs() {
           </thead>
           <tbody>
             {paginatedItems.map((brief) => (
-              <tr key={brief.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{brief.briefTitle}</td>
+              <tr key={brief.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{brief.briefTitle}</td>
                 <td className="table-cell">{getProjectName(brief.projectId)}</td>
                 <td className="table-cell">{brief.targetAudience || '-'}</td>
                 <td className="table-cell">{brief.platform || '-'}</td>
@@ -199,10 +203,11 @@ export default function Briefs() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑提案' : '创建提案'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-4">
@@ -262,6 +267,6 @@ export default function Briefs() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

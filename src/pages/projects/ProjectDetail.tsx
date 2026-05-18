@@ -7,6 +7,7 @@ import { formatDate } from '@/utils/date'
 import { normalizeSearchText } from '@/utils/search'
 import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -78,8 +79,8 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
   if (!lookup.frame) {
     return (
       <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">未绑定{label}记录</p>
+        <div className="panel-title">{label}</div>
+        <p className="body-muted mt-3">未绑定{label}记录</p>
       </div>
     )
   }
@@ -88,8 +89,8 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
     <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.frame.name}</p>
+          <div className="panel-title">{label}</div>
+          <p className="panel-value mt-1 font-semibold">{lookup.frame.name}</p>
         </div>
         <Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>
       </div>
@@ -100,25 +101,25 @@ const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup 
           className="mt-4 h-40 w-full rounded-lg bg-gray-100 object-cover dark:bg-gray-800"
         />
       ) : (
-        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+        <div className="body-muted mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/50">
           暂无可追溯图片
         </div>
       )}
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
+      <div className="helper-text mt-4 space-y-2">
+        <div>
+          <span className="field-label">提示词：</span>
           {summarizeText(lookup.frame.promptText, 120)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">模型：</span>
+        <div>
+          <span className="field-label">模型：</span>
           {lookup.frame.modelName} {lookup.frame.modelVersion}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">生成时间：</span>
+        <div>
+          <span className="field-label">生成时间：</span>
           {formatDate(lookup.frame.createdAt)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">来源任务：</span>
+        <div>
+          <span className="field-label">来源任务：</span>
           {lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}
         </div>
       </div>
@@ -130,8 +131,8 @@ const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
       <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">当前镜头还没有可播放的视频预览。</p>
+        <div className="panel-title">视频预览</div>
+        <p className="body-muted mt-3">当前镜头还没有可播放的视频预览。</p>
       </div>
     )
   }
@@ -140,8 +141,8 @@ const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
     <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
+          <div className="panel-title">视频预览</div>
+          <p className="panel-value mt-1 font-semibold">{lookup.task.mode}</p>
         </div>
         <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
           {lookup.task.status}
@@ -468,36 +469,35 @@ export default function ProjectDetail() {
 
   if (!project) {
     return (
-      <div className="space-y-6">
+      <PageShell>
         <Button variant="secondary" className="gap-2" onClick={() => navigate('/projects/projects')}>
           <ArrowLeft size={16} />
           返回项目列表
         </Button>
-        <div className="card p-8 text-center">
+        <div className="page-section py-8 text-center">
           <h1 className="page-title">项目不存在</h1>
           <p className="page-subtitle">当前链接没有找到可用的项目记录。</p>
         </div>
-      </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Button variant="secondary" className="gap-2" onClick={() => navigate('/projects/projects')}>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title={project.projectName}
+        description="项目详情工作台，集中管理镜头位编排、提案与生成追溯。"
+        actions={(
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/projects/projects')}>
             <ArrowLeft size={16} />
             返回项目列表
           </Button>
-          <div>
-            <h1 className="page-title">{project.projectName}</h1>
-            <p className="page-subtitle">项目详情工作台，集中管理镜头位编排、提案与生成追溯。</p>
-          </div>
-        </div>
-      </div>
+        )}
+      />
 
       <div className="grid gap-4 lg:grid-cols-4">
-        <div className="card space-y-4 lg:col-span-2">
+        <PageSection className="space-y-4 lg:col-span-2">
           <div className="body-text flex items-center gap-2 font-medium">
             <FolderKanban size={16} />
             项目基础信息
@@ -531,15 +531,15 @@ export default function ProjectDetail() {
               </div>
             </div>
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card space-y-3">
+        <div className="summary-card space-y-3">
           <div className="eyebrow">镜头位编排</div>
           <div className="metric-value">{filledSlotItems.length}</div>
           <p className="metric-caption">已关联镜头 / 共 {slotItems.length} 个镜头位</p>
         </div>
 
-        <div className="card space-y-3">
+        <div className="summary-card space-y-3">
           <div className="eyebrow">提案与待审</div>
           <div className="flex items-end gap-4">
             <div>
@@ -554,7 +554,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <section className="card space-y-6">
+      <PageSection className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="section-title">镜头位编排</h2>
@@ -579,9 +579,9 @@ export default function ProjectDetail() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">镜头 {slot.position}</Badge>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">未关联镜头</span>
+                        <span className="body-muted">未关联镜头</span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">这个排序位已经预留，可以从内容中心挑一个现有镜头关联进来。</p>
+                      <p className="body-muted">这个排序位已经预留，可以从内容中心挑一个现有镜头关联进来。</p>
                     </div>
                     <Button variant="secondary" className="gap-2" onClick={() => openLinkModal(slot.id)}>
                       <Link2 size={14} />
@@ -597,30 +597,30 @@ export default function ProjectDetail() {
             const video = getVideoLookup(shot.id)
 
             return (
-              <div key={slot.id} className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-primary-900/40">
+              <div key={slot.id} className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">镜头 {slot.position}</Badge>
-                      <Film size={16} className="text-primary-500" />
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{shot.shotName}</h3>
+                      <Film size={16} className="text-gray-700 dark:text-gray-300" />
+                      <h3 className="card-title">{shot.shotName}</h3>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头提示词标识</div>
-                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
+                        <div className="field-label">镜头提示词标识</div>
+                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
                       </div>
                       <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">基础模型</div>
-                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
+                        <div className="field-label">基础模型</div>
+                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
                       </div>
                       <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">首图记录</div>
-                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{opening.frame?.name || '未绑定'}</div>
+                        <div className="field-label">首图记录</div>
+                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{opening.frame?.name || '未绑定'}</div>
                       </div>
                       <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">尾图记录</div>
-                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{ending.frame?.name || '未绑定'}</div>
+                        <div className="field-label">尾图记录</div>
+                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{ending.frame?.name || '未绑定'}</div>
                       </div>
                     </div>
                   </div>
@@ -656,9 +656,9 @@ export default function ProjectDetail() {
             )
           })}
         </div>
-      </section>
+      </PageSection>
 
-      <section className="card space-y-6">
+      <PageSection className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="section-title">提案</h2>
@@ -671,17 +671,17 @@ export default function ProjectDetail() {
         </div>
 
         {projectBriefs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          <div className="empty-state rounded-xl border-0 bg-transparent py-12">
             当前项目还没有提案，先补充提案内容和交付要求。
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
             {projectBriefs.map((brief) => (
-              <div key={brief.id} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-primary-900/40">
+              <div key={brief.id} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{brief.briefTitle}</h3>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{summarizeText(brief.description, 120)}</p>
+                    <h3 className="card-title">{brief.briefTitle}</h3>
+                    <p className="body-muted mt-2">{summarizeText(brief.description, 120)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="secondary" size="sm" className="gap-2" onClick={() => openBriefModal(brief)}>
@@ -696,19 +696,19 @@ export default function ProjectDetail() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">目标受众</div>
-                    <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.targetAudience || '未填写'}</div>
+                    <div className="field-label">目标受众</div>
+                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.targetAudience || '未填写'}</div>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">交付平台</div>
-                    <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.platform || '未填写'}</div>
+                    <div className="field-label">交付平台</div>
+                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.platform || '未填写'}</div>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">截止日期</div>
-                    <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">{brief.deadline ? formatDate(brief.deadline, 'date') : '未设置'}</div>
+                    <div className="field-label">截止日期</div>
+                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.deadline ? formatDate(brief.deadline, 'date') : '未设置'}</div>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">版本绑定</div>
+                    <div className="field-label">版本绑定</div>
                     <div className="mt-2 flex items-center gap-2">
                       <Badge variant={brief.currentVersionId ? 'success' : 'outline'}>
                         {brief.currentVersionId ? '当前版本已绑定' : '当前版本未绑定'}
@@ -718,9 +718,9 @@ export default function ProjectDetail() {
                 </div>
 
                 {brief.fileUrl && (
-                  <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
+                  <div className="panel-value rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50 dark:text-gray-300">
                     <span className="font-medium text-gray-800 dark:text-gray-200">文件链接：</span>
-                    <a href={brief.fileUrl} target="_blank" rel="noreferrer" className="break-all text-primary-500 hover:underline">
+                    <a href={brief.fileUrl} target="_blank" rel="noreferrer" className="break-all text-gray-900 underline-offset-4 hover:underline dark:text-gray-100">
                       {brief.fileUrl}
                     </a>
                   </div>
@@ -729,33 +729,33 @@ export default function ProjectDetail() {
             ))}
           </div>
         )}
-      </section>
+      </PageSection>
 
-      <section className="card space-y-6">
+      <PageSection className="space-y-6">
         <div>
           <h2 className="section-title">过程记录 / 模型记录</h2>
           <p className="section-subtitle">汇总当前项目使用过的镜头模型、关键帧模型、版本记录以及图片/视频生成任务。</p>
         </div>
 
         {processRecords.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          <div className="empty-state rounded-xl border-0 bg-transparent py-12">
             当前项目还没有可追溯的模型或生成过程记录。
           </div>
         ) : (
           <div className="space-y-3">
             {processRecords.map((record) => (
-              <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-primary-900/40">
+              <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{record.category}</Badge>
-                      {record.shotName && <span className="text-sm text-gray-500 dark:text-gray-400">镜头：{record.shotName}</span>}
+                      {record.shotName && <span className="body-muted">镜头：{record.shotName}</span>}
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{summarizeText(record.title, 80)}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{summarizeText(record.prompt, 180)}</p>
+                    <h3 className="panel-title text-gray-900 dark:text-gray-100">{summarizeText(record.title, 80)}</h3>
+                    <p className="body-muted">{summarizeText(record.prompt, 180)}</p>
                   </div>
-                  <div className="min-w-[220px] space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <div className="body-muted min-w-[220px] space-y-2">
+                    <div className="panel-value flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <Sparkles size={14} />
                       <span>{record.model || '-'}</span>
                     </div>
@@ -767,7 +767,7 @@ export default function ProjectDetail() {
             ))}
           </div>
         )}
-      </section>
+      </PageSection>
 
       <Modal title={editingBrief ? '编辑提案' : '新建提案'} isOpen={briefModalOpen} onClose={() => setBriefModalOpen(false)} onSave={saveBrief} width="max-w-2xl">
         <div className="space-y-4">
@@ -822,13 +822,13 @@ export default function ProjectDetail() {
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{shot.shotName}</h3>
+                      <h3 className="panel-value font-semibold">{shot.shotName}</h3>
                         {isCurrentSelection && <Badge variant="outline">当前关联</Badge>}
                         {belongsToCurrentProject && !isCurrentSelection && <Badge variant="success">当前项目镜头</Badge>}
                         {belongsToAnotherProject && <Badge variant="warning">原项目：{getProjectName(shot.projectId)}</Badge>}
                         {!shot.projectId && <Badge variant="outline">未归属项目</Badge>}
                       </div>
-                      <div className="grid gap-2 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-3">
+                      <div className="helper-text grid gap-2 sm:grid-cols-3">
                         <div>Prompt ID：{shot.promptId || '未填写'}</div>
                         <div>模型：{shot.modelName || '未填写'}</div>
                         <div>版本：{shot.modelVersion || '未填写'}</div>
@@ -843,13 +843,13 @@ export default function ProjectDetail() {
               )
             })}
             {candidateShots.length === 0 && (
-              <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              <div className="body-muted rounded-xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-700">
                 暂无匹配镜头，可先去内容中心创建镜头后再回来关联。
               </div>
             )}
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   )
 }

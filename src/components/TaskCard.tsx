@@ -37,9 +37,9 @@ function getStatusBadge(status: VideoGenerationTask['status']) {
 
 export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onRetry, extraActions }: TaskCardProps) {
   return (
-    <div className="card space-y-4">
+    <div className="page-section-tight space-y-4">
       {task.videoUrl && (
-        <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: task.aspectRatio?.replace(':', '/') || '16/9', maxHeight: '160px' }}>
+        <div className="media-tile" style={{ aspectRatio: task.aspectRatio?.replace(':', '/') || '16/9', maxHeight: '160px' }}>
           <video src={task.videoUrl} className="w-full h-full object-contain" muted />
         </div>
       )}
@@ -47,8 +47,8 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
       <div className="space-y-2">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{task.prompt}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="body-text line-clamp-2">{task.prompt}</p>
+            <p className="helper-text">
               {task.mode === 'text-to-video' ? '文生视频' : '图生视频'} · {task.aspectRatio}
             </p>
           </div>
@@ -56,12 +56,12 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
         </div>
 
         {(task.status === 'in_queue' || task.status === 'generating') && (
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
                 task.status === 'in_queue'
-                  ? 'bg-warning/70 animate-pulse w-1/2'
-                  : 'bg-info'
+                  ? 'w-1/2 animate-pulse bg-gray-500'
+                  : 'bg-gray-950 dark:bg-white'
               }`}
               style={task.status === 'generating' && task.progress ? { width: `${task.progress}%` } : undefined}
             />
@@ -69,31 +69,31 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
         )}
 
         {task.status === 'generating' && task.progress != null && (
-          <p className="text-xs text-gray-600 dark:text-gray-400">{task.progress}%</p>
+          <p className="helper-text">{task.progress}%</p>
         )}
 
         {task.status === 'failed' && task.errorMessage && (
-          <p className="text-xs text-error flex items-center gap-1">
+          <p className="flex items-center gap-1 text-xs text-error">
             <AlertCircle size={12} />
             {task.errorMessage}
           </p>
         )}
 
         {task.status === 'done' && task.tokensUsed != null && task.tokensUsed > 0 && (
-          <p className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+          <p className="helper-text flex items-center gap-1">
             <Zap size={12} />
             消耗 Token: {task.tokensUsed.toLocaleString()}
           </p>
         )}
 
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="helper-text flex items-center justify-between">
           <span>{task.timeElapsed ? `已用 ${task.timeElapsed}` : ''}</span>
           {task.completedAt && <span>{formatDate(task.completedAt, 'full')}</span>}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700/50">
-        <Button onClick={onViewDetail} variant="secondary" size="sm" className="gap-1">
+      <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3 dark:border-gray-800">
+        <Button onClick={onViewDetail} variant="outline" size="sm" className="gap-1">
           <Eye size={14} />
           详情
         </Button>

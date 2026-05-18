@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import Pagination from '@/components/Pagination'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
+import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 
 interface LogEntry {
   id: string
@@ -60,17 +62,17 @@ const MOCK_LOGS: LogEntry[] = [
 ]
 
 const levelMap: Record<string, { label: string; className: string }> = {
-  error: { label: '错误', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  warning: { label: '警告', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  info: { label: '信息', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  debug: { label: '调试', className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  error: { label: '错误', className: 'badge-error' },
+  warning: { label: '警告', className: 'badge-warning' },
+  info: { label: '信息', className: 'badge-info' },
+  debug: { label: '调试', className: 'badge-secondary' },
 }
 
 const sourceMap: Record<string, { label: string; className: string }> = {
-  'video-gen': { label: '视频生成', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  'image-gen': { label: '图片生成', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  system: { label: '系统', className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
-  'user-action': { label: '用户操作', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  'video-gen': { label: '视频生成', className: 'badge-secondary' },
+  'image-gen': { label: '图片生成', className: 'badge-success' },
+  system: { label: '系统', className: 'badge-info' },
+  'user-action': { label: '用户操作', className: 'badge-warning' },
 }
 
 const ITEMS_PER_PAGE = 10
@@ -114,16 +116,12 @@ export default function SystemLogs() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <FileText size={20} className="text-primary-500" />
-            全局日志
-          </h1>
-          <p className="page-subtitle">查看系统运行日志和审计记录</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell>
+      <PageIntro
+        eyebrow="系统管理"
+        title="全局日志"
+        description="统一查看系统运行日志、生成链路记录和用户操作审计。"
+        actions={<div className="flex items-center gap-2">
           <Button variant="secondary" className="gap-2" onClick={handleExport}>
             <Download size={14} />
             导出日志
@@ -132,12 +130,12 @@ export default function SystemLogs() {
             <Trash2 size={14} />
             清空日志
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
-      <div className="card">
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex-1 min-w-[200px]">
+      <PageSection className="space-y-5">
+        <div className="filter-bar">
+          <div className="filter-search min-w-[200px]">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
@@ -170,11 +168,11 @@ export default function SystemLogs() {
           </NativeSelect>
         </div>
 
-        <p className="meta-text mb-3">
+        <p className="filter-meta">
           共 {filteredLogs.length} 条日志，当前第 {currentPage}/{totalPages || 1} 页
         </p>
 
-        <div className="overflow-x-auto">
+        <div className="card overflow-x-auto p-0 shadow-none">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -187,15 +185,15 @@ export default function SystemLogs() {
             </thead>
             <tbody>
               {paginatedLogs.map(log => (
-                <tr key={log.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                <tr key={log.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
                   <td className="px-2 py-2.5 whitespace-nowrap body-muted">{log.timestamp}</td>
                   <td className="py-2.5 px-2">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${levelMap[log.level]?.className}`}>
+                    <span className={`badge ${levelMap[log.level]?.className}`}>
                       {levelMap[log.level]?.label}
                     </span>
                   </td>
                   <td className="py-2.5 px-2">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${sourceMap[log.source]?.className}`}>
+                    <span className={`badge ${sourceMap[log.source]?.className}`}>
                       {sourceMap[log.source]?.label}
                     </span>
                   </td>
@@ -205,7 +203,7 @@ export default function SystemLogs() {
                       onClick={() => setDetailLog(log)}
                       variant="ghost"
                       size="sm"
-                      className="gap-1 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                      className="gap-1 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
                       <Eye size={12} />
                       详情
@@ -226,55 +224,31 @@ export default function SystemLogs() {
         </div>
 
         <Pagination currentPage={currentPage} pageSize={ITEMS_PER_PAGE} totalItems={filteredLogs.length} onPageChange={setCurrentPage} />
-      </div>
+      </PageSection>
 
       {detailLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDetailLog(null)}>
-          <div className="card w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm" onClick={() => setDetailLog(null)}>
+          <div className="page-section w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="card-title">日志详情</h3>
+              <h3 className="section-title text-lg">日志详情</h3>
               <Button
                 onClick={() => setDetailLog(null)}
                 variant="ghost"
                 size="icon"
               >
-                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Trash2 size={16} className="rotate-45 text-gray-500" />
               </Button>
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 body-text">
-                <div>
-                  <p className="meta-text">时间</p>
-                  <p className="body-text font-medium text-gray-900 dark:text-gray-100">{detailLog.timestamp}</p>
-                </div>
-                <div>
-                  <p className="meta-text">来源</p>
-                  <p className="body-text font-medium text-gray-900 dark:text-gray-100">{sourceMap[detailLog.source]?.label}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${levelMap[detailLog.level]?.className}`}>
-                  {levelMap[detailLog.level]?.label}
-                </span>
-              </div>
-              <div>
-                <p className="meta-text mb-1">消息</p>
-                <p className="body-text text-gray-900 dark:text-gray-100">{detailLog.message}</p>
-              </div>
-              {detailLog.details && (
-                <div>
-                  <p className="meta-text mb-1">详细信息</p>
-                  <pre className="surface-muted p-3 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
-                    {detailLog.details}
-                  </pre>
-                </div>
-              )}
-            </div>
+            <ReadOnlySection>
+              <ReadOnlyField label="时间" value={detailLog.timestamp} />
+              <ReadOnlyField label="来源" value={<span className={`badge ${sourceMap[detailLog.source]?.className}`}>{sourceMap[detailLog.source]?.label}</span>} />
+              <ReadOnlyField label="级别" value={<span className={`badge ${levelMap[detailLog.level]?.className}`}>{levelMap[detailLog.level]?.label}</span>} />
+              <ReadOnlyField label="消息" value={detailLog.message} />
+              <ReadOnlyField label="详细信息" value={detailLog.details} span="full" />
+            </ReadOnlySection>
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }

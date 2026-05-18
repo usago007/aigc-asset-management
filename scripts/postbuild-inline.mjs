@@ -14,6 +14,57 @@ const resolveDistAssetPath = (assetPath) => {
 
 const escapeInlineScript = (content) => content.replace(/<\/script/gi, '<\\/script')
 const escapeInlineStyle = (content) => content.replace(/<\/style/gi, '<\\/style')
+const normalizeWebDir = (value) => value.replace(/\\/g, '/').replace(/^\.\//, '')
+const isRelativeSpecifier = (specifier) => specifier.startsWith('./') || specifier.startsWith('../')
+const rebaseRelativeSpecifier = (specifier, assetSrc) => {
+  if (!isRelativeSpecifier(specifier)) return specifier
+  const assetDir = path.posix.dirname(normalizeWebDir(assetSrc))
+  if (!assetDir || assetDir === '.') return specifier
+  const rebased = path.posix.normalize(path.posix.join(assetDir, specifier))
+  return rebased.startsWith('.') ? rebased : `./${rebased}`
+}
+
+const rebaseInlineModuleImports = (content, scriptSrc) => {
+  return content
+    .replace(/(from\s*['"])(\.{1,2}\/[^'"]+)(['"])/g, (_, prefix, specifier, suffix) => {
+      return `${prefix}${rebaseRelativeSpecifier(specifier, scriptSrc)}${suffix}`
+    })
+    .replace(/(import\s*['"])(\.{1,2}\/[^'"]+)(['"])/g, (_, prefix, specifier, suffix) => {
+      return `${prefix}${rebaseRelativeSpecifier(specifier, scriptSrc)}${suffix}`
+    })
+    .replace(/(import\s*\(\s*['"])(\.{1,2}\/[^'"]+)(['"]\s*\))/g, (_, prefix, specifier, suffix) => {
+      return `${prefix}${rebaseRelativeSpecifier(specifier, scriptSrc)}${suffix}`
+    })
+    .replace(/(new\s+URL\s*\(\s*['"])(\.{1,2}\/[^'"]+)(['"]\s*,\s*import\.meta\.url\s*\))/g, (_, prefix, specifier, suffix) => {
+      return `${prefix}${rebaseRelativeSpecifier(specifier, scriptSrc)}${suffix}`
+    })
+}
+
+const rebaseInlineCssUrls = (content, cssSrc) =>
+  content.replace(/url\((['"]?)([^'")]+)\1\)/g, (full, quote, assetPath) => {
+    if (!isRelativeSpecifier(assetPath) || assetPath.startsWith('data:')) return full
+    const rebased = rebaseRelativeSpecifier(assetPath, cssSrc)
+    return `url(${quote}${rebased}${quote})`
+  })
+
+const ensureInlineReferencesResolvable = async (content, assetSrc, patterns, kind) => {
+  const references = []
+  for (const pattern of patterns) {
+    for (const match of content.matchAll(pattern)) {
+      references.push(match[1])
+    }
+  }
+
+  for (const ref of references) {
+    if (!isRelativeSpecifier(ref)) continue
+    const resolved = resolveDistAssetPath(ref)
+    try {
+      await fs.access(resolved)
+    } catch {
+      throw new Error(`${kind} 内联后仍引用了不存在的资源: ${ref} (来源: ${assetSrc})`)
+    }
+  }
+}
 
 let html = await fs.readFile(indexPath, 'utf8')
 
@@ -32,14 +83,30 @@ if (faviconMatch) {
 const stylesheetMatches = [...html.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)]
 for (const match of stylesheetMatches) {
   const cssPath = resolveDistAssetPath(match[1])
-  const css = escapeInlineStyle(await fs.readFile(cssPath, 'utf8'))
+  const rawCss = await fs.readFile(cssPath, 'utf8')
+  const rebasedCss = rebaseInlineCssUrls(rawCss, match[1])
+  await ensureInlineReferencesResolvable(rebasedCss, match[1], [/url\((?:['"]?)(\.{1,2}\/[^'")]+)(?:['"]?)\)/g], 'CSS')
+  const css = escapeInlineStyle(rebasedCss)
   html = html.replace(match[0], () => `<style data-inline-href="${match[1]}">\n${css}\n</style>`)
 }
 
 const scriptMatches = [...html.matchAll(/<script type="module"[^>]*src="([^"]+)"[^>]*><\/script>/g)]
 for (const match of scriptMatches) {
   const jsPath = resolveDistAssetPath(match[1])
-  const js = escapeInlineScript(await fs.readFile(jsPath, 'utf8'))
+  const rawJs = await fs.readFile(jsPath, 'utf8')
+  const rebasedJs = rebaseInlineModuleImports(rawJs, match[1])
+  await ensureInlineReferencesResolvable(
+    rebasedJs,
+    match[1],
+    [
+      /from\s*['"](\.{1,2}\/[^'"]+)['"]/g,
+      /import\s*['"](\.{1,2}\/[^'"]+)['"]/g,
+      /import\s*\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g,
+      /new\s+URL\s*\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g,
+    ],
+    'JS',
+  )
+  const js = escapeInlineScript(rebasedJs)
   html = html.replace(match[0], () => `<script type="module" data-inline-src="${match[1]}">\n${js}\n</script>`)
 }
 

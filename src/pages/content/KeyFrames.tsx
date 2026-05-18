@@ -7,6 +7,7 @@ import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -105,19 +106,24 @@ export default function KeyFrames() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">首图/尾图管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有首图和尾图资源</p>
-        </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2">
-          <Plus size={16} /> 创建
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="内容中心"
+        title="关键帧管理"
+        description="统一查看首图、尾图的类型、状态、所属镜头和模型记录，作为镜头结果追溯入口。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建关键帧</Button>}
+      />
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <PageSection className="space-y-5">
+        <div className="summary-grid">
+          <div className="summary-card"><p className="summary-label">关键帧总数</p><p className="summary-value">{keyFrames.length}</p></div>
+          <div className="summary-card"><p className="summary-label">首图数量</p><p className="summary-value">{keyFrames.filter((item) => item.type === 'Opening').length}</p></div>
+          <div className="summary-card"><p className="summary-label">尾图数量</p><p className="summary-value">{keyFrames.filter((item) => item.type === 'Ending').length}</p></div>
+          <div className="summary-card"><p className="summary-label">已完成</p><p className="summary-value">{keyFrames.filter((item) => item.status === 'Completed').length}</p></div>
+        </div>
+
+        <div className="filter-bar">
+        <div className="relative filter-search max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
           <Input placeholder="搜索名称、Prompt、模型或镜头..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
@@ -145,9 +151,14 @@ export default function KeyFrames() {
             {shots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}
           </SelectContent>
         </Select>
-      </div>
+        </div>
 
-      <div className="card overflow-x-auto p-0">
+        <div className="filter-meta">
+          <span>共 {filteredItems.length} 条关键帧记录</span>
+          <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+        </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -162,8 +173,8 @@ export default function KeyFrames() {
           </thead>
           <tbody>
             {paginatedItems.map((keyFrame) => (
-              <tr key={keyFrame.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{keyFrame.name}</td>
+              <tr key={keyFrame.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{keyFrame.name}</td>
                 <td className="table-cell"><Badge variant={keyFrame.type === 'Opening' ? 'info' : 'success'}>{keyFrame.type === 'Opening' ? '首图' : '尾图'}</Badge></td>
                 <td className="table-cell">{keyFrame.modelName || '-'}</td>
                 <td className="table-cell">{keyFrame.modelVersion || '-'}</td>
@@ -180,10 +191,11 @@ export default function KeyFrames() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑首图/尾图' : '创建首图/尾图'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -234,6 +246,6 @@ export default function KeyFrames() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

@@ -75,7 +75,7 @@ const PaginationLink = React.forwardRef<HTMLButtonElement, PaginationLinkProps>(
       ref={ref}
       variant={isActive ? "outline" : "default"}
       className={cn(
-        isActive && "border-primary-500 bg-primary-500/20 text-primary-400"
+        isActive && "border-gray-950 bg-gray-950 text-white dark:border-white dark:bg-white dark:text-gray-950"
       )}
       {...props}
     />

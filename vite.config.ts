@@ -7,6 +7,17 @@ export default defineConfig({
   build: {
     modulePreload: false,
     cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('react-router-dom')) return 'router'
+          if (id.includes('@radix-ui')) return 'radix'
+          if (id.includes('zustand')) return 'state'
+          return 'vendor'
+        },
+      },
+    },
   },
   plugins: [react()],
   resolve: {

@@ -6,6 +6,7 @@ import { formatDate } from '@/utils/date'
 import { normalizeSearchText } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -128,29 +129,46 @@ export default function Customers() {
   )
 
   const roleChecklist = (selectedRoles: string[], onToggle: (roleName: string) => void) => (
-    <div className="flex flex-wrap gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+    <div className="flex flex-wrap gap-3 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-950">
       {availableRoleNames.length > 0 ? availableRoleNames.map((roleName) => (
-        <label key={roleName} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <label key={roleName} className="field-label flex items-center gap-2">
           <Checkbox checked={selectedRoles.includes(roleName)} onCheckedChange={() => onToggle(roleName)} />
           <span>{roleName}</span>
         </label>
-      )) : <span className="text-sm text-gray-500 dark:text-gray-400">暂无可用角色</span>}
+      )) : <span className="helper-text">暂无可用角色</span>}
     </div>
   )
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">客户管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有客户信息</p>
-        </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2">
-          <Plus size={16} /> 创建客户
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title="客户管理"
+        description="统一管理客户、联系人、角色标签和备注信息，作为品牌与项目归属链路的起点。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建客户</Button>}
+      />
 
-      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900/40 md:grid-cols-2 xl:grid-cols-4">
+      <PageSection className="space-y-5">
+        <div className="summary-grid">
+          <div className="summary-card">
+            <p className="summary-label">客户总数</p>
+            <p className="summary-value">{customers.length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">已配置角色</p>
+            <p className="summary-value">{customers.filter((item) => item.roles.length > 0).length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">可用角色模板</p>
+            <p className="summary-value">{availableRoleNames.length}</p>
+          </div>
+          <div className="summary-card">
+            <p className="summary-label">当前筛中</p>
+            <p className="summary-value">{filteredItems.length}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="customer-filter-name">客户名称</Label>
           <Input id="customer-filter-name" value={filters.customerName} onChange={(e) => updateFilter('customerName', e.target.value)} placeholder="按客户名称筛选" />
@@ -167,9 +185,14 @@ export default function Customers() {
           <Label>角色</Label>
           {roleChecklist(filters.roles, toggleFilterRole)}
         </div>
-      </div>
+        </div>
 
-      <div className="card overflow-x-auto p-0">
+        <div className="filter-meta">
+          <span>共 {filteredItems.length} 个客户</span>
+          <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+        </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -183,8 +206,8 @@ export default function Customers() {
           </thead>
           <tbody>
             {paginatedItems.map((customer) => (
-              <tr key={customer.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{customer.customerName}</td>
+              <tr key={customer.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{customer.customerName}</td>
                 <td className="table-cell">{customer.contactPerson || '-'}</td>
                 <td className="table-cell">{roleBadges(customer.roles)}</td>
                 <td className="table-cell max-w-[200px] truncate">{customer.notes || '-'}</td>
@@ -206,10 +229,11 @@ export default function Customers() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑客户' : '创建客户'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -244,6 +268,6 @@ export default function Customers() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

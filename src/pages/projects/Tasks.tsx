@@ -6,6 +6,7 @@ import { formatDate } from '@/utils/date'
 import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -107,19 +108,36 @@ export default function Tasks() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">任务管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有项目任务</p>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title="任务管理"
+        description="统一查看项目任务、负责人、类型与状态，和仪表盘任务概览保持同一阅读节奏。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建任务</Button>}
+      />
+
+      <PageSection className="space-y-5">
+      <div className="summary-grid">
+        <div className="summary-card">
+          <p className="summary-label">任务总数</p>
+          <p className="summary-value">{tasks.length}</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2">
-          <Plus size={16} /> 创建任务
-        </Button>
+        <div className="summary-card">
+          <p className="summary-label">待处理</p>
+          <p className="summary-value">{tasks.filter((item) => item.status === 'Pending').length}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">进行中</p>
+          <p className="summary-value">{tasks.filter((item) => item.status === 'InProgress').length}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">已完成</p>
+          <p className="summary-value">{tasks.filter((item) => item.status === 'Completed').length}</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="filter-bar">
+        <div className="relative filter-search max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
           <Input type="text" placeholder="搜索任务名称、项目、负责人或备注..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
@@ -150,7 +168,12 @@ export default function Tasks() {
         </Select>
       </div>
 
-      <div className="card overflow-x-auto p-0">
+      <div className="filter-meta">
+        <span>共 {filteredItems.length} 个任务</span>
+        <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+      </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -165,8 +188,8 @@ export default function Tasks() {
           </thead>
           <tbody>
             {paginatedItems.map((task) => (
-              <tr key={task.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                <td className="table-cell font-medium text-gray-800 dark:text-gray-200">{task.taskName}</td>
+              <tr key={task.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{task.taskName}</td>
                 <td className="table-cell">{getProjectName(task.projectId)}</td>
                 <td className="table-cell">{task.assignedTo || '-'}</td>
                 <td className="table-cell"><Badge variant="info">{task.type}</Badge></td>
@@ -183,10 +206,11 @@ export default function Tasks() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑任务' : '创建任务'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -260,6 +284,6 @@ export default function Tasks() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

@@ -16,11 +16,14 @@ interface JimengInputProps {
     onUpload: (files: FileList | null) => void
     onRemove: (index: number) => void
   }
+  imageUploadLabel?: string
   videoUpload?: {
     video: { url: string; base64: string } | null
     onUpload: (file: File | null) => void
     onRemove: () => void
   }
+  videoUploadLabel?: string
+  mediaHint?: ReactNode
   showVoice?: boolean
 }
 
@@ -34,7 +37,10 @@ export default function JimengInput({
   leftActions,
   bottomActions,
   imageUpload,
+  imageUploadLabel = '添加图片',
   videoUpload,
+  videoUploadLabel = '添加素材',
+  mediaHint,
   showVoice = true,
 }: JimengInputProps) {
   const [isFocused, setIsFocused] = useState(false)
@@ -53,24 +59,26 @@ export default function JimengInput({
   const hasValue = value.trim().length > 0
   const hasImages = imageUpload && imageUpload.images.length > 0
   const hasVideo = videoUpload && videoUpload.video !== null
+  const actionShellClassName =
+    'group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-white hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-50'
 
   return (
     <div className="relative">
       <div
-        className={`rounded-2xl border transition-all duration-200 bg-white dark:bg-gray-800 shadow-sm ${
+        className={`rounded-[24px] border bg-white shadow-[0_16px_44px_rgba(15,23,42,0.06)] transition-colors dark:bg-gray-900 ${
           isFocused
-            ? 'border-accent-500 shadow-md shadow-accent-500/15 ring-1 ring-accent-500/20'
-            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-accent-500'
+            ? 'border-gray-900 ring-2 ring-gray-900/5 dark:border-white dark:ring-white/10'
+            : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
         }`}
       >
         {/* Image preview strip */}
         {hasImages && (
-          <div className="flex gap-2 p-3 pb-0">
+          <div className="flex gap-2 p-4 pb-0">
             {imageUpload!.images.map((img, idx) => (
-              <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 shadow-sm">
+              <div key={idx} className="relative group h-16 w-16 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
                 <img src={img.url} alt="" className="w-full h-full object-cover" />
                 <button
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-900 dark:bg-gray-700 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500 dark:bg-gray-700"
                   onClick={() => imageUpload!.onRemove(idx)}
                 >
                   <X size={12} className="text-white" />
@@ -78,7 +86,7 @@ export default function JimengInput({
               </div>
             ))}
             {imageUpload!.images.length < imageUpload!.maxImages && (
-              <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-accent-500 dark:hover:border-accent-500 flex items-center justify-center cursor-pointer transition-colors bg-gray-50 dark:bg-gray-800">
+              <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-500 dark:border-gray-700 dark:bg-gray-800">
                 <input
                   type="file"
                   accept="image/jpeg,image/png"
@@ -86,18 +94,18 @@ export default function JimengInput({
                   onChange={(e) => imageUpload!.onUpload(e.target.files)}
                   multiple={imageUpload!.maxImages > 1}
                 />
-                <ImagePlus size={18} className="text-gray-500 dark:text-gray-400" />
+                  <ImagePlus size={18} className="text-gray-400 dark:text-gray-500" />
               </label>
             )}
           </div>
         )}
 
-        {/* Video preview */}
+        {/* Single media preview */}
         {hasVideo && (
-          <div className="relative group w-24 h-16 mx-3 mt-2 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 shadow-sm">
-            <video src={videoUpload!.video!.url} className="w-full h-full object-cover" muted />
+          <div className="relative group mx-4 mt-3 h-16 w-24 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+            <img src={videoUpload!.video!.url} alt="" className="w-full h-full object-cover" />
             <button
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-900 dark:bg-gray-700 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500 dark:bg-gray-700"
               onClick={videoUpload!.onRemove}
             >
               <X size={12} className="text-white" />
@@ -109,7 +117,7 @@ export default function JimengInput({
         <div className="relative">
           <textarea
             ref={textareaRef}
-            className="w-full px-4 pt-4 pb-16 bg-transparent text-gray-900 dark:text-gray-100 text-[15px] leading-relaxed resize-none outline-none placeholder:text-gray-400"
+            className="w-full resize-none bg-transparent px-5 pt-5 pb-24 text-sm leading-7 text-gray-950 outline-none placeholder:text-gray-400 dark:text-gray-50"
             placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -122,12 +130,14 @@ export default function JimengInput({
           />
 
           {/* Bottom toolbar */}
-          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-            <div className="flex items-center gap-1">
+          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-4">
+            <div className="min-w-0 space-y-2">
+              {mediaHint ? <div className="helper-text">{mediaHint}</div> : null}
+              <div className="flex flex-wrap items-center gap-2">
               {leftActions || (
                 <>
                   {imageUpload && (
-                    <label className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors group" title="上传图片">
+                    <label className={`${actionShellClassName} cursor-pointer`} title={imageUploadLabel}>
                       <input
                         type="file"
                         accept="image/jpeg,image/png"
@@ -135,32 +145,46 @@ export default function JimengInput({
                         onChange={(e) => imageUpload.onUpload(e.target.files)}
                         multiple={imageUpload.maxImages > 1}
                       />
-                      <ImagePlus size={18} className="text-gray-600 dark:text-gray-400 group-hover:text-accent-500 transition-colors" />
+                      <ImagePlus size={16} className="text-gray-500 transition-colors group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-gray-100" />
+                      <span>{imageUploadLabel}</span>
+                    </label>
+                  )}
+                  {videoUpload && (
+                    <label className={`${actionShellClassName} cursor-pointer`} title={videoUploadLabel}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        className="hidden"
+                        onChange={(e) => videoUpload.onUpload(e.target.files?.[0] || null)}
+                      />
+                      <ImagePlus size={16} className="text-gray-500 transition-colors group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-gray-100" />
+                      <span>{videoUploadLabel}</span>
                     </label>
                   )}
                 </>
               )}
               {bottomActions}
+              </div>
             </div>
 
             <div className="flex items-center gap-1">
-              <span className={`text-xs mr-2 font-medium ${value.length > maxChars * 0.9 ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+              <span className={`mr-2 text-xs font-medium ${value.length > maxChars * 0.9 ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 {value.length}/{maxChars}
               </span>
               {showVoice && (
                 <button
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                  className="group rounded-xl p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
                   title="语音输入"
                   disabled={disabled}
                 >
-                  <Mic size={18} className="text-gray-600 dark:text-gray-400 group-hover:text-accent-500 transition-colors" />
+                  <Mic size={18} className="text-gray-500 transition-colors group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-gray-100" />
                 </button>
               )}
               <button
-                className={`p-2 rounded-lg transition-all font-medium ${
+                className={`rounded-xl p-2 font-medium transition-colors ${
                   hasValue && !disabled
-                    ? 'bg-accent-500 text-white hover:bg-accent-600 shadow-md shadow-accent-500/25'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                    ? 'bg-gray-950 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200'
+                    : 'bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
                 }`}
                 onClick={onSubmit}
                 disabled={!hasValue || disabled}

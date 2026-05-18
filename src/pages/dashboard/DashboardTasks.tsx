@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
 import { BarChart3, Layers, AlertCircle, UserCheck } from 'lucide-react'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
 function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
       <span className={`text-3xl font-bold ${color}`}>{value}</span>
-      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</span>
+      <span className="helper-text mt-1">{label}</span>
     </div>
   )
 }
@@ -17,13 +18,13 @@ function StatusRow({ label, value, total, colorClass }: { label: string; value: 
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${colorClass}`} />
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="panel-value">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div className={`h-full ${colorClass} rounded-full`} style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-sm text-gray-500 dark:text-gray-400 w-16 text-right">{value} ({pct}%)</span>
+        <span className="helper-text w-16 text-right">{value} ({pct}%)</span>
       </div>
     </div>
   )
@@ -85,25 +86,19 @@ export default function DashboardTasks() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">任务</h1>
-          <span className="text-xs text-gray-500 dark:text-gray-400">最后更新: {lastUpdated}</span>
-        </div>
-        <p className="text-gray-500 mt-1">任务管理与人员工作负载</p>
-      </div>
+    <PageShell>
+      <PageIntro eyebrow="仪表盘" title="任务概览" description={`任务管理与人员工作负载，最后更新 ${lastUpdated}`} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MiniStatCard label="总任务" value={tasks.length} color="text-accent-500" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStatCard label="总任务" value={tasks.length} color="text-gray-900 dark:text-white" />
         <MiniStatCard label="待处理" value={statusCounts.Pending} color="text-gray-500" />
         <MiniStatCard label="进行中" value={statusCounts.InProgress} color="text-blue-500" />
         <MiniStatCard label="已完成" value={statusCounts.Completed} color="text-green-500" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <BarChart3 size={18} className="text-blue-600 dark:text-blue-400" />
             任务状态分布
           </h2>
@@ -118,19 +113,19 @@ export default function DashboardTasks() {
               />
             ))}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <Layers size={18} className="text-purple-600 dark:text-purple-400" />
             任务类型分布
           </h2>
           <div className="space-y-3">
             {Object.entries(typeCounts).map(([type, count]) => (
               <div key={type}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-800 dark:text-gray-300">{type}</span>
-                  <span className="text-gray-600 dark:text-gray-500">{count}</span>
+                <div className="mb-1 flex justify-between">
+                  <span className="panel-value">{type}</span>
+                  <span className="helper-text">{count}</span>
                 </div>
                 <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
@@ -141,24 +136,24 @@ export default function DashboardTasks() {
               </div>
             ))}
           </div>
-        </div>
+        </PageSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <AlertCircle size={18} className="text-red-500" />
             逾期任务 ({overdueTasks.length})
           </h2>
           {overdueTasks.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">暂无逾期任务</p>
+            <p className="body-muted py-4 text-center">暂无逾期任务</p>
           ) : (
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {overdueTasks.map(task => (
                 <div key={task.id} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-900/30">
                   <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">{task.taskName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{task.assignedTo}</p>
+                    <p className="panel-value font-medium text-gray-800 dark:text-gray-300">{task.taskName}</p>
+                    <p className="helper-text">{task.assignedTo}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-red-500 dark:text-red-400">截止: {new Date(task.deadline).toLocaleDateString('zh-CN')}</span>
@@ -170,10 +165,10 @@ export default function DashboardTasks() {
               ))}
             </div>
           )}
-        </div>
+        </PageSection>
 
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <PageSection>
+          <h2 className="card-title mb-4 flex items-center gap-2">
             <UserCheck size={18} className="text-green-600 dark:text-green-400" />
             人员工作负载
           </h2>
@@ -181,21 +176,21 @@ export default function DashboardTasks() {
             {workloadEntries.map(person => (
               <div key={person.name} className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent-500/10 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-accent-500">{person.name.charAt(0)}</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{person.name.charAt(0)}</span>
                   </div>
-                  <span className="text-sm text-gray-800 dark:text-gray-300">{person.name}</span>
+                    <span className="panel-value">{person.name}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">总计 <span className="font-semibold text-gray-700 dark:text-gray-300">{person.total}</span></span>
-                  <span className="text-gray-500 dark:text-gray-400">待处理 <span className="font-semibold text-yellow-500">{person.pending}</span></span>
-                  <span className="text-gray-500 dark:text-gray-400">进行中 <span className="font-semibold text-blue-500">{person.inProgress}</span></span>
+                <div className="flex items-center gap-4">
+                  <span className="helper-text">总计 <span className="panel-value font-semibold">{person.total}</span></span>
+                  <span className="helper-text">待处理 <span className="panel-value font-semibold text-yellow-500">{person.pending}</span></span>
+                  <span className="helper-text">进行中 <span className="panel-value font-semibold text-blue-500">{person.inProgress}</span></span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </PageShell>
   )
 }

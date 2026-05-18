@@ -6,6 +6,7 @@ import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -106,16 +107,17 @@ export default function Reviews() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">审核管理</h1>
-        <Button className="gap-2" onClick={() => handleOpenModal()}>
-          <Plus size={16} /> 创建审核
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="项目中心"
+        title="审核管理"
+        description="统一查看审核对象、审核人、审核类型和状态，保证项目评审与内容链路使用同一套管理台语法。"
+        actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} /> 创建审核</Button>}
+      />
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <PageSection className="space-y-5">
+      <div className="filter-bar">
+        <div className="relative filter-search max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <Input placeholder="搜索对象 ID、审核人或评论..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
@@ -138,7 +140,12 @@ export default function Reviews() {
         </NativeSelect>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="filter-meta">
+        <span>共 {filteredItems.length} 条审核记录</span>
+        <span>当前第 {currentPage}/{Math.max(1, Math.ceil(filteredItems.length / pageSize))} 页</span>
+      </div>
+
+      <div className="card overflow-x-auto p-0 shadow-none">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -153,7 +160,7 @@ export default function Reviews() {
           </thead>
           <tbody>
             {paginatedItems.map((review) => (
-              <tr key={review.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
+              <tr key={review.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
                 <td className="table-cell"><span className="badge badge-info">{targetTypeMap[review.targetType]}</span></td>
                 <td className="table-cell">{review.reviewer}</td>
                 <td className="table-cell">{reviewTypeMap[review.reviewType]}</td>
@@ -171,10 +178,11 @@ export default function Reviews() {
             ))}
           </tbody>
         </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-500">暂无数据</div>}
+        {paginatedItems.length === 0 && <div className="empty-state rounded-none border-0 bg-transparent py-12">暂无数据</div>}
       </div>
 
       <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑审核' : '创建审核'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-4">
@@ -234,6 +242,6 @@ export default function Reviews() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

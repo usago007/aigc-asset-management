@@ -22,35 +22,35 @@ export default function ParamPanel({
   const [expanded, setExpanded] = useState(defaultExpanded)
 
   return (
-    <div className="border border-accent-500/20 dark:border-accent-500/30 rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-gray-800 dark:bg-gray-900">
       <button
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent-50 dark:hover:bg-accent-500/10 transition-colors"
+        className="flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={16} className="text-accent-500" />
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</span>
+          <SlidersHorizontal size={16} className="text-gray-500 dark:text-gray-400" />
+          <span className="panel-title">{title}</span>
           {sections.length > 0 && (
-            <span className="text-xs font-medium text-accent-600 dark:text-accent-400 bg-accent-100 dark:bg-accent-500/20 px-2 py-0.5 rounded-full">
+            <span className="rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 helper-text font-medium dark:border-gray-700 dark:bg-gray-800">
               {sections.length} 项
             </span>
           )}
         </div>
         {expanded ? (
-          <ChevronUp size={16} className="text-accent-500" />
+          <ChevronUp size={16} className="text-gray-400 dark:text-gray-500" />
         ) : (
-          <ChevronDown size={16} className="text-accent-500" />
+          <ChevronDown size={16} className="text-gray-400 dark:text-gray-500" />
         )}
       </button>
 
       {expanded && (
-        <div className="border-t border-accent-500/20 dark:border-accent-500/30">
+        <div className="border-t border-gray-200 dark:border-gray-800">
           {sections.map((section) => (
-            <div key={section.id} className="px-4 py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+            <div key={section.id} className="border-b border-gray-100 px-5 py-5 last:border-b-0 dark:border-gray-800">
               {section.icon && (
                 <div className="flex items-center gap-2 mb-3">
                   {section.icon}
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{section.label}</span>
+                  <span className="panel-title">{section.label}</span>
                 </div>
               )}
               <div>{section.children}</div>

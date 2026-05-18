@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Asset } from '@/types'
 
 const ASSET_PLACEHOLDER_IMAGES = [
@@ -36,6 +37,44 @@ const sourceTypeLabelMap: Record<Asset['sourceType'], string> = {
   'image-task': '图片任务',
   'video-task': '视频任务',
   script: '脚本录入',
+}
+
+function AssetThumb({
+  asset,
+  thumbnail,
+  detailPath,
+  onOpen,
+}: {
+  asset: Asset
+  thumbnail: string
+  detailPath: string | null
+  onOpen: () => void
+}) {
+  return (
+    <div
+      className={`relative h-14 w-14 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950 ${detailPath ? 'cursor-pointer transition-colors hover:border-gray-300 dark:hover:border-gray-700' : ''}`}
+      onClick={() => {
+        if (detailPath) onOpen()
+      }}
+    >
+      <img src={thumbnail} alt={asset.assetName} className="h-full w-full object-cover" loading="lazy" />
+      {asset.type === 'Video' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <Play size={14} className="text-white" />
+        </div>
+      )}
+      {asset.type === 'Script' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <FileText size={16} className="text-gray-400 dark:text-gray-500" />
+        </div>
+      )}
+      {detailPath && (
+        <div className="absolute right-1.5 top-1.5 rounded-full bg-black/45 p-1">
+          <ExternalLink size={10} className="text-white" />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Assets() {
@@ -282,123 +321,122 @@ export default function Assets() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">资产管理</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-500">管理所有生成资产</p>
+    <PageShell>
+      <PageIntro
+        eyebrow="内容中心"
+        title="资产管理"
+        description="统一查看图片、视频和脚本资产的来源、归属、模型信息与详情跳转。"
+        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建资产</Button>}
+      />
+
+      <PageSection className="space-y-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative max-w-sm flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Input placeholder="搜索资产、项目、镜头、模型或文件地址..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          </div>
+          <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value as 'all' | Asset['type']); setCurrentPage(1) }}>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="全部类型" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部类型</SelectItem>
+              <SelectItem value="Image">图片</SelectItem>
+              <SelectItem value="Video">视频</SelectItem>
+              <SelectItem value="Script">脚本</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={projectFilter} onValueChange={(value) => { setProjectFilter(value); setCurrentPage(1) }}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部项目" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部项目</SelectItem>
+              {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={shotFilter} onValueChange={(value) => { setShotFilter(value); setCurrentPage(1) }}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部镜头" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部镜头</SelectItem>
+              {shots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sourceTypeFilter} onValueChange={(value) => { setSourceTypeFilter(value as 'all' | Asset['sourceType']); setCurrentPage(1) }}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部来源" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部来源</SelectItem>
+              <SelectItem value="image-task">图片任务</SelectItem>
+              <SelectItem value="video-task">视频任务</SelectItem>
+              <SelectItem value="script">脚本录入</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建资产</Button>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-          <Input placeholder="搜索资产、项目、镜头、模型或文件地址..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+        <div className="filter-meta justify-between">
+          <span>共 {filteredItems.length} 条资产记录</span>
+          <span>覆盖图片、视频、脚本三类资产</span>
         </div>
-        <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value as 'all' | Asset['type']); setCurrentPage(1) }}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="全部类型" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部类型</SelectItem>
-            <SelectItem value="Image">图片</SelectItem>
-            <SelectItem value="Video">视频</SelectItem>
-            <SelectItem value="Script">脚本</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={projectFilter} onValueChange={(value) => { setProjectFilter(value); setCurrentPage(1) }}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部项目" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部项目</SelectItem>
-            {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={shotFilter} onValueChange={(value) => { setShotFilter(value); setCurrentPage(1) }}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部镜头" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部镜头</SelectItem>
-            {shots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={sourceTypeFilter} onValueChange={(value) => { setSourceTypeFilter(value as 'all' | Asset['sourceType']); setCurrentPage(1) }}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部来源" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部来源</SelectItem>
-            <SelectItem value="image-task">图片任务</SelectItem>
-            <SelectItem value="video-task">视频任务</SelectItem>
-            <SelectItem value="script">脚本录入</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <div className="card overflow-x-auto p-0">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="table-header">缩略图</th>
-              <th className="table-header">资产名称</th>
-              <th className="table-header">类型</th>
-              <th className="table-header">所属项目</th>
-              <th className="table-header">所属镜头</th>
-              <th className="table-header">AI模型</th>
-              <th className="table-header">创建时间</th>
-              <th className="table-header">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedItems.map((asset) => {
-              const thumbnail = getAssetThumbnail(asset)
-              const detailPath = getAssetDetailPath(asset)
+        <div className="card overflow-x-auto p-0 shadow-none">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <th className="table-header">缩略图</th>
+                <th className="table-header">资产名称</th>
+                <th className="table-header">类型</th>
+                <th className="table-header">所属项目</th>
+                <th className="table-header">所属镜头</th>
+                <th className="table-header">AI模型</th>
+                <th className="table-header">创建时间</th>
+                <th className="table-header text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedItems.map((asset) => {
+                const thumbnail = getAssetThumbnail(asset)
+                const detailPath = getAssetDetailPath(asset)
+                const openDetail = () => {
+                  if (detailPath) navigate(detailPath)
+                }
 
-              return (
-                <tr key={asset.id} className="border-b border-gray-200/50 transition-colors hover:bg-gray-100 dark:border-gray-800/50 dark:hover:bg-gray-800/30">
-                  <td className="table-cell">
-                    <div className={`relative h-12 w-12 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 ${detailPath ? 'cursor-pointer ring-1 ring-transparent hover:ring-accent-500' : ''}`} onClick={() => { if (detailPath) navigate(detailPath) }}>
-                      <img src={thumbnail} alt={asset.assetName} className="h-full w-full object-cover" loading="lazy" />
-                      {asset.type === 'Video' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <Play size={12} className="text-white" />
+                return (
+                  <tr key={asset.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
+                    <td className="table-cell">
+                      <AssetThumb asset={asset} thumbnail={thumbnail} detailPath={detailPath} onOpen={openDetail} />
+                    </td>
+                    <td className="table-cell">
+                      <div className="space-y-1">
+                        {detailPath ? (
+                          <button className="text-left font-medium text-gray-900 transition-colors hover:text-black dark:text-gray-100" onClick={openDetail}>
+                            {asset.assetName}
+                          </button>
+                        ) : <div className="font-medium text-gray-900 dark:text-gray-100">{asset.assetName}</div>}
+                        <div className="helper-text max-w-[280px] truncate">
+                          {sourceTypeLabelMap[asset.sourceType]} · {getTaskSummary(asset)}
                         </div>
-                      )}
-                      {asset.type === 'Script' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                          <FileText size={16} className="text-gray-500 dark:text-gray-400" />
-                        </div>
-                      )}
-                      {detailPath && (
-                        <div className="absolute right-1 top-1 rounded-full bg-black/50 p-1">
-                          <ExternalLink size={10} className="text-white" />
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="table-cell font-medium text-gray-800 dark:text-gray-200">
-                    {detailPath ? (
-                      <button className="text-left transition-colors hover:text-accent-500" onClick={() => navigate(detailPath)}>
-                        {asset.assetName}
-                      </button>
-                    ) : asset.assetName}
-                  </td>
-                  <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[asset.type]}</Badge></td>
-                  <td className="table-cell">{getProjectName(asset)}</td>
-                  <td className="table-cell">{getShotName(asset.shotId)}</td>
-                  <td className="table-cell">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '-'}</td>
-                  <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(asset.createdAt)}</td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => setViewingItem(asset)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)} title="编辑"><Edit2 size={14} /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)} title="删除"><Trash2 size={14} className="text-error" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        {paginatedItems.length === 0 && <div className="py-12 text-center text-gray-600 dark:text-gray-500">暂无数据</div>}
-      </div>
+                      </div>
+                    </td>
+                    <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[asset.type]}</Badge></td>
+                    <td className="table-cell">{getProjectName(asset)}</td>
+                    <td className="table-cell">{getShotName(asset.shotId)}</td>
+                    <td className="table-cell">
+                      <div className="max-w-[220px] truncate text-gray-600 dark:text-gray-400">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '-'}</div>
+                    </td>
+                    <td className="table-cell text-gray-500 dark:text-gray-400">{formatDate(asset.createdAt)}</td>
+                    <td className="table-cell">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setViewingItem(asset)} title="查看"><Eye size={14} className="text-gray-500 dark:text-gray-400" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)} title="编辑"><Edit2 size={14} className="text-gray-500 dark:text-gray-400" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(asset.id)} title="删除"><Trash2 size={14} className="text-red-500" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          {paginatedItems.length === 0 && <div className="py-14 text-center text-gray-500 dark:text-gray-400">暂无数据</div>}
+        </div>
 
-      <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+        <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
+      </PageSection>
 
       <Modal title={editingItem ? '编辑资产' : '创建资产'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
@@ -495,6 +533,6 @@ export default function Assets() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

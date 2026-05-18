@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Shield, Edit, Trash2, Plus, X, Eye } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import Modal from '@/components/Modal'
+import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -121,19 +122,16 @@ export default function Roles() {
   const isPermissionSelected = (perm: string) => selectedPermissions.includes('*') || selectedPermissions.includes(perm)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">角色权限管理</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统角色和权限配置</p>
-        </div>
-        <Button className="gap-2" onClick={() => handleOpenModal()}>
-          <Plus size={16} />
-          新增角色
-        </Button>
-      </div>
+    <PageShell>
+      <PageIntro
+        eyebrow="系统管理"
+        title="角色权限管理"
+        description="统一管理角色、可见性和权限组合，保持系统页与内容页相同的筛选和详情语法。"
+        actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} />新增角色</Button>}
+      />
 
-      <div className="flex flex-wrap items-center gap-4">
+      <PageSection className="space-y-5">
+      <div className="filter-bar">
         <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索角色名称或权限..." className="max-w-sm" />
         <NativeSelect className="max-w-[180px]" value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}>
           <option value="all">全部可见性</option>
@@ -143,13 +141,18 @@ export default function Roles() {
         </NativeSelect>
       </div>
 
+      <div className="filter-meta">
+        <span>共 {filteredRoles.length} 个角色</span>
+        <span>权限分类 {AVAILABLE_PERMISSIONS.length} 项</span>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredRoles.map((role) => (
-          <div key={role.id} className="card">
+          <div key={role.id} className="page-section-tight">
             <div className="mb-4 flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-accent-500/10 p-2">
-                  <Shield size={20} className="text-accent-500" />
+                <div className="summary-icon">
+                  <Shield size={18} />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100">{role.roleName}</h3>
@@ -171,10 +174,10 @@ export default function Roles() {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">权限列表 ({role.permissions.length})</p>
+              <p className="body-muted mb-2">权限列表 ({role.permissions.length})</p>
               <div className="flex flex-wrap gap-1.5">
                 {role.permissions.map((perm, index) => (
-                  <span key={index} className={`rounded px-2 py-1 text-xs ${perm === '*' ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                  <span key={index} className={`rounded-full border px-2.5 py-1 helper-text ${perm === '*' ? 'border-gray-950 bg-gray-950 text-white dark:border-white dark:bg-white dark:text-gray-950' : 'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
                     {perm === '*' ? '全部权限' : perm}
                   </span>
                 ))}
@@ -183,9 +186,10 @@ export default function Roles() {
           </div>
         ))}
         {filteredRoles.length === 0 && (
-          <div className="card text-center text-sm text-gray-500 dark:text-gray-400">暂无匹配角色</div>
+          <div className="empty-state">暂无匹配角色</div>
         )}
       </div>
+      </PageSection>
 
       <Modal
         title={editingRole ? '编辑角色' : '新增角色'}
@@ -226,16 +230,16 @@ export default function Roles() {
                   checked={selectedPermissions.includes('*')}
                   onCheckedChange={() => togglePermission('*')}
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">全部权限</span>
+                <span className="panel-value font-medium text-gray-900 dark:text-gray-100">全部权限</span>
                 {selectedPermissions.includes('*') && (
-                  <span className="text-xs text-accent-500">（已授予所有权限）</span>
+                  <span className="helper-text">（已授予所有权限）</span>
                 )}
               </label>
             </div>
 
             {!selectedPermissions.includes('*') && AVAILABLE_PERMISSIONS.map((category) => (
               <div key={category.key} className="space-y-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{category.category}</p>
+                <p className="panel-value font-medium text-gray-700 dark:text-gray-300">{category.category}</p>
                 <div className="flex flex-wrap gap-2">
                   {category.actions.map((action) => {
                     const perm = `${category.key}:${action}`
@@ -249,7 +253,7 @@ export default function Roles() {
                         size="sm"
                         className={`gap-1.5 ${
                           selected
-                            ? 'border-accent-500/30 bg-accent-500/20 text-accent-600 dark:text-accent-400'
+                            ? 'border-gray-950 bg-gray-950 text-white dark:border-white dark:bg-white dark:text-gray-950'
                             : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
                         }`}
                       >
@@ -269,10 +273,10 @@ export default function Roles() {
 
           {selectedPermissions.length > 0 && !selectedPermissions.includes('*') && (
             <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
-              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">已选权限 ({selectedPermissions.length})</p>
+              <p className="panel-value mb-2 font-medium text-gray-700 dark:text-gray-300">已选权限 ({selectedPermissions.length})</p>
               <div className="flex flex-wrap gap-1.5">
                 {selectedPermissions.map((perm) => (
-                  <span key={perm} className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-2 py-1 text-xs text-accent-600 dark:text-accent-400">
+                  <span key={perm} className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 helper-text text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     {perm}
                     <button onClick={() => togglePermission(perm)} className="hover:text-red-500">
                       <X size={12} />
@@ -297,7 +301,7 @@ export default function Roles() {
               value={
                 <div className="flex flex-wrap gap-1.5">
                   {viewingRole.permissions.map((perm, index) => (
-                    <span key={index} className={`rounded px-2 py-1 text-xs ${perm === '*' ? 'bg-accent-500/20 text-accent-600 dark:text-accent-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                    <span key={index} className={`rounded-full border px-2.5 py-1 helper-text ${perm === '*' ? 'border-gray-950 bg-gray-950 text-white dark:border-white dark:bg-white dark:text-gray-950' : 'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
                       {perm === '*' ? '全部权限' : perm}
                     </span>
                   ))}
@@ -307,6 +311,6 @@ export default function Roles() {
           </ReadOnlySection>
         )}
       </Modal>
-    </div>
+    </PageShell>
   )
 }

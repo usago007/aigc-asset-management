@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ActionIconButton } from '@/components/ui/action-icon-button'
+import { PageIntro, PageShell } from '@/components/PageShell'
 
 interface EndpointCardProps {
   title: string
@@ -21,7 +22,7 @@ interface EndpointCardProps {
 
 function EndpointCard({ title, enabled, reqKey, timeout, maxRetries, onToggle, onChange }: EndpointCardProps) {
   return (
-    <div className={`rounded-xl border p-4 transition-all ${enabled ? 'border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 opacity-60'}`}>
+    <div className={`rounded-2xl border p-4 transition-all ${enabled ? 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900' : 'border-gray-100 bg-gray-50/70 opacity-60 dark:border-gray-800 dark:bg-gray-950'}`}>
       <div className="flex items-center justify-between mb-4">
         <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
         <div className="flex items-center gap-2">
@@ -29,7 +30,7 @@ function EndpointCard({ title, enabled, reqKey, timeout, maxRetries, onToggle, o
             onClick={() => onToggle(true)}
             variant="ghost"
             size="sm"
-            className={enabled ? 'border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}
+            className={enabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' : 'text-gray-400 dark:text-gray-500'}
           >
             启用
           </Button>
@@ -37,7 +38,7 @@ function EndpointCard({ title, enabled, reqKey, timeout, maxRetries, onToggle, o
             onClick={() => onToggle(false)}
             variant="ghost"
             size="sm"
-            className={!enabled ? 'border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}
+            className={!enabled ? 'border border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300' : 'text-gray-400 dark:text-gray-500'}
           >
             禁用
           </Button>
@@ -164,16 +165,12 @@ export default function AIConfigPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <Settings size={20} className="text-primary-500" />
-            AI 能力配置
-          </h1>
-          <p className="page-subtitle">管理 AI 生图、生视频 API 配置</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell>
+      <PageIntro
+        eyebrow="系统管理"
+        title="AI 能力配置"
+        description="管理生图、生视频和提示词优化能力的接口、密钥与超时策略。"
+        actions={(
           <NativeSelect
             value={preset}
             onChange={(e) => handlePresetChange(e.target.value as AIPresetEnv)}
@@ -182,12 +179,12 @@ export default function AIConfigPanel() {
             <option value="staging">测试环境</option>
             <option value="production">生产环境</option>
           </NativeSelect>
-        </div>
-      </div>
+        )}
+      />
 
       <div className="card">
         <h2 className="card-title mb-6 flex items-center gap-2">
-          <Settings size={18} className="text-primary-500" />
+          <Settings size={18} className="text-gray-500" />
           通用 AI 配置
         </h2>
         <div className="space-y-4">
@@ -276,7 +273,7 @@ export default function AIConfigPanel() {
 
       <div className="card">
         <h2 className="card-title mb-6 flex items-center gap-2">
-          <Video size={18} className="text-primary-500" />
+          <Video size={18} className="text-gray-500" />
           视频生成 API
         </h2>
         <div className="space-y-4">
@@ -321,7 +318,7 @@ export default function AIConfigPanel() {
 
       <div className="card">
         <h2 className="card-title mb-6 flex items-center gap-2">
-          <Image size={18} className="text-primary-500" />
+          <Image size={18} className="text-gray-500" />
           图片生成 API
         </h2>
         <div className="space-y-4">
@@ -375,10 +372,10 @@ export default function AIConfigPanel() {
 
       <div className="card">
         <h2 className="card-title mb-6 flex items-center gap-2">
-          <Sparkles size={18} className="text-primary-500" />
+          <Sparkles size={18} className="text-gray-500" />
           DeepSeek AI 配置（提示词优化）
         </h2>
-        <div className={`rounded-xl border p-4 transition-all ${config.deepseek.enabled ? 'border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 opacity-60'}`}>
+        <div className={`rounded-2xl border p-4 transition-all ${config.deepseek.enabled ? 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900' : 'border-gray-100 bg-gray-50/70 opacity-60 dark:border-gray-800 dark:bg-gray-950'}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">DeepSeek 提示词优化</h4>
@@ -389,7 +386,7 @@ export default function AIConfigPanel() {
                 onClick={() => updateDeepSeek({ enabled: true })}
                 variant="ghost"
                 size="sm"
-                className={config.deepseek.enabled ? 'border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}
+                className={config.deepseek.enabled ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' : 'text-gray-400 dark:text-gray-500'}
               >
                 启用
               </Button>
@@ -397,7 +394,7 @@ export default function AIConfigPanel() {
                 onClick={() => updateDeepSeek({ enabled: false })}
                 variant="ghost"
                 size="sm"
-                className={!config.deepseek.enabled ? 'border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}
+                className={!config.deepseek.enabled ? 'border border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300' : 'text-gray-400 dark:text-gray-500'}
               >
                 禁用
               </Button>
@@ -489,12 +486,12 @@ export default function AIConfigPanel() {
 
       <div className="card">
         <h2 className="card-title mb-6 flex items-center gap-2">
-          <Key size={18} className="text-primary-500" />
+          <Key size={18} className="text-gray-500" />
           API 密钥管理
         </h2>
         <div className="space-y-4">
           {apiKeys.map(key => (
-            <div key={key.id} className="rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30 p-4">
+            <div key={key.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">{key.name}</h4>
                 <div className="flex items-center gap-1">
@@ -634,7 +631,7 @@ export default function AIConfigPanel() {
           </Button>
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }
 

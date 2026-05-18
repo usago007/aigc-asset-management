@@ -1,9 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  LayoutDashboard, Image, Video, FolderOpen, History,
-  Users, Tags, FolderTree, FileText, CheckSquare, ClipboardCheck,
-  Shield, Settings, ChevronLeft, ChevronRight, Clapperboard
-} from 'lucide-react'
+import { LayoutGrid, ImagePlus, Folder, Settings, ChevronLeft, ChevronRight, UserRound } from 'lucide-react'
 
 interface SidebarProps {
   collapsed: boolean
@@ -24,7 +20,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const menuItems: MenuItem[] = [
     {
       path: '/content',
-      icon: <Image size={20} />,
+      icon: <ImagePlus size={19} strokeWidth={1.8} />,
       label: '内容中心',
       children: [
         { path: '/content/image-generation', label: '图片创作' },
@@ -35,7 +31,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     },
     {
       path: '/projects',
-      icon: <FolderOpen size={20} />,
+      icon: <Folder size={19} strokeWidth={1.8} />,
       label: '项目中心',
       children: [
         { path: '/projects/projects', label: '项目列表' },
@@ -48,18 +44,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     },
     {
       path: '/dashboard',
-      icon: <LayoutDashboard size={20} />,
+      icon: <LayoutGrid size={19} strokeWidth={1.8} />,
       label: '数据中心',
       children: [
-        { path: '/dashboard/overview', label: '总览' },
-        { path: '/dashboard/generation', label: '生成' },
-        { path: '/dashboard/assets', label: '资产' },
-        { path: '/dashboard/tasks', label: '任务' },
+        { path: '/dashboard/overview', label: '经营总览' },
+        { path: '/dashboard/generation', label: '生成概览' },
+        { path: '/dashboard/assets', label: '资产概览' },
+        { path: '/dashboard/tasks', label: '任务概览' },
       ]
     },
     {
       path: '/system',
-      icon: <Settings size={20} />,
+      icon: <Settings size={19} strokeWidth={1.8} />,
       label: '系统管理',
       children: [
         { path: '/system/members', label: '成员管理' },
@@ -78,45 +74,58 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const isChildActive = (childPath: string) => currentPath === childPath
 
+  const accountPanel = (
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+        <UserRound size={16} strokeWidth={1.8} />
+      </div>
+      <div>
+        <p className="body-text font-medium text-gray-900 dark:text-gray-100">admin</p>
+        <p className="meta-text">管理员账号</p>
+      </div>
+    </div>
+  )
+
   return (
-    <div className={`nav-shell transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
-      <div className="nav-header flex items-center justify-between p-4">
+    <div className={`nav-shell transition-all duration-300 flex flex-col ${collapsed ? 'w-[88px]' : 'w-64'}`}>
+      <div className={`nav-header flex items-start justify-between ${collapsed ? 'p-3' : 'p-4'}`}>
         {!collapsed && (
-          <div>
-            <h1 className="font-display text-xl font-bold text-primary-200">AIGC数字资产管理平台</h1>
-            <p className="meta-text mt-1 text-primary-300/70">数字资产管理与协同平台</p>
+          <div className="pr-3">
+            <h1 className="text-2xl font-semibold tracking-[-0.04em] text-gray-950 dark:text-gray-50">数字资产管理平台</h1>
+            <p className="meta-text mt-1">FatMug</p>
           </div>
         )}
         <button
           onClick={onToggle}
-          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-primary-900 hover:text-gray-100"
+          className={`rounded-full border border-transparent p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-100 ${collapsed ? 'mx-auto mt-1' : ''}`}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
-      <nav className="flex-1 py-4 overflow-y-auto">
+      <nav className={`flex-1 overflow-y-auto ${collapsed ? 'px-2 py-6' : 'py-4'}`}>
         {menuItems.map((item) => (
           <div key={item.path}>
             <Link
               to={item.children ? item.children[0].path : item.path}
-              className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-all duration-200 ${
+              className={`group flex items-center ${collapsed ? 'justify-center px-3 py-3.5 mx-1.5' : 'gap-3 px-4 py-3 mx-2'} rounded-2xl transition-colors ${
                 isActive(item.path)
                   ? 'nav-item nav-item-active'
                   : 'nav-item'
               }`}
+              title={collapsed ? item.label : undefined}
             >
               {item.icon}
               {!collapsed && <span>{item.label}</span>}
             </Link>
 
             {item.children && isActive(item.path) && !collapsed && (
-              <div className="ml-8 mt-1 space-y-1">
+              <div className="ml-8 mt-2 space-y-1">
                 {item.children.map((child) => (
                   <Link
                     key={child.path}
                     to={child.path}
-                    className={`block px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                    className={`block px-3 py-2 rounded-lg transition-colors text-sm ${
                       isChildActive(child.path)
                         ? 'nav-subitem nav-subitem-active'
                         : 'nav-subitem'
@@ -132,16 +141,22 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       <div className="nav-header p-4">
-        {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500/15 text-primary-200">
-              <Users size={16} />
-            </div>
-            <div>
-              <p className="body-text text-gray-200">admin</p>
-              <p className="meta-text text-primary-300/70">管理员账号</p>
+        {collapsed ? (
+          <div className="relative flex justify-center group">
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+              title="admin"
+            >
+              <UserRound size={17} strokeWidth={1.8} />
+            </button>
+            <div className="pointer-events-none absolute bottom-0 left-[calc(100%+12px)] z-30 w-max min-w-[140px] rounded-2xl border border-gray-200 bg-white px-4 py-3 opacity-0 shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition-all duration-200 group-hover:pointer-events-auto group-hover:-translate-y-1 group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
+              <p className="body-text font-medium text-gray-900 dark:text-gray-100">admin</p>
+              <p className="meta-text">管理员账号</p>
             </div>
           </div>
+        ) : (
+          accountPanel
         )}
       </div>
     </div>
