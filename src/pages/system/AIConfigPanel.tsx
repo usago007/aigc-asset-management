@@ -3,6 +3,11 @@ import { Settings, Video, Image, Upload, Download, RotateCcw, Check, AlertTriang
 import { useAIConfigStore } from '@/store/aiConfigStore'
 import { AI_PRESETS, type AIPresetEnv } from '@/types/aiConfig'
 import { showToast } from '@/utils/toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { NativeSelect } from '@/components/ui/native-select'
+import { ActionIconButton } from '@/components/ui/action-icon-button'
 
 interface EndpointCardProps {
   title: string
@@ -18,56 +23,56 @@ function EndpointCard({ title, enabled, reqKey, timeout, maxRetries, onToggle, o
   return (
     <div className={`rounded-xl border p-4 transition-all ${enabled ? 'border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 opacity-60'}`}>
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
+        <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={() => onToggle(true)}
-            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${enabled ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'}`}
+            variant="ghost"
+            size="sm"
+            className={enabled ? 'border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}
           >
             启用
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => onToggle(false)}
-            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${!enabled ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'}`}
+            variant="ghost"
+            size="sm"
+            className={!enabled ? 'border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}
           >
             禁用
-          </button>
+          </Button>
         </div>
       </div>
       <div className="space-y-3">
         <div>
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">req_key</label>
-          <input
-            type="text"
+          <label className="meta-text mb-1 block font-medium">req_key</label>
+          <Input
             value={reqKey}
             onChange={(e) => onChange('reqKey', e.target.value)}
             disabled={!enabled}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">超时 (ms)</label>
-            <input
+            <label className="meta-text mb-1 block font-medium">超时 (ms)</label>
+            <Input
               type="number"
               value={timeout}
               onChange={(e) => onChange('timeout', parseInt(e.target.value) || 30000)}
               disabled={!enabled}
               min={1000}
               max={300000}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">重试次数</label>
-            <input
+            <label className="meta-text mb-1 block font-medium">重试次数</label>
+            <Input
               type="number"
               value={maxRetries}
               onChange={(e) => onChange('maxRetries', parseInt(e.target.value) || 3)}
               disabled={!enabled}
               min={0}
               max={10}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -162,27 +167,26 @@ export default function AIConfigPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h1 className="page-title flex items-center gap-2">
             <Settings size={20} className="text-primary-500" />
             AI 能力配置
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">管理 AI 生图、生视频 API 配置</p>
+          <p className="page-subtitle">管理 AI 生图、生视频 API 配置</p>
         </div>
         <div className="flex items-center gap-2">
-          <select
+          <NativeSelect
             value={preset}
             onChange={(e) => handlePresetChange(e.target.value as AIPresetEnv)}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none"
           >
             <option value="development">开发环境</option>
             <option value="staging">测试环境</option>
             <option value="production">生产环境</option>
-          </select>
+          </NativeSelect>
         </div>
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+        <h2 className="card-title mb-6 flex items-center gap-2">
           <Settings size={18} className="text-primary-500" />
           通用 AI 配置
         </h2>
@@ -246,9 +250,9 @@ export default function AIConfigPanel() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">视频过期时间</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{formatMs(config.general.videoExpiryMs)} ({config.general.videoExpiryMs} ms)</p>
+            <div className="surface-panel">
+              <p className="meta-text mb-1 font-medium">视频过期时间</p>
+              <p className="body-text text-gray-900 dark:text-gray-100">{formatMs(config.general.videoExpiryMs)} ({config.general.videoExpiryMs} ms)</p>
               <input
                 type="number"
                 value={config.general.videoExpiryMs}
@@ -256,9 +260,9 @@ export default function AIConfigPanel() {
                 className="input-field mt-2"
               />
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">图片过期时间</p>
-              <p className="text-sm text-gray-900 dark:text-gray-100">{formatMs(config.general.imageExpiryMs)} ({config.general.imageExpiryMs} ms)</p>
+            <div className="surface-panel">
+              <p className="meta-text mb-1 font-medium">图片过期时间</p>
+              <p className="body-text text-gray-900 dark:text-gray-100">{formatMs(config.general.imageExpiryMs)} ({config.general.imageExpiryMs} ms)</p>
               <input
                 type="number"
                 value={config.general.imageExpiryMs}
@@ -271,7 +275,7 @@ export default function AIConfigPanel() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+        <h2 className="card-title mb-6 flex items-center gap-2">
           <Video size={18} className="text-primary-500" />
           视频生成 API
         </h2>
@@ -316,7 +320,7 @@ export default function AIConfigPanel() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+        <h2 className="card-title mb-6 flex items-center gap-2">
           <Image size={18} className="text-primary-500" />
           图片生成 API
         </h2>
@@ -370,29 +374,33 @@ export default function AIConfigPanel() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+        <h2 className="card-title mb-6 flex items-center gap-2">
           <Sparkles size={18} className="text-primary-500" />
           DeepSeek AI 配置（提示词优化）
         </h2>
         <div className={`rounded-xl border p-4 transition-all ${config.deepseek.enabled ? 'border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 opacity-60'}`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">DeepSeek 提示词优化</h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">使用 DeepSeek AI 优化生图/生视频的提示词质量</p>
+              <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">DeepSeek 提示词优化</h4>
+              <p className="meta-text mt-0.5">使用 DeepSeek AI 优化生图/生视频的提示词质量</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => updateDeepSeek({ enabled: true })}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${config.deepseek.enabled ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'}`}
+                variant="ghost"
+                size="sm"
+                className={config.deepseek.enabled ? 'border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}
               >
                 启用
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => updateDeepSeek({ enabled: false })}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${!config.deepseek.enabled ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'}`}
+                variant="ghost"
+                size="sm"
+                className={!config.deepseek.enabled ? 'border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}
               >
                 禁用
-              </button>
+              </Button>
             </div>
           </div>
           <div className="space-y-4">
@@ -423,16 +431,15 @@ export default function AIConfigPanel() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label-field">模型</label>
-                <select
+                <NativeSelect
                   value={config.deepseek.model}
                   onChange={(e) => updateDeepSeek({ model: e.target.value })}
                   disabled={!config.deepseek.enabled}
-                  className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="deepseek-chat">deepseek-chat</option>
                   <option value="deepseek-coder">deepseek-coder</option>
                   <option value="deepseek-reasoner">deepseek-reasoner</option>
-                </select>
+                </NativeSelect>
               </div>
               <div>
                 <label className="label-field">超时 (ms)</label>
@@ -460,7 +467,7 @@ export default function AIConfigPanel() {
                   max={2}
                   className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">较低值更确定，较高值更随机</p>
+                <p className="meta-text mt-1">较低值更确定，较高值更随机</p>
               </div>
               <div>
                 <label className="label-field">最大 Token 数</label>
@@ -473,7 +480,7 @@ export default function AIConfigPanel() {
                   max={8192}
                   className="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">单次响应的最大 token 数量</p>
+                <p className="meta-text mt-1">单次响应的最大 token 数量</p>
               </div>
             </div>
           </div>
@@ -481,7 +488,7 @@ export default function AIConfigPanel() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+        <h2 className="card-title mb-6 flex items-center gap-2">
           <Key size={18} className="text-primary-500" />
           API 密钥管理
         </h2>
@@ -489,44 +496,42 @@ export default function AIConfigPanel() {
           {apiKeys.map(key => (
             <div key={key.id} className="rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/30 p-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{key.name}</h4>
+                <h4 className="body-text font-semibold text-gray-900 dark:text-gray-100">{key.name}</h4>
                 <div className="flex items-center gap-1">
-                  <button
+                  <ActionIconButton
                     onClick={() => toggleKeyVisibility(key.id)}
-                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                     title={visibleKeys[key.id] ? '隐藏' : '显示'}
                   >
                     {visibleKeys[key.id] ? <EyeOff size={14} className="text-gray-600 dark:text-gray-400" /> : <EyeIcon size={14} className="text-gray-600 dark:text-gray-400" />}
-                  </button>
-                  <button
+                  </ActionIconButton>
+                  <ActionIconButton
                     onClick={() => copyKey(key.id, key.value)}
-                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                     title="复制"
                     disabled={!key.value}
                   >
                     <Copy size={14} className={copiedKey === key.id ? 'text-green-500' : 'text-gray-600 dark:text-gray-400'} />
-                  </button>
+                  </ActionIconButton>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type={visibleKeys[key.id] ? 'text' : 'password'}
                   value={key.value}
                   onChange={(e) => key.onUpdate(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all font-mono"
+                  className="flex-1 font-mono"
                   placeholder={key.placeholder}
                 />
                 {key.value && (
-                  <button
+                  <ActionIconButton
+                    tone="danger"
                     onClick={() => key.onUpdate('')}
-                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                     title="清除"
                   >
-                    <Trash2 size={14} className="text-red-500" />
-                  </button>
+                    <Trash2 size={14} />
+                  </ActionIconButton>
                 )}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="meta-text mt-2">
                 {key.id === 'volcengine' ? '火山引擎视觉智能 API 密钥，用于生图/生视频服务' : 'DeepSeek API 密钥，用于提示词优化'}
               </p>
             </div>
@@ -539,22 +544,22 @@ export default function AIConfigPanel() {
           <div className="card w-full max-w-md mx-4">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle size={24} className="text-red-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">确认重置配置</h3>
+              <h3 className="card-title">确认重置配置</h3>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">此操作将恢复所有 AI 配置为默认值，无法撤销。是否继续？</p>
+            <p className="body-muted mb-6">此操作将恢复所有 AI 配置为默认值，无法撤销。是否继续？</p>
             <div className="flex justify-end gap-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleReset}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-all"
+                variant="destructive"
               >
                 确认重置
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -563,28 +568,28 @@ export default function AIConfigPanel() {
       {showImport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="card w-full max-w-lg mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">导入配置</h3>
-            <textarea
+            <h3 className="card-title mb-4">导入配置</h3>
+            <Textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
               rows={12}
-              className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none resize-none"
+              className="font-mono resize-none"
               placeholder='{"general": {...}, "video": {...}, "image": {...}}'
             />
             <div className="flex justify-end gap-3 mt-4">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => { setShowImport(false); setImportJson('') }}
-                className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
               >
                 取消
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleImport}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-primary-500 text-white hover:bg-primary-600 transition-all flex items-center gap-2"
+                className="gap-2"
               >
                 <Check size={14} />
                 确认导入
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -592,38 +597,41 @@ export default function AIConfigPanel() {
 
       <div className="flex items-center justify-between pt-2">
         <div className="flex gap-3">
-          <button
+          <Button
             onClick={() => {
               showToast('success', 'AI 配置保存成功')
             }}
-            className="btn-primary flex items-center gap-2"
+            className="gap-2"
           >
             <Check size={14} />
             保存配置
-          </button>
+          </Button>
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setShowImport(true)}
-            className="btn-secondary flex items-center gap-2"
+            className="gap-2"
           >
             <Upload size={14} />
             导入配置
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={handleExport}
-            className="btn-secondary flex items-center gap-2"
+            className="gap-2"
           >
             <Download size={14} />
             导出配置
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => setShowResetConfirm(true)}
-            className="btn-secondary flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+            className="gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
           >
             <RotateCcw size={14} />
             重置默认
-          </button>
+          </Button>
         </div>
       </div>
     </div>

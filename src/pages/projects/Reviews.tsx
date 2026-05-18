@@ -6,6 +6,12 @@ import { matchesKeyword } from '@/utils/search'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
+import { ActionIconButton } from '@/components/ui/action-icon-button'
 import type { Review, ReviewStatus } from '@/types'
 
 const statusMap: Record<ReviewStatus, { label: string; className: string }> = {
@@ -103,33 +109,33 @@ export default function Reviews() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">审核管理</h1>
-        <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
+        <Button className="gap-2" onClick={() => handleOpenModal()}>
           <Plus size={16} /> 创建审核
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input type="text" placeholder="搜索对象 ID、审核人或评论..." className="input-field pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <Input placeholder="搜索对象 ID、审核人或评论..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
         </div>
-        <select className="input-field max-w-[150px]" value={targetTypeFilter} onChange={(e) => { setTargetTypeFilter(e.target.value as 'all' | Review['targetType']); setCurrentPage(1) }}>
+        <NativeSelect className="max-w-[150px]" value={targetTypeFilter} onChange={(e) => { setTargetTypeFilter(e.target.value as 'all' | Review['targetType']); setCurrentPage(1) }}>
           <option value="all">全部对象</option>
           <option value="Asset">资产</option>
           <option value="Shot">镜头</option>
           <option value="Brief">提案</option>
-        </select>
-        <select className="input-field max-w-[150px]" value={reviewTypeFilter} onChange={(e) => { setReviewTypeFilter(e.target.value as 'all' | Review['reviewType']); setCurrentPage(1) }}>
+        </NativeSelect>
+        <NativeSelect className="max-w-[150px]" value={reviewTypeFilter} onChange={(e) => { setReviewTypeFilter(e.target.value as 'all' | Review['reviewType']); setCurrentPage(1) }}>
           <option value="all">全部审核类型</option>
           <option value="Internal">内部审核</option>
           <option value="Client">客户审核</option>
-        </select>
-        <select className="input-field max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as ReviewStatus | 'all'); setCurrentPage(1) }}>
+        </NativeSelect>
+        <NativeSelect className="max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as ReviewStatus | 'all'); setCurrentPage(1) }}>
           <option value="all">全部状态</option>
           <option value="Pending">待审核</option>
           <option value="Approved">通过</option>
           <option value="Rejected">拒绝</option>
-        </select>
+        </NativeSelect>
       </div>
 
       <div className="card overflow-x-auto">
@@ -156,9 +162,9 @@ export default function Reviews() {
                 <td className="table-cell text-gray-500">{formatDate(review.createdAt)}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => setViewingItem(review)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => handleOpenModal(review)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onClick={() => handleDelete(review.id)} title="删除"><Trash2 size={14} className="text-error" /></button>
+                    <ActionIconButton onClick={() => setViewingItem(review)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></ActionIconButton>
+                    <ActionIconButton onClick={() => handleOpenModal(review)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></ActionIconButton>
+                    <ActionIconButton tone="danger" onClick={() => handleDelete(review.id)} title="删除"><Trash2 size={14} /></ActionIconButton>
                   </div>
                 </td>
               </tr>
@@ -173,43 +179,43 @@ export default function Reviews() {
       <Modal title={editingItem ? '编辑审核' : '创建审核'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">审核对象类型</label>
-              <select className="input-field" value={formData.targetType} onChange={(e) => setFormData({ ...formData, targetType: e.target.value as Review['targetType'] })}>
+            <div className="space-y-2">
+              <Label>审核对象类型</Label>
+              <NativeSelect value={formData.targetType} onChange={(e) => setFormData({ ...formData, targetType: e.target.value as Review['targetType'] })}>
                 <option value="Asset">资产</option>
                 <option value="Shot">镜头</option>
                 <option value="Brief">提案</option>
-              </select>
+              </NativeSelect>
             </div>
-            <div>
-              <label className="label-field">审核对象ID</label>
-              <input type="text" className="input-field" value={formData.targetId} onChange={(e) => setFormData({ ...formData, targetId: e.target.value })} placeholder="输入对象ID" />
+            <div className="space-y-2">
+              <Label>审核对象ID</Label>
+              <Input value={formData.targetId} onChange={(e) => setFormData({ ...formData, targetId: e.target.value })} placeholder="输入对象ID" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label-field">审核人</label>
-              <input type="text" className="input-field" value={formData.reviewer} onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })} placeholder="输入审核人" />
+            <div className="space-y-2">
+              <Label>审核人</Label>
+              <Input value={formData.reviewer} onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })} placeholder="输入审核人" />
             </div>
-            <div>
-              <label className="label-field">审核类型</label>
-              <select className="input-field" value={formData.reviewType} onChange={(e) => setFormData({ ...formData, reviewType: e.target.value as Review['reviewType'] })}>
+            <div className="space-y-2">
+              <Label>审核类型</Label>
+              <NativeSelect value={formData.reviewType} onChange={(e) => setFormData({ ...formData, reviewType: e.target.value as Review['reviewType'] })}>
                 <option value="Internal">内部审核</option>
                 <option value="Client">客户审核</option>
-              </select>
+              </NativeSelect>
             </div>
           </div>
-          <div>
-            <label className="label-field">状态</label>
-            <select className="input-field" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as ReviewStatus })}>
+          <div className="space-y-2">
+            <Label>状态</Label>
+            <NativeSelect value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as ReviewStatus })}>
               <option value="Pending">待审核</option>
               <option value="Approved">通过</option>
               <option value="Rejected">拒绝</option>
-            </select>
+            </NativeSelect>
           </div>
-          <div>
-            <label className="label-field">评论</label>
-            <textarea className="input-field min-h-[80px]" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入审核评论" />
+          <div className="space-y-2">
+            <Label>评论</Label>
+            <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入审核评论" />
           </div>
         </div>
       </Modal>

@@ -4,6 +4,7 @@ import { ArrowLeft, Download, RefreshCw, AlertCircle, Clock, Loader2, Video, Ima
 import { useGenerationStore } from '@/store/generationStore'
 import VideoPlayer from '@/components/VideoPlayer'
 import { formatDate } from '@/utils/date'
+import { Button } from '@/components/ui/button'
 
 const MODE_LABELS: Record<string, string> = {
   'text-to-video': '文生视频',
@@ -77,12 +78,13 @@ export default function TaskDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <button
+        <Button
           onClick={() => navigate('/content/assets')}
-          className="p-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-colors"
+          variant="ghost"
+          size="icon"
         >
           <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
-        </button>
+        </Button>
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">任务详情</h1>
         <span className={`badge ${statusInfo.className}`}>{statusInfo.label}</span>
       </div>
@@ -184,10 +186,10 @@ export default function TaskDetail() {
                 </span>
               </div>
               {!isExpired && (
-                <button onClick={handleDownload} className="btn-secondary flex items-center gap-2">
+                <Button onClick={handleDownload} variant="secondary" className="gap-2">
                   <Download size={16} />
                   下载视频
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -204,10 +206,10 @@ export default function TaskDetail() {
                 )}
               </div>
             </div>
-            <button className="btn-secondary flex items-center gap-2" onClick={() => window.location.reload()}>
+            <Button variant="secondary" className="gap-2" onClick={() => window.location.reload()}>
               <RefreshCw size={16} />
               重试生成
-            </button>
+            </Button>
           </div>
         )}
 
@@ -220,10 +222,10 @@ export default function TaskDetail() {
                 <p className="text-gray-800 dark:text-gray-300 text-sm mt-1">视频链接已失效，请重新生成</p>
               </div>
             </div>
-            <button className="btn-secondary flex items-center gap-2" onClick={() => navigate('/content/video-generation')}>
+            <Button variant="secondary" className="gap-2" onClick={() => navigate('/content/video-generation')}>
               <RefreshCw size={16} />
               重新生成
-            </button>
+            </Button>
           </div>
         )}
 

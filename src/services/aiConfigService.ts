@@ -1,12 +1,13 @@
 import type { AIConfig, AIEndpointConfig, ImageAIConfig, AIGeneralConfig, DeepSeekConfig } from '@/types/aiConfig';
 import type { GenerationMode, ImageGenerationMode } from '@/types/generation';
 import { getDefaultAIConfig } from '@/types/aiConfig';
+import { safeStorageGet, safeStorageRemove, safeStorageSet } from '@/utils/storage';
 
 export const AI_CONFIG_STORAGE_KEY = 'ai_config';
 
 export function getAIConfig(): AIConfig {
   try {
-    const stored = localStorage.getItem(AI_CONFIG_STORAGE_KEY);
+    const stored = safeStorageGet(AI_CONFIG_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       const defaults = getDefaultAIConfig();
@@ -24,12 +25,12 @@ export function getAIConfig(): AIConfig {
 }
 
 export function saveAIConfig(config: AIConfig): void {
-  localStorage.setItem(AI_CONFIG_STORAGE_KEY, JSON.stringify(config));
+  safeStorageSet(AI_CONFIG_STORAGE_KEY, JSON.stringify(config));
 }
 
 export function resetAIConfig(): AIConfig {
   const defaults = getDefaultAIConfig();
-  localStorage.removeItem(AI_CONFIG_STORAGE_KEY);
+  safeStorageRemove(AI_CONFIG_STORAGE_KEY);
   return defaults;
 }
 

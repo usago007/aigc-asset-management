@@ -1,21 +1,24 @@
 import { useMemo, useState } from 'react'
-import { Users, UserPlus, Search, ChevronLeft, ChevronRight, Edit, Trash2, Power, Eye } from 'lucide-react'
+import { Users, UserPlus, Search, Edit, Trash2, Power, Eye } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import Modal from '@/components/Modal'
+import Pagination from '@/components/Pagination'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
+import { ActionIconButton } from '@/components/ui/action-icon-button'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
 import type { Member, MemberStatus } from '@/types'
+import { AVATAR_COLOR_PALETTE } from '@/constants/brandColors'
 
 const statusMap: Record<MemberStatus, { label: string; className: string }> = {
   active: { label: '活跃', className: 'badge-success' },
   disabled: { label: '已禁用', className: 'badge-error' },
   pending: { label: '待激活', className: 'badge-warning' },
 }
-
-const AVATAR_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
 
 const ITEMS_PER_PAGE = 10
 
@@ -24,7 +27,7 @@ function getAvatarColor(name: string) {
   for (let i = 0; i < name.length; i += 1) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash)
   }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+  return AVATAR_COLOR_PALETTE[Math.abs(hash) % AVATAR_COLOR_PALETTE.length]
 }
 
 function Avatar({ name }: { name: string }) {
@@ -149,10 +152,10 @@ export default function Members() {
           </h1>
           <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统成员、角色分配和状态</p>
         </div>
-        <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
+        <Button className="gap-2" onClick={() => handleOpenModal()}>
           <UserPlus size={16} />
           邀请成员
-        </button>
+        </Button>
       </div>
 
       <div className="card">
@@ -160,35 +163,32 @@ export default function Members() {
           <div className="min-w-[200px] flex-1">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+              <Input
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
                 placeholder="搜索姓名、邮箱、手机、部门或角色..."
-                className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/50 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
+                className="pl-10"
               />
             </div>
           </div>
-          <select
+          <NativeSelect
             value={filterRole}
             onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1) }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
           >
             <option value="all">全部角色</option>
             {roles.map((role) => (
               <option key={role.id} value={role.id}>{role.roleName}</option>
             ))}
-          </select>
-          <select
+          </NativeSelect>
+          <NativeSelect
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1) }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-100"
           >
             <option value="all">全部状态</option>
             <option value="active">活跃</option>
             <option value="disabled">已禁用</option>
             <option value="pending">待激活</option>
-          </select>
+          </NativeSelect>
         </div>
 
         <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
@@ -239,34 +239,31 @@ export default function Members() {
                   <td className="px-2 py-2.5 text-xs text-gray-600 dark:text-gray-400">{member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleDateString('zh-CN') : '从未'}</td>
                   <td className="px-2 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button
+                      <ActionIconButton
                         onClick={() => toggleMemberStatus(member.id)}
-                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                         title={member.status === 'active' ? '禁用' : '启用'}
                       >
                         <Power size={14} className={member.status === 'active' ? 'text-yellow-500' : 'text-green-500'} />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
                         onClick={() => setViewingMember(member)}
-                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                         title="查看"
                       >
                         <Eye size={14} className="text-gray-600 dark:text-gray-400" />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
                         onClick={() => handleOpenModal(member)}
-                        className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
                         title="编辑"
                       >
                         <Edit size={14} className="text-gray-600 dark:text-gray-400" />
-                      </button>
-                      <button
+                      </ActionIconButton>
+                      <ActionIconButton
+                        tone="danger"
                         onClick={() => handleDelete(member)}
-                        className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
                         title="移除"
                       >
-                        <Trash2 size={14} className="text-red-500" />
-                      </button>
+                        <Trash2 size={14} />
+                      </ActionIconButton>
                     </div>
                   </td>
                 </tr>
@@ -283,42 +280,7 @@ export default function Members() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              显示 {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} / 共 {filteredMembers.length} 名
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage <= 1}
-                className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-gray-700 dark:hover:bg-gray-800"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 rounded-lg text-sm font-medium transition-colors ${
-                    page === currentPage
-                      ? 'bg-primary-500 text-white'
-                      : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                disabled={currentPage >= totalPages}
-                className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-gray-700 dark:hover:bg-gray-800"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination currentPage={currentPage} pageSize={ITEMS_PER_PAGE} totalItems={filteredMembers.length} onPageChange={setCurrentPage} />
       </div>
 
       <Modal
@@ -374,6 +336,7 @@ export default function Members() {
                 return (
                   <button
                     key={role.id}
+                    type="button"
                     onClick={() => {
                       if (selected) {
                         setFormRoleIds(formRoleIds.filter((id) => id !== role.id))

@@ -79,14 +79,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const isChildActive = (childPath: string) => currentPath === childPath
 
   return (
-    <div className={`bg-primary-900 border-r border-gray-800 transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+    <div className={`nav-shell transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
+      <div className="nav-header flex items-center justify-between p-4">
         {!collapsed && (
-          <h1 className="text-xl font-display font-bold text-accent-500">AIGC管理</h1>
+          <div>
+            <h1 className="font-display text-xl font-bold text-primary-200">AIGC数字资产管理平台</h1>
+            <p className="meta-text mt-1 text-primary-300/70">数字资产管理与协同平台</p>
+          </div>
         )}
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-primary-900 hover:text-gray-100"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
@@ -99,12 +102,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               to={item.children ? item.children[0].path : item.path}
               className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'bg-accent-500/20 text-accent-500'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  ? 'nav-item nav-item-active'
+                  : 'nav-item'
               }`}
             >
               {item.icon}
-              {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+              {!collapsed && <span>{item.label}</span>}
             </Link>
 
             {item.children && isActive(item.path) && !collapsed && (
@@ -115,8 +118,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     to={child.path}
                     className={`block px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                       isChildActive(child.path)
-                        ? 'bg-gray-800 text-accent-500'
-                        : 'text-gray-500 hover:text-gray-300'
+                        ? 'nav-subitem nav-subitem-active'
+                        : 'nav-subitem'
                     }`}
                   >
                     {child.label}
@@ -128,15 +131,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-800">
+      <div className="nav-header p-4">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent-500/20 flex items-center justify-center text-accent-500">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500/15 text-primary-200">
               <Users size={16} />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-300">admin</p>
-              <p className="text-xs text-gray-500">管理员账号</p>
+              <p className="body-text text-gray-200">admin</p>
+              <p className="meta-text text-primary-300/70">管理员账号</p>
             </div>
           </div>
         )}

@@ -45,9 +45,9 @@ const FrameTraceCard = ({
 }) => {
   if (!lookup.frame) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">未绑定{label}记录</p>
+      <div className="surface-muted p-4">
+        <div className="body-text font-medium">{label}</div>
+        <p className="body-muted mt-3">未绑定{label}记录</p>
       </div>
     )
   }
@@ -55,11 +55,11 @@ const FrameTraceCard = ({
   const resultIndex = lookup.sourceTask ? lookup.sourceTask.keyFrameIds.indexOf(lookup.frame.id) : -1
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+    <div className="surface-muted p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.frame.name}</p>
+          <div className="body-text font-medium">{label}</div>
+          <p className="body-text mt-1 font-semibold text-gray-900 dark:text-gray-100">{lookup.frame.name}</p>
         </div>
         <Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>
       </div>
@@ -80,21 +80,21 @@ const FrameTraceCard = ({
           暂无可追溯图片
         </div>
       )}
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
+      <div className="mt-4 space-y-2 body-text">
+        <div className="body-muted">
+          <span className="body-text font-medium">提示词：</span>
           {summarizeText(lookup.frame.promptText, 120)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">模型：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">模型：</span>
           {lookup.frame.modelName} {lookup.frame.modelVersion}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">生成时间：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">生成时间：</span>
           {formatDate(lookup.frame.createdAt)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">来源任务：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">来源任务：</span>
           {lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}
         </div>
       </div>
@@ -111,19 +111,19 @@ const ShotVideoCard = ({
 }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">当前镜头还没有可播放的视频预览。</p>
+      <div className="surface-muted p-4">
+        <div className="body-text font-medium">视频预览</div>
+        <p className="body-muted mt-3">当前镜头还没有可播放的视频预览。</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+    <div className="surface-muted p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">视频预览</div>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
+          <div className="body-text font-medium">视频预览</div>
+          <p className="body-text mt-1 font-semibold text-gray-900 dark:text-gray-100">{lookup.task.mode}</p>
         </div>
         <div className="flex items-center gap-2">
           {lookup.isSelected && <Badge variant="success">最终视频</Badge>}
@@ -133,21 +133,21 @@ const ShotVideoCard = ({
         </div>
       </div>
       <video src={lookup.previewUrl} controls preload="metadata" className="mt-4 h-56 w-full rounded-lg bg-black object-cover" />
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
+      <div className="mt-4 space-y-2 body-text">
+        <div className="body-muted">
+          <span className="body-text font-medium">提示词：</span>
           {summarizeText(lookup.task.prompt, 120)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">任务模型：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">任务模型：</span>
           {lookup.task.reqKey}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">生成时间：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">生成时间：</span>
           {formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}
         </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Tokens：</span>
+        <div className="body-muted">
+          <span className="body-text font-medium">Tokens：</span>
           {lookup.task.tokensUsed ?? '-'}
         </div>
       </div>

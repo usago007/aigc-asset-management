@@ -1,7 +1,11 @@
 import { useState } from 'react'
-import { FileText, Trash2, Download, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react'
+import { FileText, Trash2, Download, Search, Eye } from 'lucide-react'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
+import Pagination from '@/components/Pagination'
 
 interface LogEntry {
   id: string
@@ -113,21 +117,21 @@ export default function SystemLogs() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h1 className="page-title flex items-center gap-2">
             <FileText size={20} className="text-primary-500" />
             全局日志
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">查看系统运行日志和审计记录</p>
+          <p className="page-subtitle">查看系统运行日志和审计记录</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-secondary flex items-center gap-2" onClick={handleExport}>
+          <Button variant="secondary" className="gap-2" onClick={handleExport}>
             <Download size={14} />
             导出日志
-          </button>
-          <button className="btn-secondary flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={handleClear}>
+          </Button>
+          <Button variant="secondary" className="gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={handleClear}>
             <Trash2 size={14} />
             清空日志
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -136,40 +140,37 @@ export default function SystemLogs() {
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+              <Input
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
                 placeholder="搜索日志消息或详细信息..."
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none"
+                className="pl-10"
               />
             </div>
           </div>
-          <select
+          <NativeSelect
             value={filterLevel}
             onChange={(e) => { setFilterLevel(e.target.value); setCurrentPage(1) }}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100"
           >
             <option value="all">全部级别</option>
             <option value="error">错误</option>
             <option value="warning">警告</option>
             <option value="info">信息</option>
             <option value="debug">调试</option>
-          </select>
-          <select
+          </NativeSelect>
+          <NativeSelect
             value={filterSource}
             onChange={(e) => { setFilterSource(e.target.value); setCurrentPage(1) }}
-            className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100"
           >
             <option value="all">全部来源</option>
             <option value="video-gen">视频生成</option>
             <option value="image-gen">图片生成</option>
             <option value="system">系统</option>
             <option value="user-action">用户操作</option>
-          </select>
+          </NativeSelect>
         </div>
 
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <p className="meta-text mb-3">
           共 {filteredLogs.length} 条日志，当前第 {currentPage}/{totalPages || 1} 页
         </p>
 
@@ -177,17 +178,17 @@ export default function SystemLogs() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">时间</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">级别</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">来源</th>
-                <th className="text-left py-3 px-2 font-medium text-gray-500 dark:text-gray-400">消息</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500 dark:text-gray-400">操作</th>
+                <th className="table-header !px-2">时间</th>
+                <th className="table-header !px-2">级别</th>
+                <th className="table-header !px-2">来源</th>
+                <th className="table-header !px-2">消息</th>
+                <th className="table-header !px-2 text-right">操作</th>
               </tr>
             </thead>
             <tbody>
               {paginatedLogs.map(log => (
                 <tr key={log.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                  <td className="py-2.5 px-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">{log.timestamp}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap body-muted">{log.timestamp}</td>
                   <td className="py-2.5 px-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${levelMap[log.level]?.className}`}>
                       {levelMap[log.level]?.label}
@@ -198,21 +199,23 @@ export default function SystemLogs() {
                       {sourceMap[log.source]?.label}
                     </span>
                   </td>
-                  <td className="py-2.5 px-2 text-gray-900 dark:text-gray-100 truncate max-w-[400px]">{log.message}</td>
+                  <td className="px-2 py-2.5 max-w-[400px] truncate body-text text-gray-900 dark:text-gray-100">{log.message}</td>
                   <td className="py-2.5 px-2 text-right">
-                    <button
+                    <Button
                       onClick={() => setDetailLog(log)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20"
                     >
                       <Eye size={12} />
                       详情
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
               {paginatedLogs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={5} className="py-12 text-center meta-text">
                     <FileText size={32} className="mx-auto mb-2 opacity-30" />
                     暂无日志记录
                   </td>
@@ -222,67 +225,33 @@ export default function SystemLogs() {
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              显示 {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} / 共 {filteredLogs.length} 条
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
-                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                    page === currentPage
-                      ? 'bg-primary-500 text-white'
-                      : 'border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination currentPage={currentPage} pageSize={ITEMS_PER_PAGE} totalItems={filteredLogs.length} onPageChange={setCurrentPage} />
       </div>
 
       {detailLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDetailLog(null)}>
           <div className="card w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">日志详情</h3>
-              <button
+              <h3 className="card-title">日志详情</h3>
+              <Button
                 onClick={() => setDetailLog(null)}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                variant="ghost"
+                size="icon"
               >
                 <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </Button>
             </div>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 body-text">
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">时间</p>
-                  <p className="text-gray-900 dark:text-gray-100 font-medium">{detailLog.timestamp}</p>
+                  <p className="meta-text">时间</p>
+                  <p className="body-text font-medium text-gray-900 dark:text-gray-100">{detailLog.timestamp}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">来源</p>
-                  <p className="text-gray-900 dark:text-gray-100 font-medium">{sourceMap[detailLog.source]?.label}</p>
+                  <p className="meta-text">来源</p>
+                  <p className="body-text font-medium text-gray-900 dark:text-gray-100">{sourceMap[detailLog.source]?.label}</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -291,13 +260,13 @@ export default function SystemLogs() {
                 </span>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">消息</p>
-                <p className="text-gray-900 dark:text-gray-100">{detailLog.message}</p>
+                <p className="meta-text mb-1">消息</p>
+                <p className="body-text text-gray-900 dark:text-gray-100">{detailLog.message}</p>
               </div>
               {detailLog.details && (
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">详细信息</p>
-                  <pre className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
+                  <p className="meta-text mb-1">详细信息</p>
+                  <pre className="surface-muted p-3 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
                     {detailLog.details}
                   </pre>
                 </div>

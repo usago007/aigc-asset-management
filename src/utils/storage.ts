@@ -1,8 +1,32 @@
 const STORAGE_PREFIX = 'aigc_';
 
+export function safeStorageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeStorageSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error('safeStorageSet error:', e);
+  }
+}
+
+export function safeStorageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.error('safeStorageRemove error:', e);
+  }
+}
+
 export function storageGet<T>(key: string, defaultValue: T): T {
   try {
-    const item = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
+    const item = safeStorageGet(`${STORAGE_PREFIX}${key}`);
     if (!item) return defaultValue;
     return JSON.parse(item) as T;
   } catch {
@@ -12,12 +36,12 @@ export function storageGet<T>(key: string, defaultValue: T): T {
 
 export function storageSet<T>(key: string, value: T): void {
   try {
-    localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
+    safeStorageSet(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
   } catch (e) {
     console.error('storageSet error:', e);
   }
 }
 
 export function storageRemove(key: string): void {
-  localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
+  safeStorageRemove(`${STORAGE_PREFIX}${key}`);
 }

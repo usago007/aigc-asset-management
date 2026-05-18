@@ -474,8 +474,8 @@ export default function ProjectDetail() {
           返回项目列表
         </Button>
         <div className="card p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">项目不存在</h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">当前链接没有找到可用的项目记录。</p>
+          <h1 className="page-title">项目不存在</h1>
+          <p className="page-subtitle">当前链接没有找到可用的项目记录。</p>
         </div>
       </div>
     )
@@ -490,65 +490,65 @@ export default function ProjectDetail() {
             返回项目列表
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{project.projectName}</h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">项目详情工作台，集中管理镜头位编排、提案与生成追溯。</p>
+            <h1 className="page-title">{project.projectName}</h1>
+            <p className="page-subtitle">项目详情工作台，集中管理镜头位编排、提案与生成追溯。</p>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
         <div className="card space-y-4 lg:col-span-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="body-text flex items-center gap-2 font-medium">
             <FolderKanban size={16} />
             项目基础信息
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">品牌</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{brandName}</div>
+              <div className="eyebrow">品牌</div>
+              <div className="mt-1 body-text font-medium text-gray-900 dark:text-gray-100">{brandName}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">负责人</div>
-              <div className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</div>
+              <div className="eyebrow">负责人</div>
+              <div className="mt-1 body-text font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">阶段</div>
+              <div className="eyebrow">阶段</div>
               <div className="mt-2">
                 <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">风险</div>
+              <div className="eyebrow">风险</div>
               <div className="mt-2">
                 <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
               </div>
             </div>
             <div className="md:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">项目进度</div>
+              <div className="eyebrow">项目进度</div>
               <div className="mt-2 flex items-center gap-3">
                 <Progress value={project.progress} className="w-full max-w-xs" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{project.progress}%</span>
+                <span className="body-text font-medium">{project.progress}%</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="card space-y-3">
-          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">镜头位编排</div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{filledSlotItems.length}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">已关联镜头 / 共 {slotItems.length} 个镜头位</p>
+          <div className="eyebrow">镜头位编排</div>
+          <div className="metric-value">{filledSlotItems.length}</div>
+          <p className="metric-caption">已关联镜头 / 共 {slotItems.length} 个镜头位</p>
         </div>
 
         <div className="card space-y-3">
-          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">提案与待审</div>
+          <div className="eyebrow">提案与待审</div>
           <div className="flex items-end gap-4">
             <div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{projectBriefs.length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">项目提案</div>
+              <div className="metric-value">{projectBriefs.length}</div>
+              <div className="metric-caption">项目提案</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{project.pendingReviews}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">待审核</div>
+              <div className="metric-value">{project.pendingReviews}</div>
+              <div className="metric-caption">待审核</div>
             </div>
           </div>
         </div>
@@ -557,8 +557,8 @@ export default function ProjectDetail() {
       <section className="card space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">镜头位编排</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">默认保留 1-5 个镜头位，可关联镜头管理中的现有镜头，并在这里做上下排序。</p>
+            <h2 className="section-title">镜头位编排</h2>
+            <p className="section-subtitle">默认保留 1-5 个镜头位，可关联镜头管理中的现有镜头，并在这里做上下排序。</p>
           </div>
           <Button className="gap-2" onClick={handleAddSlot}>
             <Plus size={16} />
@@ -661,8 +661,8 @@ export default function ProjectDetail() {
       <section className="card space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">提案</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">复用项目提案数据，直接维护当前项目提案。</p>
+            <h2 className="section-title">提案</h2>
+            <p className="section-subtitle">复用项目提案数据，直接维护当前项目提案。</p>
           </div>
           <Button className="gap-2" onClick={() => openBriefModal()}>
             <Plus size={16} />
@@ -733,8 +733,8 @@ export default function ProjectDetail() {
 
       <section className="card space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">过程记录 / 模型记录</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">汇总当前项目使用过的镜头模型、关键帧模型、版本记录以及图片/视频生成任务。</p>
+          <h2 className="section-title">过程记录 / 模型记录</h2>
+          <p className="section-subtitle">汇总当前项目使用过的镜头模型、关键帧模型、版本记录以及图片/视频生成任务。</p>
         </div>
 
         {processRecords.length === 0 ? (

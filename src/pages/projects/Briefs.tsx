@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
+import { ActionIconButton } from '@/components/ui/action-icon-button'
 import type { Brief } from '@/types'
 
 const includesText = (value: unknown, query: string) => {
@@ -147,10 +149,10 @@ export default function Briefs() {
         </div>
         <div className="space-y-2">
           <Label>所属项目</Label>
-          <select className="input-field" value={filters.projectId} onChange={(e) => { setFilters((current) => ({ ...current, projectId: e.target.value })); setCurrentPage(1) }}>
+          <NativeSelect value={filters.projectId} onChange={(e) => { setFilters((current) => ({ ...current, projectId: e.target.value })); setCurrentPage(1) }}>
             <option value="all">全部项目</option>
             {projects.map((project) => <option key={project.id} value={project.id}>{project.projectName}</option>)}
-          </select>
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label htmlFor="brief-filter-deadline">截止日期</Label>
@@ -188,9 +190,9 @@ export default function Briefs() {
                 <td className="table-cell text-gray-500">{formatDate(brief.deadline, 'date')}</td>
                 <td className="table-cell">
                   <div className="flex items-center gap-2">
-                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => setViewingItem(brief)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => handleOpenModal(brief)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></button>
-                    <button className="rounded p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => handleDelete(brief.id)} title="删除"><Trash2 size={14} className="text-error" /></button>
+                    <ActionIconButton onClick={() => setViewingItem(brief)} title="查看"><Eye size={14} className="text-gray-600 dark:text-gray-400" /></ActionIconButton>
+                    <ActionIconButton onClick={() => handleOpenModal(brief)} title="编辑"><Edit2 size={14} className="text-gray-600 dark:text-gray-400" /></ActionIconButton>
+                    <ActionIconButton tone="danger" onClick={() => handleDelete(brief.id)} title="删除"><Trash2 size={14} /></ActionIconButton>
                   </div>
                 </td>
               </tr>
@@ -210,10 +212,10 @@ export default function Briefs() {
           </div>
           <div className="space-y-2">
             <Label>所属项目</Label>
-            <select className="input-field" value={formData.projectId} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}>
+            <NativeSelect value={formData.projectId} onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}>
               <option value="">选择项目</option>
               {projects.map((project) => <option key={project.id} value={project.id}>{project.projectName}</option>)}
-            </select>
+            </NativeSelect>
           </div>
           <div className="space-y-2">
             <Label>内容描述</Label>

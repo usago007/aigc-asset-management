@@ -5,6 +5,10 @@ import Modal from '@/components/Modal'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ActionIconButton } from '@/components/ui/action-icon-button'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
 import { formatDate } from '@/utils/date'
@@ -123,20 +127,20 @@ export default function Roles() {
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">角色权限管理</h1>
           <p className="mt-1 text-gray-500 dark:text-gray-400">管理系统角色和权限配置</p>
         </div>
-        <button className="btn-primary flex items-center gap-2" onClick={() => handleOpenModal()}>
+        <Button className="gap-2" onClick={() => handleOpenModal()}>
           <Plus size={16} />
           新增角色
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
         <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索角色名称或权限..." className="max-w-sm" />
-        <select className="input-field max-w-[180px]" value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}>
+        <NativeSelect className="max-w-[180px]" value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}>
           <option value="all">全部可见性</option>
           <option value="internal-only">仅内部</option>
           <option value="client-safe">客户可见</option>
           <option value="public">公开</option>
-        </select>
+        </NativeSelect>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -155,15 +159,15 @@ export default function Roles() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => setViewingRole(role)} title="查看">
+                <ActionIconButton onClick={() => setViewingRole(role)} title="查看">
                   <Eye size={14} className="text-gray-600 dark:text-gray-400" />
-                </button>
-                <button className="rounded p-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => handleOpenModal(role)} title="编辑">
+                </ActionIconButton>
+                <ActionIconButton onClick={() => handleOpenModal(role)} title="编辑">
                   <Edit size={14} className="text-gray-600 dark:text-gray-400" />
-                </button>
-                <button className="rounded p-1.5 transition-colors hover:bg-red-100 dark:hover:bg-red-900/30" onClick={() => handleDelete(role)} title="删除">
-                  <Trash2 size={14} className="text-red-500" />
-                </button>
+                </ActionIconButton>
+                <ActionIconButton tone="danger" onClick={() => handleDelete(role)} title="删除">
+                  <Trash2 size={14} />
+                </ActionIconButton>
               </div>
             </div>
             <div>
@@ -202,15 +206,14 @@ export default function Roles() {
             </div>
             <div className="space-y-2">
               <Label>可见性</Label>
-              <select
-                className="input-field"
+              <NativeSelect
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as typeof visibility)}
               >
                 <option value="internal-only">仅内部</option>
                 <option value="client-safe">客户可见</option>
                 <option value="public">公开</option>
-              </select>
+              </NativeSelect>
             </div>
           </div>
 
@@ -219,11 +222,9 @@ export default function Roles() {
 
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
               <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={selectedPermissions.includes('*')}
-                  onChange={() => togglePermission('*')}
-                  className="h-4 w-4 rounded border-gray-300 text-accent-500 focus:ring-accent-500"
+                  onCheckedChange={() => togglePermission('*')}
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">全部权限</span>
                 {selectedPermissions.includes('*') && (
@@ -240,10 +241,13 @@ export default function Roles() {
                     const perm = `${category.key}:${action}`
                     const selected = isPermissionSelected(perm)
                     return (
-                      <button
+                      <Button
                         key={perm}
+                        type="button"
                         onClick={() => togglePermission(perm)}
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
+                        variant="outline"
+                        size="sm"
+                        className={`gap-1.5 ${
                           selected
                             ? 'border-accent-500/30 bg-accent-500/20 text-accent-600 dark:text-accent-400'
                             : 'border-gray-200 bg-gray-100 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600'
@@ -255,7 +259,7 @@ export default function Roles() {
                           </svg>
                         )}
                         {action}
-                      </button>
+                      </Button>
                     )
                   })}
                 </div>

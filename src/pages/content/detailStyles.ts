@@ -1,25 +1,25 @@
-export const detailBackButtonClass = 'p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors'
+export const detailBackButtonClass = 'rounded-lg border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100'
 
-export const detailIconButtonClass = 'p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors'
+export const detailIconButtonClass = 'rounded-lg border border-gray-200 bg-white p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100'
 
-export const detailPanelClass = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800'
+export const detailPanelClass = 'surface-subtle'
 
-export const detailPanelMutedClass = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-4'
+export const detailPanelMutedClass = 'surface-muted p-4'
 
-export const detailPanelTitleClass = 'text-sm text-gray-500 dark:text-gray-400'
+export const detailPanelTitleClass = 'meta-text'
 
-export const detailPanelTextClass = 'text-sm text-gray-800 dark:text-gray-200'
+export const detailPanelTextClass = 'body-text'
 
-export const detailMetaPillClass = 'text-xs text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded'
+export const detailMetaPillClass = 'meta-text rounded-full bg-gray-200 px-2 py-0.5 dark:bg-gray-700'
 
-export const detailActionButtonClass = 'flex items-center gap-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 dark:border-gray-700'
+export const detailActionButtonClass = 'flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100'
 
-export const detailActionTileClass = 'flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 dark:border-gray-700 relative'
+export const detailActionTileClass = 'relative flex flex-col items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100'
 
-export const detailAccordionClass = 'border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800'
+export const detailAccordionClass = 'overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
 
-export const detailAccordionTriggerClass = 'w-full flex items-center justify-between px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors'
+export const detailAccordionTriggerClass = 'flex w-full items-center justify-between px-4 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
 
-export const detailAccordionContentClass = 'px-4 pb-4 space-y-2 text-xs text-gray-500 dark:text-gray-500'
+export const detailAccordionContentClass = 'space-y-2 px-4 pb-4 text-xs text-gray-500 dark:text-gray-400'
 
 export const detailMediaShellClass = 'rounded-xl overflow-hidden ring-1 ring-gray-200 dark:ring-accent-500/10 bg-white dark:bg-gray-800'

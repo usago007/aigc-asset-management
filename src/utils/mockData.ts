@@ -5,6 +5,7 @@ import type {
   TaskStatus, TaskType, ReviewStatus, ReviewType, Visibility,
 } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask, TaskQueueStatus, GenerationMode, ImageGenerationMode } from '@/types/generation'
+import { AVATAR_COLOR_PALETTE } from '@/constants/brandColors'
 
 function makeColorImage(seed: number): string {
   const hue = (seed * 37) % 360
@@ -53,7 +54,7 @@ const MEMBER_EMAILS = MEMBER_NAMES.map(n => `${n.toLowerCase().replace(/\s/g, '.
 const MEMBER_PHONES = Array.from({ length: 35 }, (_, i) => `1${3 + (i % 7)}${String(10000000 + (i * 7919) % 90000000).slice(0, 9)}`)
 const DEPARTMENTS = ['内容创作部', '项目管理部', '审核部', '技术支持部', '市场部', '运营部']
 const MEMBER_STATUSES: MemberStatus[] = ['active', 'active', 'active', 'active', 'active', 'active', 'active', 'disabled', 'pending']
-const AVATAR_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+const AVATAR_COLORS = AVATAR_COLOR_PALETTE
 
 export function generateMembers(count: number = 35, roleIds: string[] = []): Member[] {
   const defaultRoles = roleIds.length > 0 ? roleIds : ['role-1']

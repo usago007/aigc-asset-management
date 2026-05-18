@@ -56,14 +56,14 @@
     @apply bg-gray-50 dark:bg-primary-950 text-gray-900 dark:text-gray-100;
     margin: 0;
     padding: 0;
-    font-family: 'Inter', 'Source Sans Pro', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', 'Playfair Display', serif;
+    font-family: inherit;
     font-weight: 600;
     letter-spacing: -0.025em;
   }
@@ -89,20 +89,66 @@
 }
 
 @layer components {
+  /* Legacy compatibility only. Prefer src/components/ui/* in page code. */
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 active:scale-[0.98] font-medium dark:hover:shadow-primary-500/25;
+    @apply inline-flex h-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:from-primary-600 hover:to-primary-700 hover:shadow-md hover:shadow-primary-500/25 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-secondary {
-    @apply bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-md active:scale-[0.98] border border-gray-300 dark:border-gray-700/50 font-medium;
+    @apply inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-300 hover:text-gray-900 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:border-gray-700/50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100;
   }
   .btn-danger {
-    @apply bg-gradient-to-r from-error to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-error/25 active:scale-[0.98] font-medium;
+    @apply inline-flex h-10 items-center justify-center rounded-lg bg-gradient-to-r from-error to-red-600 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-md hover:shadow-error/25 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
   }
   .input-field {
-    @apply w-full px-3 py-2.5 bg-white dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700/50 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-600/50 backdrop-blur-sm;
+    @apply h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:hover:border-gray-600;
   }
   .label-field {
     @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 tracking-wide;
+  }
+  .page-title {
+    @apply font-display text-2xl font-bold text-gray-900 dark:text-gray-100;
+  }
+  .page-title-compact {
+    @apply font-display text-xl font-bold text-gray-900 dark:text-gray-100;
+  }
+  .page-subtitle {
+    @apply mt-1 text-sm text-gray-600 dark:text-gray-400;
+  }
+  .section-title {
+    @apply text-xl font-semibold text-gray-900 dark:text-gray-100;
+  }
+  .section-subtitle {
+    @apply mt-1 text-sm text-gray-600 dark:text-gray-400;
+  }
+  .card-title {
+    @apply text-lg font-semibold text-gray-900 dark:text-gray-100;
+  }
+  .body-text {
+    @apply text-sm text-gray-700 dark:text-gray-300;
+  }
+  .body-muted {
+    @apply text-sm text-gray-600 dark:text-gray-400;
+  }
+  .meta-text {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+  }
+  .eyebrow {
+    @apply text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400;
+  }
+  .metric-value {
+    @apply text-3xl font-bold text-gray-900 dark:text-gray-100;
+  }
+  .metric-caption {
+    @apply text-sm text-gray-600 dark:text-gray-400;
+  }
+  .surface-subtle {
+    @apply rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-primary-900/40;
+  }
+  .surface-muted {
+    @apply rounded-xl border border-gray-200 bg-gray-50/70 dark:border-gray-700 dark:bg-gray-900/40;
+  }
+  .surface-panel {
+    @apply rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50;
   }
   .card {
     @apply bg-white dark:bg-gradient-to-br dark:from-gray-800/60 dark:to-gray-800/40 backdrop-blur-xl border border-gray-200 dark:border-gray-700/50 rounded-xl p-6 hover:shadow-xl dark:hover:shadow-primary-500/5 transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-600/50;
@@ -130,6 +176,39 @@
   }
   .badge-secondary {
     @apply bg-gray-200/50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 border border-gray-300/50 dark:border-gray-600/50;
+  }
+  .nav-shell {
+    @apply border-r border-primary-800 bg-primary-950 text-gray-300;
+  }
+  .nav-header {
+    @apply border-b border-primary-800;
+  }
+  .nav-item {
+    @apply text-sm font-medium text-gray-400 hover:bg-primary-900 hover:text-gray-100;
+  }
+  .nav-item-active {
+    @apply bg-primary-500/15 text-primary-200 ring-1 ring-primary-400/20;
+  }
+  .nav-subitem {
+    @apply text-sm text-gray-500 hover:bg-primary-900/60 hover:text-gray-200;
+  }
+  .nav-subitem-active {
+    @apply bg-primary-900 text-primary-200;
+  }
+  .header-shell {
+    @apply border-b border-gray-200 bg-white/80 backdrop-blur transition-colors duration-300 dark:border-primary-800 dark:bg-primary-950/80;
+  }
+  .header-divider {
+    @apply text-gray-400 dark:text-gray-600;
+  }
+  .header-crumb {
+    @apply text-gray-600 dark:text-gray-500;
+  }
+  .header-crumb-active {
+    @apply font-medium text-gray-900 dark:text-gray-200;
+  }
+  .mono-text {
+    @apply font-mono text-xs text-gray-800 dark:text-gray-200;
   }
 
   .media-placeholder {

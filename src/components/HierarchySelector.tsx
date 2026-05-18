@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/appStore'
+import { NativeSelect } from '@/components/ui/native-select'
+import { Label } from '@/components/ui/label'
 
 interface HierarchySelectorProps {
   value: { customerId?: string; brandId?: string; projectId?: string }
@@ -38,47 +40,44 @@ export default function HierarchySelector({ value, onChange }: HierarchySelector
   return (
     <div className="space-y-3">
       <div>
-        <label className="label-field">客户</label>
-        <select
+        <Label>客户</Label>
+        <NativeSelect
           value={selectedCustomer}
           onChange={(e) => handleCustomerChange(e.target.value)}
-          className="input-field"
         >
           <option value="">选择客户</option>
           {customers.map(c => (
             <option key={c.id} value={c.id}>{c.customerName}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
 
       <div>
-        <label className="label-field">品牌</label>
-        <select
+        <Label>品牌</Label>
+        <NativeSelect
           value={selectedBrand}
           onChange={(e) => handleBrandChange(e.target.value)}
-          className="input-field"
           disabled={!selectedCustomer}
         >
           <option value="">选择品牌</option>
           {filteredBrands.map(b => (
             <option key={b.id} value={b.id}>{b.brandName}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
 
       <div>
-        <label className="label-field">项目</label>
-        <select
+        <Label>项目</Label>
+        <NativeSelect
           value={value.projectId || ''}
           onChange={(e) => handleProjectChange(e.target.value)}
-          className="input-field"
           disabled={!selectedBrand}
         >
           <option value="">选择项目</option>
           {filteredProjects.map(p => (
             <option key={p.id} value={p.id}>{p.projectName}</option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
     </div>
   )

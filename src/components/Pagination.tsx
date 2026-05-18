@@ -1,4 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { NativeSelect } from '@/components/ui/native-select'
 
 interface PaginationProps {
   currentPage: number
@@ -31,51 +33,54 @@ export default function Pagination({ currentPage, pageSize, totalItems, onPageCh
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-500">
         <span>共 {totalItems} 条记录</span>
         {onPageSizeChange && (
-          <select
+          <NativeSelect
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-gray-100"
+            className="h-9 min-w-[96px] px-2 py-1 text-sm"
+            wrapperClassName="w-auto"
           >
             <option value={10}>10条/页</option>
             <option value={20}>20条/页</option>
             <option value={50}>50条/页</option>
-          </select>
+          </NativeSelect>
         )}
       </div>
       <div className="flex items-center gap-2">
-        <button
+        <Button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-gray-700 dark:text-gray-300"
+          variant="secondary"
+          size="sm"
+          className="gap-1"
         >
           <ChevronLeft size={16} />
           <span className="hidden sm:inline">上一页</span>
-        </button>
+        </Button>
         {pages.map((page, index) => (
           typeof page === 'string' ? (
             <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
           ) : (
-            <button
+            <Button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200 ${
-                page === currentPage 
-                  ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' 
-                  : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-              }`}
+              variant={page === currentPage ? 'default' : 'secondary'}
+              size="icon"
+              className={page === currentPage ? 'shadow-md shadow-primary-500/30' : ''}
             >
               {page}
-            </button>
+            </Button>
           )
         ))}
-        <button
+        <Button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 text-gray-700 dark:text-gray-300"
+          variant="secondary"
+          size="sm"
+          className="gap-1"
         >
           <span className="hidden sm:inline">下一页</span>
           <ChevronRight size={16} />
-        </button>
+        </Button>
       </div>
     </div>
   )

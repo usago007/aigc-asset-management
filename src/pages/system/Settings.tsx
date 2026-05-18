@@ -5,6 +5,9 @@ import { useTheme } from '@/context/ThemeContext'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { storageGet, storageSet } from '@/utils/storage'
+import { NativeSelect } from '@/components/ui/native-select'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 
 export default function Settings() {
   const { theme, setTheme } = useTheme()
@@ -48,27 +51,27 @@ export default function Settings() {
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="label-field">语言</label>
-              <select
-                className="input-field max-w-xs"
+              <Label>语言</Label>
+              <NativeSelect
+                className="max-w-xs"
                 value={settings.language}
                 onChange={(e) => setSettings({ ...settings, language: e.target.value })}
               >
                 <option value="zh">中文</option>
                 <option value="en">English</option>
-              </select>
+              </NativeSelect>
             </div>
             <div>
-              <label className="label-field">默认每页条数</label>
-              <select
-                className="input-field max-w-xs"
+              <Label>默认每页条数</Label>
+              <NativeSelect
+                className="max-w-xs"
                 value={settings.pageSize}
                 onChange={(e) => setSettings({ ...settings, pageSize: e.target.value })}
               >
                 <option value="10">10条</option>
                 <option value="20">20条</option>
                 <option value="50">50条</option>
-              </select>
+              </NativeSelect>
             </div>
             <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
               <div>
@@ -94,7 +97,7 @@ export default function Settings() {
         </div>
 
         <div className="flex justify-end mt-4">
-          <button className="btn-primary" onClick={handleSave}>保存设置</button>
+          <Button onClick={handleSave}>保存设置</Button>
         </div>
       </TabsContent>
 
@@ -106,10 +109,11 @@ export default function Settings() {
           </h2>
           <div className="space-y-6">
             <div>
-              <label className="label-field">主题</label>
+              <Label>主题</Label>
               <div className="flex gap-3">
-                <button
-                  className={`px-5 py-3 rounded-xl border-2 transition-all flex items-center gap-2.5 font-medium text-sm ${
+                <Button
+                  variant="outline"
+                  className={`h-auto justify-start gap-2.5 rounded-xl border-2 px-5 py-3 text-sm font-medium ${
                     settings.theme === 'dark'
                       ? 'border-accent-500 bg-accent-500/10 text-accent-500 dark:border-accent-500'
                       : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'
@@ -121,9 +125,10 @@ export default function Settings() {
                     <div>深色</div>
                     <div className="text-xs opacity-60 font-normal">适合暗光环境</div>
                   </div>
-                </button>
-                <button
-                  className={`px-5 py-3 rounded-xl border-2 transition-all flex items-center gap-2.5 font-medium text-sm ${
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`h-auto justify-start gap-2.5 rounded-xl border-2 px-5 py-3 text-sm font-medium ${
                     settings.theme === 'light'
                       ? 'border-accent-500 bg-accent-500/10 text-accent-500 dark:border-accent-500'
                       : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300'
@@ -135,14 +140,14 @@ export default function Settings() {
                     <div>浅色</div>
                     <div className="text-xs opacity-60 font-normal">适合明亮环境</div>
                   </div>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end mt-4">
-          <button className="btn-primary" onClick={handleSave}>保存设置</button>
+          <Button onClick={handleSave}>保存设置</Button>
         </div>
       </TabsContent>
     </Tabs>

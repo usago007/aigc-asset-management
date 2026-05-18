@@ -76,8 +76,8 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        display: ['Playfair Display', 'serif'],
-        body: ['Source Sans Pro', 'sans-serif'],
+        display: ['Playfair Display', 'Inter', 'serif'],
+        body: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Play, Download, Eye, AlertCircle, RefreshCw, Zap } from 'lucide-react'
 import type { VideoGenerationTask } from '@/types/generation'
 import { formatDate } from '@/utils/date'
+import { Button } from '@/components/ui/button'
 
 interface TaskCardProps {
   task: VideoGenerationTask
@@ -92,29 +93,29 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
       </div>
 
       <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700/50">
-        <button onClick={onViewDetail} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+        <Button onClick={onViewDetail} variant="secondary" size="sm" className="gap-1">
           <Eye size={14} />
           详情
-        </button>
+        </Button>
 
         {task.status === 'done' && onDownload && (
-          <button onClick={onDownload} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+          <Button onClick={onDownload} size="sm" className="gap-1">
             <Download size={14} />
             下载
-          </button>
+          </Button>
         )}
 
         {task.status === 'in_queue' && onCancel && (
-          <button onClick={onCancel} className="btn-danger text-xs px-3 py-1.5">
+          <Button onClick={onCancel} variant="destructive" size="sm">
             取消
-          </button>
+          </Button>
         )}
 
         {task.status === 'failed' && onRetry && (
-          <button onClick={onRetry} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+          <Button onClick={onRetry} size="sm" className="gap-1">
             <RefreshCw size={14} />
             重试
-          </button>
+          </Button>
         )}
 
         {extraActions}

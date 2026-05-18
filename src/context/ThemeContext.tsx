@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { safeStorageGet, safeStorageSet } from '@/utils/storage'
 
 type Theme = 'dark' | 'light'
 
@@ -12,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'light'
-    const saved = localStorage.getItem('theme')
+    const saved = safeStorageGet('theme')
     if (saved === 'light' || saved === 'dark') {
       return saved as Theme
     }
@@ -29,7 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.remove('dark')
     }
-    localStorage.setItem('theme', theme)
+    safeStorageSet('theme', theme)
   }, [theme])
 
   return (
