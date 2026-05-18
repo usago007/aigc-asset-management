@@ -6,9 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageShell } from '@/components/PageShell'
 import {
-  detailAccordionClass,
-  detailAccordionContentClass,
-  detailAccordionTriggerClass,
   detailActionTileClass,
   detailBackButtonClass,
   detailContentGridClass,
@@ -42,7 +39,6 @@ export default function ImageDetail() {
   const navigate = useNavigate()
   const { imageTasks, projects, shots } = useAppStore()
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
-  const [showTechInfo, setShowTechInfo] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
 
   const task = useMemo(() => imageTasks.find((item) => item.id === taskId), [imageTasks, taskId])
@@ -124,7 +120,6 @@ export default function ImageDetail() {
                 {task.resolution ? <span className={detailMetaPillClass}>{task.resolution}</span> : null}
               </div>
               <h1 className={detailTitleClass}>图片结果详情</h1>
-              <p className={detailSubtitleClass}>围绕当前结果查看提示词、归属上下文、技术信息和后续创作入口。</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -229,26 +224,21 @@ export default function ImageDetail() {
               ))}
             </div>
 
-            <div className={detailAccordionClass}>
-              <button className={detailAccordionTriggerClass} onClick={() => setShowTechInfo(!showTechInfo)}>
-                <span>技术信息</span>
-                <span className="helper-text">{showTechInfo ? '收起' : '展开'}</span>
-              </button>
-              {showTechInfo ? (
-                <div className={`${detailAccordionContentClass} font-mono`}>
-                  <div>任务ID: {task.id}</div>
-                  <div>请求ID: {task.requestId}</div>
-                  <div>模式: {task.mode}</div>
-                  <div>结果索引: {currentIndex}</div>
-                  <div>Seed: {task.seed ?? '随机'}</div>
-                  <div>项目ID: {task.projectId || '-'}</div>
-                  <div>镜头ID: {task.shotId || '-'}</div>
-                  <div>帧类型: {task.frameType || '无'}</div>
-                  <div>创建时间: {task.createdAt}</div>
-                  <div>完成时间: {task.completedAt || '-'}</div>
-                  <div>耗时: {task.timeElapsed || '-'}</div>
-                </div>
-              ) : null}
+            <div className={detailPanelClass}>
+              <div className={`${detailPanelTitleClass} mb-3`}>技术信息</div>
+              <div className="helper-text space-y-2 font-mono">
+                <div>任务ID: {task.id}</div>
+                <div>请求ID: {task.requestId}</div>
+                <div>模式: {task.mode}</div>
+                <div>结果索引: {currentIndex}</div>
+                <div>Seed: {task.seed ?? '随机'}</div>
+                <div>项目ID: {task.projectId || '-'}</div>
+                <div>镜头ID: {task.shotId || '-'}</div>
+                <div>帧类型: {task.frameType || '无'}</div>
+                <div>创建时间: {task.createdAt}</div>
+                <div>完成时间: {task.completedAt || '-'}</div>
+                <div>耗时: {task.timeElapsed || '-'}</div>
+              </div>
             </div>
           </aside>
         </div>

@@ -7,9 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
 import {
-  detailAccordionClass,
-  detailAccordionContentClass,
-  detailAccordionTriggerClass,
   detailActionTileClass,
   detailBackButtonClass,
   detailContentGridClass,
@@ -55,8 +52,6 @@ export default function VideoDetail() {
 
   const task = useMemo(() => tasks.find((item) => item.id === id), [tasks, id])
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
-  const [showTechInfo, setShowTechInfo] = useState(false)
-  const [showParams, setShowParams] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
   const [isExpired, setIsExpired] = useState(false)
@@ -246,7 +241,6 @@ export default function VideoDetail() {
                 <span className={detailMetaPillClass}>{task.aspectRatio}</span>
               </div>
               <h1 className={detailTitleClass}>视频结果详情</h1>
-              <p className={detailSubtitleClass}>统一查看视频播放结果、过期状态、生成参数和任务技术信息。</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -317,40 +311,30 @@ export default function VideoDetail() {
               ))}
             </div>
 
-            <div className={detailAccordionClass}>
-              <button className={detailAccordionTriggerClass} onClick={() => setShowParams(!showParams)}>
-                <span>生成参数</span>
-                <span className="helper-text">{showParams ? '收起' : '展开'}</span>
-              </button>
-              {showParams ? (
-                <div className={detailAccordionContentClass}>
-                  <div>时长: {task.frames === 241 ? '10秒(241帧)' : '5秒(121帧)'}</div>
-                  <div>宽高比: {task.aspectRatio}</div>
-                  <div>Seed: {task.seed === -1 ? '随机' : task.seed}</div>
-                  <div>首帧: {task.firstFrameUrl || task.firstFrameBase64 ? '已提供' : '无'}</div>
-                  <div>尾帧: {task.lastFrameUrl || task.lastFrameBase64 ? '已提供' : '无'}</div>
-                </div>
-              ) : null}
+            <div className={detailPanelClass}>
+              <div className={`${detailPanelTitleClass} mb-3`}>生成参数</div>
+              <div className="helper-text space-y-2">
+                <div>时长: {task.frames === 241 ? '10秒(241帧)' : '5秒(121帧)'}</div>
+                <div>宽高比: {task.aspectRatio}</div>
+                <div>Seed: {task.seed === -1 ? '随机' : task.seed}</div>
+                <div>首帧: {task.firstFrameUrl || task.firstFrameBase64 ? '已提供' : '无'}</div>
+                <div>尾帧: {task.lastFrameUrl || task.lastFrameBase64 ? '已提供' : '无'}</div>
+              </div>
             </div>
 
-            <div className={detailAccordionClass}>
-              <button className={detailAccordionTriggerClass} onClick={() => setShowTechInfo(!showTechInfo)}>
-                <span>技术信息</span>
-                <span className="helper-text">{showTechInfo ? '收起' : '展开'}</span>
-              </button>
-              {showTechInfo ? (
-                <div className={`${detailAccordionContentClass} font-mono`}>
-                  <div>任务ID: {task.id}</div>
-                  <div>请求ID: {task.requestId}</div>
-                  <div>reqKey: {task.reqKey}</div>
-                  <div>模式: {task.mode}</div>
-                  <div>AIGC 元数据: {task.aigcMetaTagged ? '已标记' : '未标记'}</div>
-                  <div>创建时间: {task.createdAt}</div>
-                  <div>完成时间: {task.completedAt || '-'}</div>
-                  <div>耗时: {task.timeElapsed || '-'}</div>
-                  <div>消耗 Token: {task.tokensUsed ?? '-'}</div>
-                </div>
-              ) : null}
+            <div className={detailPanelClass}>
+              <div className={`${detailPanelTitleClass} mb-3`}>技术信息</div>
+              <div className="helper-text space-y-2 font-mono">
+                <div>任务ID: {task.id}</div>
+                <div>请求ID: {task.requestId}</div>
+                <div>reqKey: {task.reqKey}</div>
+                <div>模式: {task.mode}</div>
+                <div>AIGC 元数据: {task.aigcMetaTagged ? '已标记' : '未标记'}</div>
+                <div>创建时间: {task.createdAt}</div>
+                <div>完成时间: {task.completedAt || '-'}</div>
+                <div>耗时: {task.timeElapsed || '-'}</div>
+                <div>消耗 Token: {task.tokensUsed ?? '-'}</div>
+              </div>
             </div>
           </aside>
         </div>

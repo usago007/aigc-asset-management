@@ -1,6 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { Search, Bell } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const breadcrumbs: Record<string, string[]> = {
@@ -64,13 +63,6 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-            <Input
-              placeholder="搜索..."
-              className="h-10 w-56 border-gray-200 bg-white pl-9 dark:bg-gray-900"
-            />
-          </div>
           <Button variant="secondary" size="icon" className="relative h-10 w-10">
             <Bell size={16} className="text-gray-500 dark:text-gray-400" />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gray-900 dark:bg-white"></span>
