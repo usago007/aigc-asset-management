@@ -167,9 +167,7 @@ export default function AIConfigPanel() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="系统管理"
         title="AI 能力配置"
-        description="管理生图、生视频和提示词优化能力的接口、密钥与超时策略。"
         actions={(
           <NativeSelect
             value={preset}

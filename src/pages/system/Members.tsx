@@ -151,9 +151,7 @@ export default function Members() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="系统管理"
         title="成员管理"
-        description="统一管理系统成员、角色分配、激活状态与基本身份信息。"
         actions={(
           <Button className="gap-2" onClick={() => handleOpenModal()}>
             <UserPlus size={16} />

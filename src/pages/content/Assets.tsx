@@ -323,9 +323,7 @@ export default function Assets() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="内容中心"
-        title="资产管理"
-        description="统一查看图片、视频和脚本资产的来源、归属、模型信息与详情跳转。"
+        title="资产库"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建资产</Button>}
       />
 

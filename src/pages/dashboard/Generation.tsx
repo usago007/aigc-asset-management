@@ -133,7 +133,7 @@ export default function Generation() {
 
   return (
     <PageShell>
-      <PageIntro eyebrow="仪表盘" title="生成概览" description={`图片与视频生成任务统计，最后更新 ${lastUpdated}`} />
+      <PageIntro title="生成概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <MiniStatCard label="图片任务" value={imageTasks.length} color="text-blue-500" />

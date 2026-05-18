@@ -151,9 +151,7 @@ export default function Shots() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="内容中心"
         title="镜头列表"
-        description="统一查看镜头归属、关键帧绑定、模型记录和结果产出，作为内容链路的主入口。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建镜头</Button>}
       />
 

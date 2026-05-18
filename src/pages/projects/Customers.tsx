@@ -10,6 +10,7 @@ import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,7 @@ export default function Customers() {
   const [filters, setFilters] = useState({
     customerName: '',
     contactPerson: '',
-    roles: [] as string[],
+    role: 'all',
     notes: '',
   })
   const [currentPage, setCurrentPage] = useState(1)
@@ -53,7 +54,7 @@ export default function Customers() {
       const matchName = includesText(customer.customerName, filters.customerName)
       const matchContact = includesText(customer.contactPerson, filters.contactPerson)
       const matchNotes = includesText(customer.notes, filters.notes)
-      const matchRoles = filters.roles.length === 0 || customer.roles.some((role) => filters.roles.includes(role))
+      const matchRoles = filters.role === 'all' || customer.roles.includes(filters.role)
       return matchName && matchContact && matchNotes && matchRoles
     })
   ), [customers, filters])
@@ -65,12 +66,10 @@ export default function Customers() {
     setCurrentPage(1)
   }
 
-  const toggleFilterRole = (roleName: string) => {
+  const updateRoleFilter = (value: string) => {
     setFilters((current) => ({
       ...current,
-      roles: current.roles.includes(roleName)
-        ? current.roles.filter((item) => item !== roleName)
-        : [...current.roles, roleName],
+      role: value,
     }))
     setCurrentPage(1)
   }
@@ -142,9 +141,7 @@ export default function Customers() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="客户管理"
-        description="统一管理客户、联系人、角色标签和备注信息，作为品牌与项目归属链路的起点。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建客户</Button>}
       />
 
@@ -181,9 +178,20 @@ export default function Customers() {
           <Label htmlFor="customer-filter-notes">备注</Label>
           <Input id="customer-filter-notes" value={filters.notes} onChange={(e) => updateFilter('notes', e.target.value)} placeholder="按备注筛选" />
         </div>
-        <div className="space-y-2 md:col-span-2 xl:col-span-1">
-          <Label>角色</Label>
-          {roleChecklist(filters.roles, toggleFilterRole)}
+        <div className="space-y-2">
+          <Label htmlFor="customer-filter-role">角色</Label>
+          <NativeSelect
+            id="customer-filter-role"
+            value={filters.role}
+            onChange={(e) => updateRoleFilter(e.target.value)}
+          >
+            <option value="all">全部角色</option>
+            {availableRoleNames.map((roleName) => (
+              <option key={roleName} value={roleName}>
+                {roleName}
+              </option>
+            ))}
+          </NativeSelect>
         </div>
         </div>
 

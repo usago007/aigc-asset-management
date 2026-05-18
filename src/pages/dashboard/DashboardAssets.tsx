@@ -56,7 +56,7 @@ export default function DashboardAssets() {
 
   return (
     <PageShell>
-      <PageIntro eyebrow="仪表盘" title="资产概览" description={`资产类型分布与最新资产，最后更新 ${lastUpdated}`} />
+      <PageIntro title="资产概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MiniStatCard label="总资产" value={totalAssets} color="text-gray-900 dark:text-white" />

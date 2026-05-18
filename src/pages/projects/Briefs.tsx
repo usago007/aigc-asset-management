@@ -122,9 +122,7 @@ export default function Briefs() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="提案管理"
-        description="统一管理项目提案、目标受众、交付平台和版本关联，保持列表页与详情页节奏一致。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建提案</Button>}
       />
 

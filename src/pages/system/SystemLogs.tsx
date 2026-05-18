@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Trash2, Download, Search, Eye } from 'lucide-react'
+import { FileText, Download, Search, Eye, X } from 'lucide-react'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
 import { Button } from '@/components/ui/button'
@@ -81,6 +81,7 @@ export default function SystemLogs() {
   const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOGS)
   const [filterLevel, setFilterLevel] = useState<string>('all')
   const [filterSource, setFilterSource] = useState<string>('all')
+  const [detailFilter, setDetailFilter] = useState<'all' | 'with-details' | 'without-details'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [detailLog, setDetailLog] = useState<LogEntry | null>(null)
@@ -88,20 +89,14 @@ export default function SystemLogs() {
   const filteredLogs = logs.filter(log => {
     if (filterLevel !== 'all' && log.level !== filterLevel) return false
     if (filterSource !== 'all' && log.source !== filterSource) return false
+    if (detailFilter === 'with-details' && !log.details) return false
+    if (detailFilter === 'without-details' && log.details) return false
     if (!matchesKeyword(searchQuery, [log.message, log.details, log.timestamp, levelMap[log.level]?.label, sourceMap[log.source]?.label])) return false
     return true
   })
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE)
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-
-  const handleClear = () => {
-    if (confirm('确定要清空所有日志吗？此操作不可撤销。')) {
-      setLogs([])
-      setCurrentPage(1)
-      showToast('success', '日志已清空')
-    }
-  }
 
   const handleExport = () => {
     const json = JSON.stringify(filteredLogs, null, 2)
@@ -118,54 +113,60 @@ export default function SystemLogs() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="系统管理"
         title="全局日志"
-        description="统一查看系统运行日志、生成链路记录和用户操作审计。"
         actions={<div className="flex items-center gap-2">
           <Button variant="secondary" className="gap-2" onClick={handleExport}>
             <Download size={14} />
             导出日志
           </Button>
-          <Button variant="secondary" className="gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={handleClear}>
-            <Trash2 size={14} />
-            清空日志
-          </Button>
         </div>}
       />
 
       <PageSection className="space-y-5">
-        <div className="filter-bar">
-          <div className="filter-search min-w-[200px]">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
-                placeholder="搜索日志消息或详细信息..."
-                className="pl-10"
-              />
-            </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="relative xl:col-span-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
+              placeholder="搜索日志消息或详细信息..."
+              className="pl-10"
+            />
           </div>
-          <NativeSelect
-            value={filterLevel}
-            onChange={(e) => { setFilterLevel(e.target.value); setCurrentPage(1) }}
-          >
-            <option value="all">全部级别</option>
-            <option value="error">错误</option>
-            <option value="warning">警告</option>
-            <option value="info">信息</option>
-            <option value="debug">调试</option>
-          </NativeSelect>
-          <NativeSelect
-            value={filterSource}
-            onChange={(e) => { setFilterSource(e.target.value); setCurrentPage(1) }}
-          >
-            <option value="all">全部来源</option>
-            <option value="video-gen">视频生成</option>
-            <option value="image-gen">图片生成</option>
-            <option value="system">系统</option>
-            <option value="user-action">用户操作</option>
-          </NativeSelect>
+          <div>
+            <NativeSelect
+              value={filterLevel}
+              onChange={(e) => { setFilterLevel(e.target.value); setCurrentPage(1) }}
+            >
+              <option value="all">全部级别</option>
+              <option value="error">错误</option>
+              <option value="warning">警告</option>
+              <option value="info">信息</option>
+              <option value="debug">调试</option>
+            </NativeSelect>
+          </div>
+          <div>
+            <NativeSelect
+              value={filterSource}
+              onChange={(e) => { setFilterSource(e.target.value); setCurrentPage(1) }}
+            >
+              <option value="all">全部来源</option>
+              <option value="video-gen">视频生成</option>
+              <option value="image-gen">图片生成</option>
+              <option value="system">系统</option>
+              <option value="user-action">用户操作</option>
+            </NativeSelect>
+          </div>
+          <div>
+            <NativeSelect
+              value={detailFilter}
+              onChange={(e) => { setDetailFilter(e.target.value as typeof detailFilter); setCurrentPage(1) }}
+            >
+              <option value="all">全部详情状态</option>
+              <option value="with-details">包含详情</option>
+              <option value="without-details">仅主消息</option>
+            </NativeSelect>
+          </div>
         </div>
 
         <p className="filter-meta">
@@ -236,7 +237,7 @@ export default function SystemLogs() {
                 variant="ghost"
                 size="icon"
               >
-                <Trash2 size={16} className="rotate-45 text-gray-500" />
+                <X size={16} className="text-gray-500" />
               </Button>
             </div>
             <ReadOnlySection>

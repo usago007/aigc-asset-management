@@ -97,9 +97,7 @@ export default function Overview() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="仪表盘"
         title="经营总览"
-        description={`AIGC 数字资产管理系统整体概览，最后更新 ${lastUpdated}`}
       />
 
       <div className="summary-grid xl:grid-cols-4">

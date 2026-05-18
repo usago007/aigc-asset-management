@@ -42,19 +42,27 @@ export default function Roles() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'internal-only' | 'client-safe' | 'public'>('all')
+  const [permissionCategoryFilter, setPermissionCategoryFilter] = useState<'all' | string>('all')
+  const [permissionScopeFilter, setPermissionScopeFilter] = useState<'all' | 'full-access' | 'custom'>('all')
 
   const filteredRoles = useMemo(() => (
     roles.filter((role) => {
       const matchVisibility = visibilityFilter === 'all' || role.visibility === visibilityFilter
+      const matchPermissionCategory = permissionCategoryFilter === 'all'
+        || role.permissions.includes('*')
+        || role.permissions.some((permission) => permission.startsWith(`${permissionCategoryFilter}:`))
+      const matchPermissionScope = permissionScopeFilter === 'all'
+        || (permissionScopeFilter === 'full-access' && role.permissions.includes('*'))
+        || (permissionScopeFilter === 'custom' && !role.permissions.includes('*'))
       const matchSearch = matchesKeyword(searchQuery, [
         role.roleName,
         visibilityMap[role.visibility]?.label,
         role.permissions,
         formatDate(role.createdAt),
       ])
-      return matchVisibility && matchSearch
+      return matchVisibility && matchPermissionCategory && matchPermissionScope && matchSearch
     })
-  ), [roles, searchQuery, visibilityFilter])
+  ), [roles, searchQuery, visibilityFilter, permissionCategoryFilter, permissionScopeFilter])
 
   const handleOpenModal = (role?: typeof roles[0]) => {
     if (role) {
@@ -124,21 +132,53 @@ export default function Roles() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="系统管理"
         title="角色权限管理"
-        description="统一管理角色、可见性和权限组合，保持系统页与内容页相同的筛选和详情语法。"
         actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} />新增角色</Button>}
       />
 
       <PageSection className="space-y-5">
-      <div className="filter-bar">
-        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索角色名称或权限..." className="max-w-sm" />
-        <NativeSelect className="max-w-[180px]" value={visibilityFilter} onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}>
-          <option value="all">全部可见性</option>
-          <option value="internal-only">仅内部</option>
-          <option value="client-safe">客户可见</option>
-          <option value="public">公开</option>
-        </NativeSelect>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="xl:col-span-1">
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="搜索角色名称或权限..."
+          />
+        </div>
+        <div>
+          <NativeSelect
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value as typeof visibilityFilter)}
+          >
+            <option value="all">全部可见性</option>
+            <option value="internal-only">仅内部</option>
+            <option value="client-safe">客户可见</option>
+            <option value="public">公开</option>
+          </NativeSelect>
+        </div>
+        <div>
+          <NativeSelect
+            value={permissionCategoryFilter}
+            onChange={(e) => setPermissionCategoryFilter(e.target.value)}
+          >
+            <option value="all">全部权限分类</option>
+            {AVAILABLE_PERMISSIONS.map((item) => (
+              <option key={item.key} value={item.key}>
+                {item.category}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div>
+          <NativeSelect
+            value={permissionScopeFilter}
+            onChange={(e) => setPermissionScopeFilter(e.target.value as typeof permissionScopeFilter)}
+          >
+            <option value="all">全部权限范围</option>
+            <option value="full-access">全部权限</option>
+            <option value="custom">自定义权限</option>
+          </NativeSelect>
+        </div>
       </div>
 
       <div className="filter-meta">

@@ -110,9 +110,7 @@ export default function Tasks() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="任务管理"
-        description="统一查看项目任务、负责人、类型与状态，和仪表盘任务概览保持同一阅读节奏。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建任务</Button>}
       />
 

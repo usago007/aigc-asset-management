@@ -109,35 +109,65 @@ export default function Reviews() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="审核管理"
-        description="统一查看审核对象、审核人、审核类型和状态，保证项目评审与内容链路使用同一套管理台语法。"
         actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} /> 创建审核</Button>}
       />
 
       <PageSection className="space-y-5">
-      <div className="filter-bar">
-        <div className="relative filter-search max-w-sm">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="relative xl:col-span-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <Input placeholder="搜索对象 ID、审核人或评论..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+          <Input
+            placeholder="搜索对象 ID、审核人或评论..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
+          />
         </div>
-        <NativeSelect className="max-w-[150px]" value={targetTypeFilter} onChange={(e) => { setTargetTypeFilter(e.target.value as 'all' | Review['targetType']); setCurrentPage(1) }}>
-          <option value="all">全部对象</option>
-          <option value="Asset">资产</option>
-          <option value="Shot">镜头</option>
-          <option value="Brief">提案</option>
-        </NativeSelect>
-        <NativeSelect className="max-w-[150px]" value={reviewTypeFilter} onChange={(e) => { setReviewTypeFilter(e.target.value as 'all' | Review['reviewType']); setCurrentPage(1) }}>
-          <option value="all">全部审核类型</option>
-          <option value="Internal">内部审核</option>
-          <option value="Client">客户审核</option>
-        </NativeSelect>
-        <NativeSelect className="max-w-[150px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as ReviewStatus | 'all'); setCurrentPage(1) }}>
-          <option value="all">全部状态</option>
-          <option value="Pending">待审核</option>
-          <option value="Approved">通过</option>
-          <option value="Rejected">拒绝</option>
-        </NativeSelect>
+        <div>
+          <NativeSelect
+            value={targetTypeFilter}
+            onChange={(e) => {
+              setTargetTypeFilter(e.target.value as 'all' | Review['targetType'])
+              setCurrentPage(1)
+            }}
+          >
+            <option value="all">全部对象</option>
+            <option value="Asset">资产</option>
+            <option value="Shot">镜头</option>
+            <option value="Brief">提案</option>
+          </NativeSelect>
+        </div>
+        <div>
+          <NativeSelect
+            value={reviewTypeFilter}
+            onChange={(e) => {
+              setReviewTypeFilter(e.target.value as 'all' | Review['reviewType'])
+              setCurrentPage(1)
+            }}
+          >
+            <option value="all">全部审核类型</option>
+            <option value="Internal">内部审核</option>
+            <option value="Client">客户审核</option>
+          </NativeSelect>
+        </div>
+        <div>
+          <NativeSelect
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as ReviewStatus | 'all')
+              setCurrentPage(1)
+            }}
+          >
+            <option value="all">全部状态</option>
+            <option value="Pending">待审核</option>
+            <option value="Approved">通过</option>
+            <option value="Rejected">拒绝</option>
+          </NativeSelect>
+        </div>
       </div>
 
       <div className="filter-meta">

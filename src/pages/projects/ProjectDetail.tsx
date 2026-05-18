@@ -485,9 +485,7 @@ export default function ProjectDetail() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title={project.projectName}
-        description="项目详情工作台，集中管理镜头位编排、提案与生成追溯。"
         actions={(
           <Button variant="outline" className="gap-2" onClick={() => navigate('/projects/projects')}>
             <ArrowLeft size={16} />

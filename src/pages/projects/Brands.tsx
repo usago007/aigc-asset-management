@@ -97,9 +97,7 @@ export default function Brands() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="品牌管理"
-        description="统一管理品牌、客户归属、负责人和备注信息，保持项目归属链路的展示密度一致。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建品牌</Button>}
       />
 

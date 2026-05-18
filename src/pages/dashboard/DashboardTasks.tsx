@@ -87,7 +87,7 @@ export default function DashboardTasks() {
 
   return (
     <PageShell>
-      <PageIntro eyebrow="仪表盘" title="任务概览" description={`任务管理与人员工作负载，最后更新 ${lastUpdated}`} />
+      <PageIntro title="任务概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MiniStatCard label="总任务" value={tasks.length} color="text-gray-900 dark:text-white" />

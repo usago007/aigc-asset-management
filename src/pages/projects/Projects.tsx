@@ -121,9 +121,7 @@ export default function Projects() {
   return (
     <PageShell>
       <PageIntro
-        eyebrow="项目中心"
         title="项目列表"
-        description="统一查看项目进度、风险与待审核任务，保持筛选和操作入口的秩序感。"
         actions={(
           <Button onClick={() => handleOpenModal()} className="gap-2">
             <Plus size={16} /> 创建项目
