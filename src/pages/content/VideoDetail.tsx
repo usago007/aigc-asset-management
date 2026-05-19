@@ -121,25 +121,32 @@ export default function VideoDetail() {
     { icon: <Sparkles size={16} />, label: '智能超清', disabled: true, note: '即将开放' },
   ]
 
+  const videoDetailContentGridClass = `${detailContentGridClass} lg:items-stretch`
+  const videoDetailMediaColumnClass = 'space-y-4 lg:col-span-3 lg:flex'
+  const videoDetailMediaShellClass = `${detailMediaShellClass} flex h-full min-h-[760px] flex-col`
+  const videoDetailStageClass = `${detailMediaStageClass} min-h-0 flex-1`
+
   const renderVideoState = () => {
     if (task.status === 'done' && task.videoUrl && !isExpired) {
       return (
-        <div className="space-y-4">
-          <video
-            ref={videoRef}
-            src={task.videoUrl}
-            controls
-            muted={isMuted}
-            preload="metadata"
-            className="aspect-video w-full object-contain"
-            onTimeUpdate={(event) => {
-              setProgress(event.currentTarget.currentTime)
-              setDuration(event.currentTarget.duration || 0)
-            }}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5">
+        <div className="flex h-full min-h-[760px] flex-col">
+          <div className={`${videoDetailStageClass} p-6`}>
+            <video
+              ref={videoRef}
+              src={task.videoUrl}
+              controls
+              muted={isMuted}
+              preload="metadata"
+              className="h-full w-full object-contain"
+              onTimeUpdate={(event) => {
+                setProgress(event.currentTarget.currentTime)
+                setDuration(event.currentTarget.duration || 0)
+              }}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+            />
+          </div>
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-3">
               <button
                 className={detailIconButtonClass}
@@ -192,35 +199,41 @@ export default function VideoDetail() {
 
     if (task.status === 'failed') {
       return (
-        <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
-          <Badge variant="destructive">生成失败</Badge>
-          <p className="body-muted max-w-md">{task.errorMessage || '当前任务未返回可播放视频。'}</p>
-          <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
-            <RefreshCw size={14} />
-            重新生成
-          </Button>
+        <div className="flex h-full min-h-[760px] flex-col">
+          <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+            <Badge variant="destructive">生成失败</Badge>
+            <p className="body-muted max-w-md">{task.errorMessage || '当前任务未返回可播放视频。'}</p>
+            <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
+              <RefreshCw size={14} />
+              重新生成
+            </Button>
+          </div>
         </div>
       )
     }
 
     if (isExpired || task.status === 'expired') {
       return (
-        <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
-          <Badge variant="warning">视频已过期</Badge>
-          <p className="body-muted max-w-md">视频链接已失效，请返回创作页重新生成。</p>
-          <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
-            <RefreshCw size={14} />
-            返回重新生成
-          </Button>
+        <div className="flex h-full min-h-[760px] flex-col">
+          <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+            <Badge variant="warning">视频已过期</Badge>
+            <p className="body-muted max-w-md">视频链接已失效，请返回创作页重新生成。</p>
+            <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
+              <RefreshCw size={14} />
+              返回重新生成
+            </Button>
+          </div>
         </div>
       )
     }
 
     return (
-      <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
-        <Badge variant="info">{task.status === 'in_queue' ? '排队中' : task.status === 'submitting' ? '提交中' : '生成中'}</Badge>
-        <p className="body-muted">视频任务正在处理中，生成完成后可在这里预览。</p>
-        {task.progress != null ? <span className={detailMetaPillClass}>{task.progress}%</span> : null}
+      <div className="flex h-full min-h-[760px] flex-col">
+        <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+          <Badge variant="info">{task.status === 'in_queue' ? '排队中' : task.status === 'submitting' ? '提交中' : '生成中'}</Badge>
+          <p className="body-muted">视频任务正在处理中，生成完成后可在这里预览。</p>
+          {task.progress != null ? <span className={detailMetaPillClass}>{task.progress}%</span> : null}
+        </div>
       </div>
     )
   }
@@ -259,9 +272,9 @@ export default function VideoDetail() {
           </div>
         </section>
 
-        <div className={detailContentGridClass}>
-          <div className={detailMediaColumnClass}>
-            <div className={detailMediaShellClass}>
+        <div className={videoDetailContentGridClass}>
+          <div className={videoDetailMediaColumnClass}>
+            <div className={videoDetailMediaShellClass}>
               {renderVideoState()}
             </div>
           </div>

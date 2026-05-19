@@ -105,6 +105,11 @@ export default function ImageDetail() {
     { icon: <Sparkles size={16} />, label: '扩图延展', disabled: true, note: '即将开放' },
   ]
 
+  const imageDetailContentGridClass = `${detailContentGridClass} lg:items-stretch`
+  const imageDetailMediaColumnClass = 'space-y-4 lg:col-span-3 lg:flex'
+  const imageDetailMediaShellClass = `${detailMediaShellClass} flex h-full min-h-[760px] flex-col`
+  const imageDetailStageClass = `${detailMediaStageClass} min-h-0 flex-1`
+
   return (
     <PageShell>
       <div className={detailPageShellClass}>
@@ -138,10 +143,10 @@ export default function ImageDetail() {
           </div>
         </section>
 
-        <div className={detailContentGridClass}>
-          <div className={detailMediaColumnClass}>
-            <div className={detailMediaShellClass}>
-              <div className={detailMediaStageClass}>
+        <div className={imageDetailContentGridClass}>
+          <div className={imageDetailMediaColumnClass}>
+            <div className={imageDetailMediaShellClass}>
+              <div className={imageDetailStageClass}>
                 <img src={currentImageUrl} alt={task.prompt} className="max-h-[72vh] w-full object-contain" />
                 {totalResults > 1 ? (
                   <>
@@ -163,7 +168,7 @@ export default function ImageDetail() {
                 ) : null}
               </div>
               {totalResults > 1 ? (
-                <div className="border-t border-gray-200 p-4 dark:border-gray-800">
+                <div className="mt-auto border-t border-gray-200 p-4 dark:border-gray-800">
                   <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
                     {task.outputImageUrls.map((url, index) => (
                       <button
