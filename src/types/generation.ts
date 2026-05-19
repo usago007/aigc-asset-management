@@ -93,6 +93,7 @@ export interface ImageGenerationTask extends BaseEntity {
   height?: number;
   scale?: number;
   seed?: number;
+  numImages?: number;
   forceSingle?: boolean;
   resolution?: '4k' | '8k';
   outputImageUrls: string[];

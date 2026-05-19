@@ -6,8 +6,7 @@ import { useAppStore } from '@/store/appStore'
 import { fileToBase64 } from '@/utils/file'
 import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
-import TaskCard from '@/components/TaskCard'
-import { Button } from '@/components/ui/button'
+import GenerationResultFeed, { type ResultFeedGroup } from '@/components/GenerationResultFeed'
 import type { GenerationMode, VideoGenerationTask } from '@/types/generation'
 
 interface VideoCreationWorkspaceProps {
@@ -29,6 +28,14 @@ const statusMap: Record<string, { label: string; className: string }> = {
   cancelled: { label: '已取消', className: 'badge-secondary' },
   expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
+}
+
+const videoModeLabelMap: Record<GenerationMode, string> = {
+  'text-to-video': '文生视频',
+  'image-to-video-first': '首帧图生',
+  'image-to-video-first-tail': '首尾帧图生',
+  'action-imitation': '动作模仿',
+  'digital-human-fast': '数字人快剪',
 }
 
 export default function VideoCreationWorkspace({
@@ -172,6 +179,73 @@ export default function VideoCreationWorkspace({
     if (mode === 'image-to-video-first') return '请添加首帧图片，生成结果将以首帧为起点。'
     return '请添加首帧与尾帧图片，系统会按两端画面衔接生成视频。'
   }, [mode])
+
+  const loadTaskIntoEditor = useCallback((task: VideoGenerationTask) => {
+    setMode(task.mode)
+    setPrompt(task.prompt)
+    setFrames((task.frames === 241 ? 241 : 121))
+    setAspectRatio(task.aspectRatio)
+    setUseCustomSeed(task.seed >= 0)
+    setSeed(task.seed)
+    setProjectId(task.projectId ?? defaultProjectId)
+    setShotId(task.shotId ?? defaultShotId)
+    setFirstFrame(task.firstFrameUrl && task.firstFrameBase64 ? { url: task.firstFrameUrl, base64: task.firstFrameBase64 } : null)
+    setLastFrame(task.lastFrameUrl && task.lastFrameBase64 ? { url: task.lastFrameUrl, base64: task.lastFrameBase64 } : null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [defaultProjectId, defaultShotId])
+
+  const videoResultGroups = useMemo<ResultFeedGroup[]>(() => completedTasks.map((task) => ({
+    id: task.id,
+    createdAt: task.completedAt || task.createdAt,
+    description: task.prompt,
+    meta: [
+      videoModeLabelMap[task.mode],
+      `${Math.max(1, Math.round(task.frames / 24))}s`,
+      task.aspectRatio,
+      task.tokensUsed ? `${task.tokensUsed.toLocaleString()} tokens` : '',
+    ].filter(Boolean),
+    media: [
+      {
+        id: task.id,
+        type: 'video' as const,
+        src: task.videoUrl,
+        alt: task.prompt,
+        aspectRatio: task.aspectRatio,
+        labels: currentContextShot?.finalVideoTaskId === task.id ? ['当前最终视频'] : undefined,
+        footerTag: task.videoExpiresAt ? '已生成' : undefined,
+        onOpen: () => navigate(`/content/video-detail/${task.id}`),
+      },
+    ],
+    actions: [
+      {
+        label: '重新编辑',
+        icon: 'edit',
+        variant: 'outline',
+        onClick: () => loadTaskIntoEditor(task),
+      },
+      {
+        label: '再次生成',
+        icon: 'retry',
+        variant: 'secondary',
+        onClick: () => retryTask(task.id),
+      },
+      {
+        label: '更多操作',
+        icon: 'more',
+        variant: 'secondary',
+        onClick: () => navigate(`/content/video-detail/${task.id}`),
+      },
+      ...(contextMode === 'shot-detail' && defaultShotId
+        ? currentContextShot?.finalVideoTaskId === task.id
+          ? []
+          : [{
+              label: '设为最终视频',
+              variant: 'secondary' as const,
+              onClick: () => handleSelectFinalVideo(task.id),
+            }]
+        : []),
+    ],
+  })), [completedTasks, contextMode, currentContextShot?.finalVideoTaskId, defaultShotId, handleSelectFinalVideo, loadTaskIntoEditor, navigate, retryTask])
 
   const paramSections = [
     {
@@ -404,7 +478,7 @@ export default function VideoCreationWorkspace({
         </div>
       )}
 
-      <ParamPanel title="生成参数" sections={paramSections} defaultExpanded={contextMode === 'global'} />
+      <ParamPanel title="补充设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">
@@ -439,31 +513,12 @@ export default function VideoCreationWorkspace({
       )}
 
       {completedTasks.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="panel-title">生成结果 ({completedTasks.length})</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {completedTasks.map((task: VideoGenerationTask) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onViewDetail={() => navigate(`/content/video-detail/${task.id}`)}
-                onRetry={() => retryTask(task.id)}
-                onCancel={() => cancelTask(task.id)}
-                extraActions={
-                  contextMode === 'shot-detail' && defaultShotId ? (
-                    currentContextShot?.finalVideoTaskId === task.id ? (
-                      <span className="badge badge-secondary text-xs">当前最终视频</span>
-                    ) : (
-                      <Button onClick={() => handleSelectFinalVideo(task.id)} variant="secondary" size="sm">
-                        设为最终视频
-                      </Button>
-                    )
-                  ) : undefined
-                }
-              />
-            ))}
-          </div>
-        </div>
+        <GenerationResultFeed
+          title="生成结果"
+          count={completedTasks.length}
+          groups={videoResultGroups}
+          variant="video-stream"
+        />
       )}
     </div>
   )

@@ -81,7 +81,7 @@ interface AppState {
   toggleMemberStatus: (id: string) => void;
 
   createKeyFramesFromImages: (imageUrls: string[], frameType: 'Opening' | 'Ending', shotId: string | undefined, modelName: string, modelVersion: string, prompt: string) => string[];
-  submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; projectId?: string; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
+  submitImageTask: (mode: ImageGenerationMode, params: { prompt: string; inputImageUrls: string[]; inputImageBase64: string[]; size?: number; width?: number; height?: number; scale?: number; seed?: number; numImages?: number; forceSingle?: boolean; resolution?: '4k' | '8k'; projectId?: string; shotId?: string; frameType?: 'Opening' | 'Ending' }) => Promise<void>;
   retryImageTask: (taskId: string) => Promise<void>;
   cancelImageTask: (taskId: string) => void;
   deleteImageTask: (taskId: string) => void;
@@ -731,6 +731,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       height: params.height,
       scale: params.scale,
       seed: params.seed ?? -1,
+      numImages: params.numImages ?? 1,
       forceSingle: params.forceSingle,
       resolution: params.resolution,
       outputImageUrls: [],
@@ -785,7 +786,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(200,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image A</text></svg>'),
             'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(280,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image B</text></svg>'),
             'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(120,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image C</text></svg>'),
-          ].slice(0, params.forceSingle ? 1 : Math.floor(Math.random() * 2) + 1);
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(25,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image D</text></svg>'),
+          ].slice(0, params.forceSingle ? 1 : Math.min(params.numImages ?? 1, 4));
 
           const kfIds = get().createKeyFramesFromImages(
             imageUrls,
@@ -885,7 +887,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           const imageUrls = [
             'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(40,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image X</text></svg>'),
             'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(340,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image Y</text></svg>'),
-          ].slice(0, task.forceSingle ? 1 : 2);
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(210,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image Z</text></svg>'),
+            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(150,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image W</text></svg>'),
+          ].slice(0, task.forceSingle ? 1 : Math.min(task.numImages ?? 1, 4));
 
           const kfIds = get().createKeyFramesFromImages(
             imageUrls,

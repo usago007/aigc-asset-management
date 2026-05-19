@@ -1,12 +1,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Palette, Image as ImageIcon, Layers, Hash, Clock, Download, Loader2, AlertCircle, Eye, ExternalLink, X, CheckCircle2 } from 'lucide-react'
+import { Palette, Image as ImageIcon, Layers, Hash, Clock, Loader2, AlertCircle, X } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useAIConfigStore } from '@/store/aiConfigStore'
 import { getImageReqKeyForMode } from '@/services/imageGeneration'
 import { fileToBase64 } from '@/utils/file'
 import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
+import GenerationResultFeed, { type ResultFeedGroup } from '@/components/GenerationResultFeed'
 import type { ImageGenerationMode, ImageGenerationTask, TaskQueueStatus } from '@/types/generation'
 
 interface ImageCreationWorkspaceProps {
@@ -43,6 +44,7 @@ const RESOLUTION_OPTIONS = [
 ]
 
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
+const IMAGE_COUNT_OPTIONS = [1, 2, 3, 4]
 
 const modeCapabilities: Record<ImageGenerationMode, { maxReferenceImages: number; supportsReferenceImages: boolean; hint: string }> = {
   'text-to-image': { maxReferenceImages: 10, supportsReferenceImages: true, hint: '可选添加参考图，最多 10 张。' },
@@ -60,7 +62,7 @@ export default function ImageCreationWorkspace({
   filterTasksByShot = false,
 }: ImageCreationWorkspaceProps) {
   const navigate = useNavigate()
-  const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, cancelImageTask, updateShot } = useAppStore()
+  const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, retryImageTask, cancelImageTask } = useAppStore()
   const { updateImageEndpoint } = useAIConfigStore()
 
   const [prompt, setPrompt] = useState('')
@@ -75,7 +77,7 @@ export default function ImageCreationWorkspace({
   const [frameType, setFrameType] = useState<'Opening' | 'Ending' | ''>('')
   const [projectId, setProjectId] = useState(defaultProjectId)
   const [shotId, setShotId] = useState(defaultShotId)
-  const [uploadedImages, setUploadedImages] = useState<{ file: File; url: string; base64: string }[]>([])
+  const [uploadedImages, setUploadedImages] = useState<{ file?: File; url: string; base64: string }[]>([])
 
   useEffect(() => {
     if (contextMode === 'shot-detail') {
@@ -164,6 +166,7 @@ export default function ImageCreationWorkspace({
         height: parseInt(aspectRatio.split(':')[1], 10) * 256,
         scale,
         forceSingle,
+        numImages,
         resolution: resolution >= 2048 * 2048 ? '4k' : '8k',
         projectId: projectId || undefined,
         shotId: shotId || undefined,
@@ -174,7 +177,7 @@ export default function ImageCreationWorkspace({
     } catch (error) {
       console.error('Failed to submit image task:', error)
     }
-  }, [prompt, mode, seed, useRandomSeed, resolution, forceSingle, scale, frameType, projectId, shotId, uploadedImages, shots, storeSubmitTask, aspectRatio])
+  }, [prompt, mode, seed, useRandomSeed, resolution, forceSingle, numImages, scale, frameType, projectId, shotId, uploadedImages, shots, storeSubmitTask, aspectRatio])
 
   const mediaHint = useMemo(() => {
     if (modeCapability.supportsReferenceImages && forceSingle) {
@@ -183,92 +186,86 @@ export default function ImageCreationWorkspace({
     return modeCapability.hint
   }, [forceSingle, modeCapability])
 
-  const handleDownload = (url: string) => {
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'generated_image.png'
-    anchor.target = '_blank'
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-  }
+  const loadTaskIntoEditor = useCallback((task: ImageGenerationTask) => {
+    setPrompt(task.prompt)
+    setMode(task.mode)
+    setUseRandomSeed(task.seed == null || task.seed < 0)
+    setSeed(task.seed ?? -1)
+    setResolution(task.size ?? resolution)
+    setAspectRatio(task.width && task.height ? `${Math.round(task.width / 256)}:${Math.round(task.height / 256)}` : aspectRatio)
+    setScale(task.scale ?? 100)
+    setNumImages(task.numImages ?? Math.max(task.outputImageUrls.length, 1))
+    setForceSingle(Boolean(task.forceSingle))
+    setFrameType(task.frameType ?? '')
+    setProjectId(task.projectId ?? defaultProjectId)
+    setShotId(task.shotId ?? defaultShotId)
+    setUploadedImages(task.inputImageUrls.map((url, index) => ({
+      url,
+      base64: task.inputImageBase64[index] ?? '',
+    })))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [aspectRatio, defaultProjectId, defaultShotId, resolution])
 
-  const handleSelectFrame = useCallback((task: ImageGenerationTask, resultIndex: number, frameType: 'Opening' | 'Ending') => {
-    if (!defaultShotId) return
-    const keyFrameId = task.keyFrameIds[resultIndex]
-    if (!keyFrameId) return
-    updateShot(defaultShotId, frameType === 'Opening' ? { firstFrameId: keyFrameId } : { lastFrameId: keyFrameId })
-  }, [defaultShotId, updateShot])
+  const imageModeLabelMap = useMemo(
+    () => Object.fromEntries(modeOptions.map((option) => [option.value, option.label])) as Record<ImageGenerationMode, string>,
+    [],
+  )
+
+  const imageResultGroups = useMemo<ResultFeedGroup[]>(() => completedTasks.map((task) => {
+    const resolutionLabel = task.resolution?.toUpperCase() || (task.size ? `${Math.round(Math.sqrt(task.size))}P` : '')
+    const aspectLabel = task.width && task.height ? `${Math.round(task.width / 256)}:${Math.round(task.height / 256)}` : ''
+    const meta = [
+      imageModeLabelMap[task.mode],
+      aspectLabel,
+      resolutionLabel,
+      task.tokensUsed ? `${task.tokensUsed.toLocaleString()} tokens` : '',
+    ].filter(Boolean)
+
+    return {
+      id: task.id,
+      createdAt: task.completedAt || task.createdAt,
+      description: task.prompt,
+      meta,
+      media: task.outputImageUrls.map((url, index) => {
+        const labels: string[] = []
+        if (currentContextShot?.firstFrameId === task.keyFrameIds[index]) labels.push('当前首图')
+        if (currentContextShot?.lastFrameId === task.keyFrameIds[index]) labels.push('当前尾图')
+
+        return {
+          id: `${task.id}-${index}`,
+          type: 'image' as const,
+          src: url,
+          alt: task.prompt,
+          aspectRatio: '1:1',
+          labels,
+          footerTag: task.tokensUsed ? `${task.tokensUsed} tokens` : undefined,
+          onOpen: () => navigate(`/content/image-detail/${task.id}/${index}`),
+        }
+      }),
+      actions: [
+        {
+          label: '重新编辑',
+          icon: 'edit',
+          variant: 'outline',
+          onClick: () => loadTaskIntoEditor(task),
+        },
+        {
+          label: '再次生成',
+          icon: 'retry',
+          variant: 'secondary',
+          onClick: () => retryImageTask(task.id),
+        },
+        {
+          label: '更多操作',
+          icon: 'more',
+          variant: 'secondary',
+          onClick: () => navigate(`/content/image-detail/${task.id}/0`),
+        },
+      ],
+    }
+  }), [completedTasks, currentContextShot?.firstFrameId, currentContextShot?.lastFrameId, imageModeLabelMap, loadTaskIntoEditor, navigate, retryImageTask])
 
   const paramSections = [
-    {
-      id: 'mode',
-      label: '生成模式',
-      children: (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {modeOptions.map((option) => (
-            <button
-              key={option.value}
-              className={`flex items-center gap-2 rounded-2xl border p-3 text-left transition-colors ${
-                mode === option.value
-                  ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-800'
-                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
-              }`}
-              onClick={() => setMode(option.value)}
-            >
-              <option.icon size={18} className={mode === option.value ? 'text-gray-950 dark:text-gray-50' : 'text-gray-400'} />
-              <div>
-                <div className="panel-value font-medium">{option.label}</div>
-                <div className="helper-text">{option.desc}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      ),
-    },
-    {
-      id: 'resolution',
-      label: '分辨率',
-      children: (
-        <div className="flex gap-2">
-          {RESOLUTION_OPTIONS.map((option) => (
-            <button
-              key={option.label}
-              className={`flex-1 rounded-2xl border p-3 text-center transition-colors ${
-                resolution === option.size
-                  ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-800'
-                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-800'
-              }`}
-              onClick={() => setResolution(option.size)}
-            >
-              <div className="panel-value font-medium">{option.label}</div>
-              <div className="helper-text">{option.desc}</div>
-            </button>
-          ))}
-        </div>
-      ),
-    },
-    {
-      id: 'aspect',
-      label: '宽高比',
-      children: (
-        <div className="flex flex-wrap gap-2">
-          {ASPECT_RATIOS.map((ratio) => (
-            <button
-              key={ratio}
-              className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
-                aspectRatio === ratio
-                  ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'
-              }`}
-              onClick={() => setAspectRatio(ratio)}
-            >
-              {ratio}
-            </button>
-          ))}
-        </div>
-      ),
-    },
     {
       id: 'seed',
       label: 'Seed 随机种子',
@@ -298,30 +295,9 @@ export default function ImageCreationWorkspace({
     },
     {
       id: 'advanced',
-      label: '高级选项',
+      label: '补充控制',
       children: (
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <label className="field-label">生成数量</label>
-            <input
-              type="range"
-              min={1}
-              max={4}
-              value={numImages}
-              onChange={(event) => setNumImages(Number(event.target.value))}
-              className="flex-1 accent-gray-950 dark:accent-white"
-            />
-            <span className="w-8 text-sm font-mono">{numImages}</span>
-          </div>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={forceSingle}
-              onChange={(event) => setForceSingle(event.target.checked)}
-              className="rounded border-gray-300 text-gray-950 focus:ring-gray-950/10 dark:text-white dark:focus:ring-white/10"
-            />
-            <span className="body-text">强制单图</span>
-          </label>
           <div className="flex items-center gap-4">
             <label className="field-label">文本影响程度</label>
             <input
@@ -403,92 +379,6 @@ export default function ImageCreationWorkspace({
     },
   ]
 
-  const renderImageTaskResult = (task: ImageGenerationTask, resultIndex: number, url: string) => (
-    <div
-      key={`${task.id}-${resultIndex}`}
-      className="group relative aspect-square cursor-pointer overflow-hidden rounded-2xl bg-gray-100 transition-all hover:ring-2 hover:ring-gray-900/10 dark:bg-gray-800"
-      onClick={() => navigate(`/content/image-detail/${task.id}/${resultIndex}`)}
-    >
-      {currentContextShot?.firstFrameId === task.keyFrameIds[resultIndex] && (
-        <div className="absolute left-2 bottom-2 z-10">
-          <span className="badge micro-text border-0 bg-gray-950/90 text-white dark:bg-white/90 dark:text-gray-950">
-            <CheckCircle2 size={10} />
-            当前首图
-          </span>
-        </div>
-      )}
-      {currentContextShot?.lastFrameId === task.keyFrameIds[resultIndex] && (
-        <div className="absolute right-2 bottom-2 z-10">
-          <span className="badge micro-text border-0 bg-gray-950/90 text-white dark:bg-white/90 dark:text-gray-950">
-            <CheckCircle2 size={10} />
-            当前尾图
-          </span>
-        </div>
-      )}
-      <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
-      <div className="media-tile-overlay">
-        <p className="mb-1 line-clamp-1 helper-text text-white/90 dark:text-white/90">{task.prompt}</p>
-        <div className="flex items-center gap-1">
-          <button
-            className="media-action flex-1 gap-1"
-            onClick={(event) => {
-              event.stopPropagation()
-              navigate(`/content/image-detail/${task.id}/${resultIndex}`)
-            }}
-          >
-            <Eye size={12} />
-            详情
-          </button>
-          <button
-            className="media-action flex-1 gap-1"
-            onClick={(event) => {
-              event.stopPropagation()
-              handleDownload(url)
-            }}
-          >
-            <Download size={12} />
-            下载
-          </button>
-        </div>
-        {contextMode === 'shot-detail' && defaultShotId && task.keyFrameIds[resultIndex] && (
-          <div className="mt-1 flex items-center gap-1">
-            <button
-              className="media-action flex-1"
-              onClick={(event) => {
-                event.stopPropagation()
-                handleSelectFrame(task, resultIndex, 'Opening')
-              }}
-            >
-              设为首图
-            </button>
-            <button
-              className="media-action flex-1"
-              onClick={(event) => {
-                event.stopPropagation()
-                handleSelectFrame(task, resultIndex, 'Ending')
-              }}
-            >
-              设为尾图
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="absolute left-2 top-2">
-        <span className="badge badge-info micro-text border-0 bg-black/50 text-white">
-          <ExternalLink size={10} />
-          查看详情
-        </span>
-      </div>
-      {task.tokensUsed ? (
-        <div className="absolute right-2 top-2">
-          <span className="badge badge-secondary micro-text border-0 bg-black/50 text-white">
-            {task.tokensUsed} tokens
-          </span>
-        </div>
-      ) : null}
-    </div>
-  )
-
   return (
     <div className="space-y-6">
       <JimengInput
@@ -513,7 +403,102 @@ export default function ImageCreationWorkspace({
         ) : undefined}
       />
 
-      <ParamPanel title="生成参数" sections={paramSections} defaultExpanded={contextMode === 'global'} />
+      <div className="surface-subtle space-y-5 p-5">
+        <div className="flex flex-col gap-2">
+          <h3 className="panel-title text-gray-950 dark:text-gray-50">演示主控区</h3>
+          <p className="helper-text">把最影响画面效果的选择放到第一屏，便于直接演示结果差异。</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="field-label">生成模式</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {modeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={`flex items-center gap-2 rounded-2xl border p-3 text-left transition-colors ${
+                    mode === option.value
+                      ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-800'
+                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
+                  }`}
+                  onClick={() => setMode(option.value)}
+                >
+                  <option.icon size={18} className={mode === option.value ? 'text-gray-950 dark:text-gray-50' : 'text-gray-400'} />
+                  <div>
+                    <div className="panel-value font-medium">{option.label}</div>
+                    <div className="helper-text">{option.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_0.9fr]">
+            <div className="space-y-2">
+              <label className="field-label">宽高比</label>
+              <div className="flex flex-wrap gap-2">
+                {ASPECT_RATIOS.map((ratio) => (
+                  <button
+                    key={ratio}
+                    className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
+                      aspectRatio === ratio
+                        ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'
+                    }`}
+                    onClick={() => setAspectRatio(ratio)}
+                  >
+                    {ratio}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="field-label">分辨率</label>
+              <div className="flex gap-2">
+                {RESOLUTION_OPTIONS.map((option) => (
+                  <button
+                    key={option.label}
+                    className={`flex-1 rounded-2xl border p-3 text-center transition-colors ${
+                      resolution === option.size
+                        ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-800'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-800'
+                    }`}
+                    onClick={() => setResolution(option.size)}
+                  >
+                    <div className="panel-value font-medium">{option.label}</div>
+                    <div className="helper-text">{option.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="field-label">生成数量</label>
+              <div className="grid grid-cols-4 gap-2">
+                {IMAGE_COUNT_OPTIONS.map((count) => (
+                  <button
+                    key={count}
+                    className={`rounded-2xl border px-3 py-3 text-center text-sm font-medium transition-colors ${
+                      numImages === count
+                        ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'
+                    }`}
+                    onClick={() => {
+                      setNumImages(count)
+                      setForceSingle(count === 1)
+                    }}
+                  >
+                    {count}张
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ParamPanel title="补充设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">
@@ -548,12 +533,12 @@ export default function ImageCreationWorkspace({
       )}
 
       {completedTasks.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="panel-title text-gray-700 dark:text-gray-300">生成结果 ({completedTasks.length})</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {completedTasks.flatMap((task) => task.outputImageUrls.map((url, index) => renderImageTaskResult(task, index, url)))}
-          </div>
-        </div>
+        <GenerationResultFeed
+          title="生成结果"
+          count={completedTasks.length}
+          groups={imageResultGroups}
+          variant="image-gallery"
+        />
       )}
     </div>
   )

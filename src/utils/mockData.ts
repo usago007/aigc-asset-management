@@ -12,6 +12,10 @@ function makeColorImage(seed: number): string {
   return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="hsl(${hue},70%,60%)"/><stop offset="100%" stop-color="hsl(${(hue+60)%360},70%,40%)"/></linearGradient></defs><rect width="400" height="300" fill="url(%23g${seed})"/><text x="200" y="155" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif">Asset Image ${seed}</text></svg>`)}`
 }
 
+function makeImageVariants(baseSeed: number, count: number): string[] {
+  return Array.from({ length: count }, (_, index) => makeColorImage(baseSeed + index))
+}
+
 const COSMETIC_IMAGES = Array.from({ length: 32 }, (_, i) => makeColorImage(i))
 
 const CUSTOMER_NAMES = [
@@ -448,6 +452,16 @@ function buildDemoDataset(): DemoDataset {
       const openingImageTaskId = `image-task-${projectIndex + 1}-${shotIndex + 1}-opening`
       const endingImageTaskId = `image-task-${projectIndex + 1}-${shotIndex + 1}-ending`
       const videoTaskId = `video-task-${projectIndex + 1}-${shotIndex + 1}`
+      const openingCount = (globalShotIndex % 4) + 1
+      const endingCount = ((globalShotIndex + 2) % 4) + 1
+      const openingOutputs = makeImageVariants(globalShotIndex * 10 + 1, openingCount)
+      const endingOutputs = makeImageVariants(globalShotIndex * 10 + 101, endingCount)
+      const openingKeyFrameIds = Array.from({ length: openingCount }, (_, index) =>
+        index === 0 ? openingFrameId : `${openingFrameId}-variant-${index + 1}`,
+      )
+      const endingKeyFrameIds = Array.from({ length: endingCount }, (_, index) =>
+        index === 0 ? endingFrameId : `${endingFrameId}-variant-${index + 1}`,
+      )
 
       imageTasks.push(
         {
@@ -464,11 +478,12 @@ function buildDemoDataset(): DemoDataset {
           height: 1024,
           scale: 2,
           seed: 1000 + globalShotIndex,
-          forceSingle: true,
+          numImages: openingCount,
+          forceSingle: openingCount === 1,
           resolution: shotIndex % 2 === 0 ? '4k' : '8k',
-          outputImageUrls: [openingImage],
+          outputImageUrls: openingOutputs,
           outputImageBase64: [],
-          keyFrameIds: [openingFrameId],
+          keyFrameIds: openingKeyFrameIds,
           projectId,
           shotId,
           frameType: 'Opening',
@@ -492,11 +507,12 @@ function buildDemoDataset(): DemoDataset {
           height: 1024,
           scale: 2,
           seed: 2000 + globalShotIndex,
-          forceSingle: true,
+          numImages: endingCount,
+          forceSingle: endingCount === 1,
           resolution: shotIndex % 2 === 0 ? '8k' : '4k',
-          outputImageUrls: [endingImage],
+          outputImageUrls: endingOutputs,
           outputImageBase64: [],
-          keyFrameIds: [endingFrameId],
+          keyFrameIds: endingKeyFrameIds,
           projectId,
           shotId,
           frameType: 'Ending',
