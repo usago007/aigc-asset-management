@@ -31,6 +31,11 @@ export interface ResultFeedGroup {
   createdAt: string
   description: string
   meta: string[]
+  headerMedia?: Array<{
+    id: string
+    src: string
+    alt: string
+  }>
   media: ResultFeedMediaItem[]
   actions: ResultFeedAction[]
 }
@@ -88,12 +93,29 @@ export default function GenerationResultFeed({
                 'flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between',
                 (variant === 'image-gallery' || variant === 'video-stream') && 'rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.04)] dark:border-gray-800 dark:bg-gray-900',
               )}>
-                <p className={cn(
-                  'body-text max-w-5xl leading-7 text-gray-700 dark:text-gray-300',
-                  (variant === 'image-gallery' || variant === 'video-stream') && 'max-w-none flex-1 leading-8',
+                <div className={cn(
+                  'flex min-w-0 flex-1 gap-3',
+                  variant === 'video-stream' ? 'items-start' : 'items-start',
                 )}>
-                  {group.description}
-                </p>
+                  {variant === 'video-stream' && group.headerMedia?.length ? (
+                    <div className="flex flex-shrink-0 items-center gap-1.5 pt-0.5">
+                      {group.headerMedia.map((preview) => (
+                        <div
+                          key={preview.id}
+                          className="h-10 w-10 overflow-hidden rounded-xl border border-gray-200 bg-gray-100 shadow-[0_4px_10px_rgba(15,23,42,0.06)] dark:border-gray-700 dark:bg-gray-900"
+                        >
+                          <img src={preview.src} alt={preview.alt} className="h-full w-full object-cover" loading="lazy" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <p className={cn(
+                    'body-text max-w-5xl leading-7 text-gray-700 dark:text-gray-300',
+                    (variant === 'image-gallery' || variant === 'video-stream') && 'max-w-none flex-1 leading-8',
+                  )}>
+                    {group.description}
+                  </p>
+                </div>
                 {group.meta.length > 0 && (
                   <div className={cn(
                     'flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400 dark:text-gray-500 lg:justify-end',
@@ -110,7 +132,7 @@ export default function GenerationResultFeed({
                 className={cn(
                   'grid gap-1.5',
                   variant === 'video-stream'
-                    ? 'max-w-[720px] grid-cols-1'
+                    ? 'max-w-[520px] grid-cols-1'
                     : group.media.length <= 1
                     ? 'max-w-[420px] grid-cols-1'
                     : group.media.length === 2
@@ -119,7 +141,7 @@ export default function GenerationResultFeed({
                         ? 'grid-cols-3'
                         : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                   variant === 'image-gallery' && 'gap-0.5 max-w-none justify-start',
-                  variant === 'video-stream' && 'max-w-[720px] justify-start',
+                  variant === 'video-stream' && 'max-w-[520px] justify-start',
                 )}
                 style={
                   variant === 'image-gallery'

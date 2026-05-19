@@ -204,6 +204,22 @@ export default function VideoCreationWorkspace({
       task.aspectRatio,
       task.tokensUsed ? `${task.tokensUsed.toLocaleString()} tokens` : '',
     ].filter(Boolean),
+    headerMedia: [
+      task.firstFrameUrl
+        ? {
+            id: `${task.id}-first`,
+            src: task.firstFrameUrl,
+            alt: '首帧参考图',
+          }
+        : null,
+      task.lastFrameUrl
+        ? {
+            id: `${task.id}-last`,
+            src: task.lastFrameUrl,
+            alt: '尾帧参考图',
+          }
+        : null,
+    ].filter(Boolean) as NonNullable<ResultFeedGroup['headerMedia']>,
     media: [
       {
         id: task.id,
