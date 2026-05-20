@@ -22,7 +22,6 @@ import {
   projectSummaryMetaListClass,
   projectSummaryMetaRowClass,
   projectSummaryTitleClass,
-  projectSummaryValueClass,
 } from '@/pages/content/detailStyles'
 import type {
   Brief,
@@ -84,13 +83,6 @@ const includesText = (value: unknown, query: string) => {
   const normalizedQuery = normalizeSearchText(query)
   if (!normalizedQuery) return true
   return normalizeSearchText(value).includes(normalizedQuery)
-}
-
-const getProjectProgressNarrative = (progress: number) => {
-  if (progress >= 90) return '交付完成'
-  if (progress >= 60) return '制作与审核收口中'
-  if (progress >= 25) return '素材与提案推进中'
-  return '项目建立中'
 }
 
 const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup }) => {
@@ -170,6 +162,7 @@ export default function ProjectDetail() {
   const {
     projects,
     brands,
+    customers,
     shots,
     projectShotSlots,
     keyFrames,
@@ -205,7 +198,9 @@ export default function ProjectDetail() {
   })
 
   const project = projects.find((item) => item.id === id) || null
-  const brandName = project ? brands.find((brand) => brand.id === project.brandId)?.brandName || '-' : '-'
+  const projectBrand = project ? brands.find((brand) => brand.id === project.brandId) || null : null
+  const brandName = projectBrand?.brandName || '-'
+  const customerName = projectBrand ? customers.find((customer) => customer.id === projectBrand.customerId)?.customerName || '-' : '-'
 
   useEffect(() => {
     if (project) {
@@ -247,8 +242,6 @@ export default function ProjectDetail() {
 
     return boundBrief || [...projectBriefs].sort(byTimeDesc)[0] || null
   }, [projectBriefs])
-  const progressNarrative = useMemo(() => getProjectProgressNarrative(project?.progress ?? 0), [project?.progress])
-  const slotCoverageComplete = slotItems.length > 0 && filledSlotItems.length === slotItems.length
   const briefStatusVariant = primaryBrief?.currentVersionId ? 'success' : 'outline'
   const relatedImageTasks = useMemo(
     () => imageTasks.filter((task) => task.projectId === id || (task.shotId ? projectShotIds.has(task.shotId) : false)),
@@ -323,6 +316,35 @@ export default function ProjectDetail() {
     const task = latestVideoTaskByShotId.get(shotId) || null
     return { task, previewUrl: task?.videoUrl || null }
   }
+
+  const getLookupSortTime = (frame: KeyFrame | null, sourceTask: ImageGenerationTask | null) => {
+    const taskTime = sourceTask?.completedAt || sourceTask?.updatedAt || sourceTask?.createdAt
+    return new Date(taskTime || frame?.createdAt || 0).getTime()
+  }
+
+  const latestOpeningLookup = useMemo(() => {
+    const lookups = projectShots
+      .map((shot) => getFrameLookup(shot.firstFrameId))
+      .filter((lookup) => lookup.frame)
+      .sort((a, b) => getLookupSortTime(b.frame, b.sourceTask) - getLookupSortTime(a.frame, a.sourceTask))
+    return lookups[0] || null
+  }, [projectShots, keyFrameById, relatedImageTasks])
+
+  const latestEndingLookup = useMemo(() => {
+    const lookups = projectShots
+      .map((shot) => getFrameLookup(shot.lastFrameId))
+      .filter((lookup) => lookup.frame)
+      .sort((a, b) => getLookupSortTime(b.frame, b.sourceTask) - getLookupSortTime(a.frame, a.sourceTask))
+    return lookups[0] || null
+  }, [projectShots, keyFrameById, relatedImageTasks])
+
+  const latestProjectVideoTask = useMemo(() => {
+    return [...latestVideoTaskByShotId.values()].sort((a, b) => {
+      const aTime = new Date(a.completedAt || a.updatedAt || a.createdAt).getTime()
+      const bTime = new Date(b.completedAt || b.updatedAt || b.createdAt).getTime()
+      return bTime - aTime
+    })[0] || null
+  }, [latestVideoTaskByShotId])
 
   const processRecords = useMemo<ProcessRecord[]>(() => {
     const shotRecords: ProcessRecord[] = filledSlotItems.map(({ slot, shot }) => ({
@@ -511,34 +533,29 @@ export default function ProjectDetail() {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
           <h1 className="page-title-compact sm:text-[30px]">{project.projectName}</h1>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 dark:text-gray-400 lg:justify-end">
-            <div className="flex items-center gap-2">
-              <span className="field-label">品牌</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{brandName}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="field-label">负责人</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</span>
-            </div>
-          </div>
         </div>
 
         <PageSection className="space-y-4">
           <div className={projectSummaryGridClass}>
             <section className={projectSummaryCardClass}>
               <div className={projectSummaryHeaderClass}>
-                <div className={projectSummaryEyebrowClass}>项目状态</div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <div className="text-right">
-                  <div className={projectSummaryValueClass}>
-                    {project.progress}%
-                  </div>
-                </div>
+                <div className={projectSummaryEyebrowClass}>项目基础信息</div>
               </div>
               <div className={`mt-4 ${projectSummaryMetaListClass}`}>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">客户</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{customerName}</span>
+                </div>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">品牌</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{brandName}</span>
+                </div>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">负责人</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</span>
+                </div>
                 <div className={projectSummaryMetaRowClass}>
                   <span className="field-label">阶段</span>
                   <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
@@ -547,33 +564,58 @@ export default function ProjectDetail() {
                   <span className="field-label">风险</span>
                   <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
                 </div>
-                <div className={projectSummaryMetaRowClass}>
-                  <span className="field-label">待审核</span>
-                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{project.pendingReviews}</span>
-                </div>
               </div>
             </section>
 
             <section className={projectSummaryCardClass}>
               <div className={projectSummaryHeaderClass}>
-                <div className={projectSummaryEyebrowClass}>镜头位覆盖</div>
+                <div className={projectSummaryEyebrowClass}>项目生成信息</div>
               </div>
-              <div className="mt-4 flex justify-end">
-                <div className="flex items-end gap-2 text-right">
-                  <div className={projectSummaryValueClass}>
-                    {filledSlotItems.length}
+              <div className="mt-4 space-y-4">
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">首图</div>
+                  <div className={`mt-2 ${projectSummaryMetaListClass}`}>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">模型</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {latestOpeningLookup?.frame ? `${latestOpeningLookup.frame.modelName} ${latestOpeningLookup.frame.modelVersion}`.trim() : '未生成'}
+                      </span>
+                    </div>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">Tokens</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{latestOpeningLookup?.sourceTask?.tokensUsed ?? '-'}</span>
+                    </div>
                   </div>
-                  <div className="pb-1 text-lg text-gray-500 dark:text-gray-400">/ {slotItems.length}</div>
                 </div>
-              </div>
-              <div className={`mt-4 ${projectSummaryMetaListClass}`}>
-                <div className={projectSummaryMetaRowClass}>
-                  <span className="field-label">已关联</span>
-                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{filledSlotItems.length}</span>
+
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">尾图</div>
+                  <div className={`mt-2 ${projectSummaryMetaListClass}`}>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">模型</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {latestEndingLookup?.frame ? `${latestEndingLookup.frame.modelName} ${latestEndingLookup.frame.modelVersion}`.trim() : '未生成'}
+                      </span>
+                    </div>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">Tokens</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{latestEndingLookup?.sourceTask?.tokensUsed ?? '-'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className={projectSummaryMetaRowClass}>
-                  <span className="field-label">总镜头位</span>
-                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{slotItems.length}</span>
+
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">视频</div>
+                  <div className={`mt-2 ${projectSummaryMetaListClass}`}>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">模型</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{latestProjectVideoTask?.reqKey || '未生成'}</span>
+                    </div>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">Tokens</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{latestProjectVideoTask?.tokensUsed ?? '-'}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -684,29 +726,11 @@ export default function ProjectDetail() {
             return (
               <div key={slot.id} className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-3">
+                  <div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">镜头 {slot.position}</Badge>
                       <Film size={16} className="text-gray-700 dark:text-gray-300" />
                       <h3 className="card-title">{shot.shotName}</h3>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="field-label">镜头提示词标识</div>
-                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{shot.promptId || '未填写'}</div>
-                      </div>
-                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="field-label">基础模型</div>
-                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
-                      </div>
-                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="field-label">首图记录</div>
-                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{opening.frame?.name || '未绑定'}</div>
-                      </div>
-                      <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                        <div className="field-label">尾图记录</div>
-                        <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{ending.frame?.name || '未绑定'}</div>
-                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center justify-end gap-2 lg:mt-10 xl:mt-9">
