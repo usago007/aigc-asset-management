@@ -335,6 +335,9 @@
   .header-crumb-active {
     @apply font-medium text-gray-950 dark:text-gray-50;
   }
+  .notification-panel {
+    @apply w-[420px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.12)] dark:border-gray-800 dark:bg-gray-900;
+  }
   .mono-text {
     @apply font-mono text-xs text-gray-700 dark:text-gray-200;
   }

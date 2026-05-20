@@ -7,6 +7,7 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { Switch } from '@/components/ui/switch'
 import { storageGet, storageSet } from '@/utils/storage'
 import { showToast } from '@/utils/toast'
+import { syncNotificationsEnabled } from '@/utils/shellState'
 
 export default function Settings() {
   const { theme, setTheme } = useTheme()
@@ -25,6 +26,7 @@ export default function Settings() {
     storageSet('autoSave', settings.autoSave)
     storageSet('theme', settings.theme)
     storageSet('settings', settings)
+    syncNotificationsEnabled(settings.notifications)
     setTheme(settings.theme)
     showToast('success', '设置保存成功')
   }

@@ -1,9 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutGrid, ImagePlus, Folder, Settings, ChevronLeft, ChevronRight, UserRound } from 'lucide-react'
+import { LayoutGrid, Folder, Settings, ChevronLeft, ChevronRight, UserRound } from 'lucide-react'
+import type { CurrentUserProfile } from '@/types'
 
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
+  profile: CurrentUserProfile
+  onOpenProfile: () => void
 }
 
 interface MenuItem {
@@ -38,7 +41,7 @@ function ContentCenterIcon() {
   )
 }
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }: SidebarProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
@@ -100,15 +103,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const isChildActive = (childPath: string) => currentPath === childPath
 
   const accountPanel = (
-    <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={onOpenProfile}
+      className="flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-900"
+    >
       <div className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
         <UserRound size={16} strokeWidth={1.8} />
       </div>
-      <div>
-        <p className="body-text font-medium text-gray-900 dark:text-gray-100">admin</p>
-        <p className="meta-text">管理员账号</p>
+      <div className="min-w-0">
+        <p className="body-text truncate font-medium text-gray-900 dark:text-gray-100">{profile.displayName}</p>
+        <p className="meta-text">{profile.roleLabel}</p>
       </div>
-    </div>
+    </button>
   )
 
   return (
@@ -169,18 +176,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       <div className="nav-header p-4">
         {collapsed ? (
-          <div className="relative flex justify-center group">
+          <div className="flex justify-center">
             <button
               type="button"
+              onClick={onOpenProfile}
               className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-50"
-              title="admin"
+              title={profile.displayName}
             >
               <UserRound size={17} strokeWidth={1.8} />
             </button>
-            <div className="pointer-events-none absolute bottom-0 left-[calc(100%+12px)] z-30 w-max min-w-[140px] rounded-2xl border border-gray-200 bg-white px-4 py-3 opacity-0 shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition-all duration-200 group-hover:pointer-events-auto group-hover:-translate-y-1 group-hover:opacity-100 dark:border-gray-800 dark:bg-gray-900">
-              <p className="body-text font-medium text-gray-900 dark:text-gray-100">admin</p>
-              <p className="meta-text">管理员账号</p>
-            </div>
           </div>
         ) : (
           accountPanel

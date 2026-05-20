@@ -1,6 +1,9 @@
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import NotificationPanel from '@/components/NotificationPanel'
+import type { NotificationItem } from '@/types'
 
 const breadcrumbs: Record<string, string[]> = {
   '/dashboard': ['仪表盘'],
@@ -34,9 +37,34 @@ const dynamicRoutes: { prefix: string; crumbs: string[] }[] = [
   { prefix: '/projects/projects/', crumbs: ['项目中心', '项目详情'] },
 ]
 
-export default function Header() {
+interface HeaderProps {
+  notifications: NotificationItem[]
+  unreadCount: number
+  notificationsEnabled: boolean
+  notificationPanelOpen: boolean
+  onToggleNotificationPanel: () => void
+  onCloseNotificationPanel: () => void
+  onMarkNotificationRead: (id: string) => void
+  onMarkAllNotificationsRead: () => void
+  onNavigateFromNotification: (item: NotificationItem) => void
+  onOpenSettings: () => void
+}
+
+export default function Header({
+  notifications,
+  unreadCount,
+  notificationsEnabled,
+  notificationPanelOpen,
+  onToggleNotificationPanel,
+  onCloseNotificationPanel,
+  onMarkNotificationRead,
+  onMarkAllNotificationsRead,
+  onNavigateFromNotification,
+  onOpenSettings,
+}: HeaderProps) {
   const location = useLocation()
   const path = location.pathname
+  const panelRef = useRef<HTMLDivElement | null>(null)
 
   const getBreadcrumbs = () => {
     if (breadcrumbs[path]) return breadcrumbs[path]
@@ -47,6 +75,34 @@ export default function Header() {
   }
 
   const crumbs = getBreadcrumbs()
+
+  useEffect(() => {
+    onCloseNotificationPanel()
+  }, [location.pathname, onCloseNotificationPanel])
+
+  useEffect(() => {
+    if (!notificationPanelOpen) return undefined
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!panelRef.current?.contains(event.target as Node)) {
+        onCloseNotificationPanel()
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCloseNotificationPanel()
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [notificationPanelOpen, onCloseNotificationPanel])
 
   return (
     <header className="header-shell px-6 py-4 lg:px-10">
@@ -62,11 +118,33 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" size="icon" className="relative h-10 w-10">
+        <div className="relative flex items-center gap-3" ref={panelRef}>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="relative h-10 w-10"
+            onClick={onToggleNotificationPanel}
+            aria-label="打开系统通知"
+            aria-expanded={notificationPanelOpen}
+          >
             <Bell size={16} className="text-gray-500 dark:text-gray-400" />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gray-900 dark:bg-white"></span>
+            {notificationsEnabled && unreadCount > 0 ? (
+              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gray-900 dark:bg-white"></span>
+            ) : null}
           </Button>
+          {notificationPanelOpen ? (
+            <div className="absolute right-0 top-[calc(100%+14px)] z-40">
+              <NotificationPanel
+                items={notifications}
+                unreadCount={unreadCount}
+                notificationsEnabled={notificationsEnabled}
+                onMarkRead={onMarkNotificationRead}
+                onMarkAllRead={onMarkAllNotificationsRead}
+                onNavigate={onNavigateFromNotification}
+                onOpenSettings={onOpenSettings}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

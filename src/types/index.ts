@@ -158,3 +158,28 @@ export interface PaginationState {
   totalItems: number;
   totalPages: number;
 }
+
+export type NotificationLevel = 'info' | 'success' | 'warning' | 'error';
+
+export interface NotificationItem {
+  id: UUID;
+  title: string;
+  summary: string;
+  level: NotificationLevel;
+  createdAt: string;
+  read: boolean;
+  targetPath: string;
+  targetLabel: string;
+}
+
+export interface CurrentUserProfile {
+  accountName: string;
+  displayName: string;
+  roleLabel: string;
+  email: string;
+  phone: string;
+  department: string;
+  avatarUrl: string;
+  lastLoginAt: string;
+  notificationsEnabled: boolean;
+}
