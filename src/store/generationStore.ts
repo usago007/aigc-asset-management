@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { VideoGenerationTask, TaskQueueStatus, SubmitTaskParams, GenerationMode } from '@/types/generation';
-import { getReqKeyForMode, getVideoExpiryMs } from '@/services/videoGeneration';
+import { getReqKeyForMode } from '@/services/videoGeneration';
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import { startPolling, stopPolling } from '@/services/poller';
@@ -17,10 +17,7 @@ interface GenerationState {
   submitTask: (mode: GenerationMode, params: Omit<SubmitTaskParams, 'reqKey'>) => Promise<void>;
   retryTask: (taskId: string) => Promise<void>;
   cancelTask: (taskId: string) => void;
-  checkExpiringVideos: () => void;
 }
-
-const EXPIRY_WARNING_MS = 600000;
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
   tasks: _videoTasks,
@@ -107,11 +104,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         },
         (result) => {
           const completedTime = new Date().toISOString();
-          const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(tempId, {
             status: 'done',
             videoUrl: '',
-            videoExpiresAt: expiresAt,
             aigcMetaTagged: true,
             progress: 100,
             completedAt: completedTime,
@@ -151,7 +146,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     get().updateTask(taskId, {
       status: 'submitting',
       videoUrl: undefined,
-      videoExpiresAt: undefined,
       errorCode: undefined,
       errorMessage: undefined,
       progress: 0,
@@ -192,11 +186,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         },
         (result) => {
           const completedTime = new Date().toISOString();
-          const expiresAt = new Date(Date.now() + getVideoExpiryMs()).toISOString();
           get().updateTask(taskId, {
             status: 'done',
             videoUrl: '',
-            videoExpiresAt: expiresAt,
             aigcMetaTagged: true,
             progress: 100,
             completedAt: completedTime,
@@ -233,25 +225,5 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       errorMessage: '已取消',
     });
     showToast('info', '任务已取消');
-  },
-
-  checkExpiringVideos: () => {
-    const { tasks, updateTask } = get();
-    const now = Date.now();
-
-    tasks.forEach((task) => {
-      if (task.status === 'done' && task.videoUrl && task.videoExpiresAt) {
-        const expiresAt = new Date(task.videoExpiresAt).getTime();
-        const timeRemaining = expiresAt - now;
-
-        if (timeRemaining <= 0) {
-          updateTask(task.id, { status: 'expired' });
-          showToast('warning', `视频已过期: ${task.prompt}`);
-        } else if (timeRemaining <= EXPIRY_WARNING_MS) {
-          const minutes = Math.ceil(timeRemaining / 60000);
-          showToast('warning', `视频将在 ${minutes} 分钟后过期: ${task.prompt}`);
-        }
-      }
-    });
   },
 }));

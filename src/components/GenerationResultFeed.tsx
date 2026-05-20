@@ -138,10 +138,10 @@ export default function GenerationResultFeed({
                     ? 'max-w-[420px] grid-cols-1'
                     : group.media.length === 2
                       ? 'grid-cols-2'
-                      : group.media.length === 3
+                    : group.media.length === 3
                         ? 'grid-cols-3'
                         : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-                  variant === 'image-gallery' && 'gap-0.5 max-w-none justify-start',
+                  variant === 'image-gallery' && 'gap-2 max-w-none justify-start',
                   variant === 'video-stream' && 'max-w-[520px] justify-start',
                 )}
                 style={

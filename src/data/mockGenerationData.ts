@@ -15,7 +15,6 @@ export const mockGenerationTasks: VideoGenerationTask[] = [
     frames: 121,
     aspectRatio: '16:9',
     videoUrl: '',
-    videoExpiresAt: new Date(now + 30 * 60 * 1000).toISOString(),
     status: 'done',
     aigcMetaTagged: true,
     timeElapsed: '45.2s',

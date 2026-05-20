@@ -235,8 +235,6 @@ export default function Shots() {
             <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">镜头名称</th>
               <th className="table-header">所属项目</th>
-              <th className="table-header">首图</th>
-              <th className="table-header">尾图</th>
               <th className="table-header">AI模型</th>
               <th className="table-header">创建时间</th>
               <th className="table-header">操作</th>
@@ -255,8 +253,6 @@ export default function Shots() {
                   </button>
                 </td>
                 <td className="table-cell">{getProjectName(shot.projectId)}</td>
-                <td className="table-cell text-xs">{getFrameName(shot.firstFrameId)}</td>
-                <td className="table-cell text-xs">{getFrameName(shot.lastFrameId)}</td>
                 <td className="table-cell">{[shot.modelName, shot.modelVersion].filter(Boolean).join(' ') || '-'}</td>
                 <td className="table-cell text-gray-600 dark:text-gray-500">{formatDate(shot.createdAt)}</td>
                 <td className="table-cell">

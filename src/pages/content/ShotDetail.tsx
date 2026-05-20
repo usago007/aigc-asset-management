@@ -391,26 +391,27 @@ export default function ShotDetail() {
 
   return (
     <PageShell>
-      <div className="page-intro">
-        <div className="space-y-2">
+      <div className="page-intro items-start">
+        <div className="w-full space-y-3">
           <Button variant="secondary" className="gap-2" onClick={() => navigate('/content/shots')}>
             <ArrowLeft size={16} />
             返回镜头列表
           </Button>
-          <div>
-            <h1 className="page-title-compact">{shot.shotName}</h1>
-            <p className="page-subtitle mt-1">镜头详情工作台，集中管理首尾帧、创作任务、结果追溯与资产沉淀。</p>
+          <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <h1 className="page-title-compact">{shot.shotName}</h1>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:ml-6 lg:flex-none lg:justify-end">
+              <Button variant="secondary" className="gap-2" onClick={() => navigate(`/projects/projects/${project.id}`)}>
+                <FolderKanban size={14} />
+                查看项目
+              </Button>
+              <Button className="gap-2" onClick={() => openShotModal(shot)}>
+                <Edit2 size={14} />
+                编辑镜头
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" className="gap-2" onClick={() => navigate(`/projects/projects/${project.id}`)}>
-            <FolderKanban size={14} />
-            查看项目
-          </Button>
-          <Button className="gap-2" onClick={() => openShotModal(shot)}>
-            <Edit2 size={14} />
-            编辑镜头
-          </Button>
         </div>
       </div>
 

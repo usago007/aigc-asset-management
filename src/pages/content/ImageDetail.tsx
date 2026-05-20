@@ -10,7 +10,10 @@ import {
   detailContentGridClass,
   detailFixedStageClass,
   detailFixedStageShellClass,
+  detailHeaderActionsClass,
+  detailHeaderBackRowClass,
   detailHeaderClass,
+  detailHeaderContentRowClass,
   detailHeaderIntroClass,
   detailHeaderMetaRowClass,
   detailHeaderMetaTextClass,
@@ -131,37 +134,42 @@ export default function ImageDetail() {
     <PageShell>
       <div className={detailPageShellClass}>
         <section className={detailHeaderClass}>
-          <div className={detailHeaderTopBarClass}>
-            <button onClick={handleBack} className={detailBackButtonClass}>
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex items-center gap-2">
-              <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
-                <Download size={18} />
-              </button>
-              <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
-                <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
-              </button>
-              <button className={detailIconButtonClass} title="分享">
-                <Share2 size={18} />
-              </button>
-              <button className={detailIconButtonClass} title="更多操作">
-                <MoreHorizontal size={18} />
-              </button>
+          <div className="w-full space-y-3">
+            <div className={detailHeaderTopBarClass}>
+              <div className={detailHeaderBackRowClass}>
+                <Button variant="secondary" className="gap-2" onClick={handleBack}>
+                  <ArrowLeft size={16} />
+                  返回上一页
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className={detailHeaderIntroClass}>
-            <h1 className={detailTitleClass}>图片结果详情</h1>
-            <div className={detailHeaderMetaRowClass}>
-              <span className={detailHeaderMetaTextClass}>图片详情</span>
-              <span aria-hidden="true">·</span>
-              <span className={detailHeaderMetaTextClass}>第 {currentIndex + 1} 张 / 共 {totalResults} 张</span>
-              {task.resolution ? (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span className={detailHeaderMetaTextClass}>{task.resolution.toUpperCase()}</span>
-                </>
-              ) : null}
+            <div className={detailHeaderContentRowClass}>
+              <div className={detailHeaderIntroClass}>
+                <h1 className={detailTitleClass}>图片详情</h1>
+                <div className={detailHeaderMetaRowClass}>
+                  <span className={detailHeaderMetaTextClass}>第 {currentIndex + 1} 张 / 共 {totalResults} 张</span>
+                  {task.resolution ? (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className={detailHeaderMetaTextClass}>{task.resolution.toUpperCase()}</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              <div className={detailHeaderActionsClass}>
+                <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
+                  <Download size={18} />
+                </button>
+                <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                  <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
+                </button>
+                <button className={detailIconButtonClass} title="分享">
+                  <Share2 size={18} />
+                </button>
+                <button className={detailIconButtonClass} title="更多操作">
+                  <MoreHorizontal size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </section>

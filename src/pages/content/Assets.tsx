@@ -345,9 +345,8 @@ export default function Assets() {
           </Select>
         </div>
 
-        <div className="filter-meta justify-between">
+        <div className="filter-meta">
           <span>共 {filteredItems.length} 条资产记录</span>
-          <span>覆盖图片、视频、脚本三类资产</span>
         </div>
 
         <div className="card overflow-x-auto p-0 shadow-none">

@@ -20,12 +20,12 @@ function getStatusBadge(status: VideoGenerationTask['status']) {
     done: { label: '完成', className: 'badge-success', icon: null },
     failed: { label: '失败', className: 'badge-error', icon: <AlertCircle size={12} /> },
     cancelled: { label: '已取消', className: 'badge-secondary', icon: null },
-    expired: { label: '已过期', className: 'badge-error', icon: null },
     submitting: { label: '提交中', className: 'badge-info', icon: null },
     not_found: { label: '未找到', className: 'badge-error', icon: <AlertCircle size={12} /> },
   } as const
 
-  const { label, className, icon } = config[status] || config.not_found
+  const normalizedStatus = status === 'expired' ? 'done' : status
+  const { label, className, icon } = config[normalizedStatus] || config.not_found
 
   return (
     <span className={`badge ${className} gap-1`}>

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Clapperboard, Clock, Download, FolderOpen, Image, RefreshCw, Video } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Clapperboard, Download, FolderOpen, Image, RefreshCw, Video } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,38 +33,14 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'destructive' | 'in
   generating: 'info',
   done: 'success',
   failed: 'destructive',
-  expired: 'warning',
 }
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { tasks, updateTask } = useGenerationStore()
-  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
-  const [isExpired, setIsExpired] = useState(false)
+  const { tasks } = useGenerationStore()
 
   const task = useMemo(() => tasks.find((item) => item.id === id), [tasks, id])
-
-  useEffect(() => {
-    if (!task?.videoExpiresAt || task.status !== 'done') return
-
-    const updateCountdown = () => {
-      const remaining = new Date(task.videoExpiresAt!).getTime() - Date.now()
-      if (remaining <= 0) {
-        setIsExpired(true)
-        updateTask(task.id, { status: 'expired' })
-        setTimeRemaining(null)
-        return
-      }
-      const minutes = Math.floor(remaining / 60000)
-      const seconds = Math.floor((remaining % 60000) / 1000)
-      setTimeRemaining(`${minutes}分${seconds}秒`)
-    }
-
-    updateCountdown()
-    const timer = setInterval(updateCountdown, 1000)
-    return () => clearInterval(timer)
-  }, [task?.videoExpiresAt, task?.status, task?.id, updateTask])
 
   if (!task) {
     return (
@@ -86,7 +62,7 @@ export default function TaskDetail() {
   const modeLabel = MODE_LABELS[task.mode] || task.mode
 
   const handleDownload = () => {
-    if (!task.videoUrl || isExpired) return
+    if (!task.videoUrl) return
     const anchor = document.createElement('a')
     anchor.href = task.videoUrl
     anchor.download = `video_${task.taskId}.mp4`
@@ -117,7 +93,7 @@ export default function TaskDetail() {
               <RefreshCw size={14} />
               再次生成
             </Button>
-            <Button className="gap-2" onClick={handleDownload} disabled={!task.videoUrl || isExpired}>
+            <Button className="gap-2" onClick={handleDownload} disabled={!task.videoUrl}>
               <Download size={14} />
               下载结果
             </Button>
@@ -127,17 +103,12 @@ export default function TaskDetail() {
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="space-y-4 lg:col-span-3">
             <div className={detailMediaShellClass}>
-              {task.status === 'done' && task.videoUrl && !isExpired ? (
+              {task.status === 'done' && task.videoUrl ? (
                 <video src={task.videoUrl} controls preload="metadata" className="aspect-video w-full bg-black object-contain" />
               ) : task.status === 'failed' ? (
                 <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
                   <Badge variant="destructive">生成失败</Badge>
                   <p className="body-muted max-w-md">{task.errorMessage || '当前任务没有可用结果。'}</p>
-                </div>
-              ) : task.status === 'expired' || isExpired ? (
-                <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
-                  <Badge variant="warning">视频已过期</Badge>
-                  <p className="body-muted max-w-md">该结果链接已失效，请返回生成页重新生成。</p>
                 </div>
               ) : (
                 <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
@@ -180,15 +151,6 @@ export default function TaskDetail() {
                 <p className={`mt-2 ${detailPanelTextClass}`}>{task.shotId || '-'}</p>
               </div>
             </div>
-
-            {task.status === 'done' && timeRemaining && !isExpired ? (
-              <div className={detailPanelClass}>
-                <div className="panel-value flex items-center gap-2">
-                  <Clock size={14} />
-                  视频将在 {timeRemaining} 后过期
-                </div>
-              </div>
-            ) : null}
 
             <div className={detailPanelClass}>
               <div className={`${detailPanelTitleClass} mb-3`}>输入参数</div>

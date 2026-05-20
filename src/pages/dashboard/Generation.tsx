@@ -53,7 +53,6 @@ const GEN_STATUS_LABELS: Record<string, string> = {
   in_queue: '排队中',
   failed: '失败',
   cancelled: '已取消',
-  expired: '已过期',
   submitting: '提交中',
   not_found: '未找到',
 }
@@ -64,7 +63,6 @@ const GEN_STATUS_COLORS: Record<string, string> = {
   in_queue: 'bg-yellow-500',
   failed: 'bg-red-500',
   cancelled: 'bg-gray-400',
-  expired: 'bg-gray-300',
   submitting: 'bg-purple-500',
   not_found: 'bg-gray-400',
 }

@@ -7,12 +7,21 @@ import { formatDate } from '@/utils/date'
 import { normalizeSearchText } from '@/utils/search'
 import { showToast } from '@/utils/toast'
 import Modal from '@/components/Modal'
-import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
+import { PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import {
+  detailHeaderBackRowClass,
+  detailHeaderClass,
+  detailHeaderContentRowClass,
+  detailHeaderIntroClass,
+  detailHeaderTopBarClass,
+  detailPageShellClass,
+  detailTitleClass,
+} from '@/pages/content/detailStyles'
 import type {
   Brief,
   GenerationVersion,
@@ -484,15 +493,24 @@ export default function ProjectDetail() {
 
   return (
     <PageShell>
-      <PageIntro
-        title={project.projectName}
-        actions={(
-          <Button variant="outline" className="gap-2" onClick={() => navigate('/projects/projects')}>
-            <ArrowLeft size={16} />
-            返回项目列表
-          </Button>
-        )}
-      />
+      <div className={detailPageShellClass}>
+        <section className={detailHeaderClass}>
+          <div className="w-full space-y-3">
+            <div className={detailHeaderTopBarClass}>
+              <div className={detailHeaderBackRowClass}>
+                <Button variant="secondary" className="gap-2" onClick={() => navigate('/projects/projects')}>
+                  <ArrowLeft size={16} />
+                  返回项目列表
+                </Button>
+              </div>
+            </div>
+            <div className={detailHeaderContentRowClass}>
+              <div className={detailHeaderIntroClass}>
+                <h1 className={detailTitleClass}>{project.projectName}</h1>
+              </div>
+            </div>
+          </div>
+        </section>
 
       <div className="grid gap-4 lg:grid-cols-4">
         <PageSection className="space-y-4 lg:col-span-2">
@@ -766,6 +784,7 @@ export default function ProjectDetail() {
           </div>
         )}
       </PageSection>
+      </div>
 
       <Modal title={editingBrief ? '编辑提案' : '新建提案'} isOpen={briefModalOpen} onClose={() => setBriefModalOpen(false)} onSave={saveBrief} width="max-w-2xl">
         <div className="space-y-4">

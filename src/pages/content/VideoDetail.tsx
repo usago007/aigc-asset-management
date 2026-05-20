@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Clapperboard, Clock, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Clapperboard, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star, Volume2, VolumeX } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { useAppStore } from '@/store/appStore'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +12,10 @@ import {
   detailContentGridClass,
   detailFixedStageClass,
   detailFixedStageShellClass,
+  detailHeaderActionsClass,
+  detailHeaderBackRowClass,
   detailHeaderClass,
+  detailHeaderContentRowClass,
   detailHeaderIntroClass,
   detailHeaderMetaRowClass,
   detailHeaderMetaTextClass,
@@ -45,7 +48,6 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'destructive' | 'in
   in_queue: 'info',
   submitting: 'info',
   failed: 'destructive',
-  expired: 'warning',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -54,21 +56,18 @@ const STATUS_LABELS: Record<string, string> = {
   in_queue: '排队中',
   submitting: '提交中',
   failed: '生成失败',
-  expired: '已过期',
 }
 
 export default function VideoDetail() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  const { tasks, updateTask } = useGenerationStore()
+  const { tasks } = useGenerationStore()
   const { projects, shots } = useAppStore()
 
   const task = useMemo(() => tasks.find((item) => item.id === id), [tasks, id])
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
-  const [isExpired, setIsExpired] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
@@ -88,27 +87,6 @@ export default function VideoDetail() {
     }
     navigate('/content/assets')
   }, [navState, navigate])
-
-  useEffect(() => {
-    if (!task?.videoExpiresAt || task.status !== 'done') return
-
-    const updateCountdown = () => {
-      const remaining = new Date(task.videoExpiresAt!).getTime() - Date.now()
-      if (remaining <= 0) {
-        setIsExpired(true)
-        updateTask(task.id, { status: 'expired' })
-        setTimeRemaining(null)
-        return
-      }
-      const minutes = Math.floor(remaining / 60000)
-      const seconds = Math.floor((remaining % 60000) / 1000)
-      setTimeRemaining(`${minutes}分${seconds}秒`)
-    }
-
-    updateCountdown()
-    const timer = setInterval(updateCountdown, 1000)
-    return () => clearInterval(timer)
-  }, [task?.videoExpiresAt, task?.status, task?.id, updateTask])
 
   const handleDownload = useCallback(() => {
     if (!task?.videoUrl) return
@@ -154,7 +132,7 @@ export default function VideoDetail() {
   const videoDetailStageClass = detailFixedStageClass
 
   const renderVideoState = () => {
-    if (task.status === 'done' && task.videoUrl && !isExpired) {
+    if (task.status === 'done' && task.videoUrl) {
       return (
         <div className={videoDetailStageClass}>
           <video
@@ -188,19 +166,6 @@ export default function VideoDetail() {
       )
     }
 
-    if (isExpired || task.status === 'expired') {
-      return (
-        <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
-          <Badge variant="warning">视频已过期</Badge>
-          <p className="body-muted max-w-md">视频链接已失效，请返回创作页重新生成。</p>
-          <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
-            <RefreshCw size={14} />
-            返回重新生成
-          </Button>
-        </div>
-      )
-    }
-
     return (
       <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
         <Badge variant="info">{task.status === 'in_queue' ? '排队中' : task.status === 'submitting' ? '提交中' : '生成中'}</Badge>
@@ -214,34 +179,41 @@ export default function VideoDetail() {
     <PageShell>
       <div className={detailPageShellClass}>
         <section className={detailHeaderClass}>
-          <div className={detailHeaderTopBarClass}>
-            <button onClick={handleBack} className={detailBackButtonClass}>
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex items-center gap-2">
-              <button className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl || isExpired}>
-                <Download size={18} />
-              </button>
-              <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
-                <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
-              </button>
-              <button className={detailIconButtonClass} title="分享">
-                <Share2 size={18} />
-              </button>
-              <button className={detailIconButtonClass} title="更多操作">
-                <MoreHorizontal size={18} />
-              </button>
+          <div className="w-full space-y-3">
+            <div className={detailHeaderTopBarClass}>
+              <div className={detailHeaderBackRowClass}>
+                <Button variant="secondary" className="gap-2" onClick={handleBack}>
+                  <ArrowLeft size={16} />
+                  返回上一页
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className={detailHeaderIntroClass}>
-            <h1 className={detailTitleClass}>视频结果详情</h1>
-            <div className={detailHeaderMetaRowClass}>
-              <Badge variant={statusVariant}>{statusLabel}</Badge>
-              <span className={detailHeaderMetaTextClass}>{modeLabel}</span>
-              <span aria-hidden="true">·</span>
-              <span className={detailHeaderMetaTextClass}>{frameLabel}</span>
-              <span aria-hidden="true">·</span>
-              <span className={detailHeaderMetaTextClass}>{task.aspectRatio}</span>
+            <div className={detailHeaderContentRowClass}>
+              <div className={detailHeaderIntroClass}>
+                <h1 className={detailTitleClass}>视频详情</h1>
+                <div className={detailHeaderMetaRowClass}>
+                  {statusLabel ? <Badge variant={statusVariant}>{statusLabel}</Badge> : null}
+                  <span className={detailHeaderMetaTextClass}>{modeLabel}</span>
+                  <span aria-hidden="true">·</span>
+                  <span className={detailHeaderMetaTextClass}>{frameLabel}</span>
+                  <span aria-hidden="true">·</span>
+                  <span className={detailHeaderMetaTextClass}>{task.aspectRatio}</span>
+                </div>
+              </div>
+              <div className={detailHeaderActionsClass}>
+                <button className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl}>
+                  <Download size={18} />
+                </button>
+                <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                  <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
+                </button>
+                <button className={detailIconButtonClass} title="分享">
+                  <Share2 size={18} />
+                </button>
+                <button className={detailIconButtonClass} title="更多操作">
+                  <MoreHorizontal size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -277,16 +249,7 @@ export default function VideoDetail() {
               </div>
             </div>
 
-            {task.status === 'done' && timeRemaining && !isExpired ? (
-              <div className={detailPanelClass}>
-                <div className="panel-value flex items-center gap-2">
-                  <Clock size={14} />
-                  视频将在 {timeRemaining} 后过期
-                </div>
-              </div>
-            ) : null}
-
-            {task.status === 'done' && task.videoUrl && !isExpired ? (
+            {task.status === 'done' && task.videoUrl ? (
               <div className={detailPanelClass}>
                 <div className={`${detailPanelTitleClass} mb-3`}>播放控制</div>
                 <div className="flex flex-wrap items-center gap-3">

@@ -240,7 +240,7 @@ const PROMPT_TEXTS = [
 
 const IMAGE_MODES: ImageGenerationMode[] = ['text-to-image', 'image-to-image', 'text-to-image-31', 'text-to-image-30', 'text-to-image-21']
 const VIDEO_MODES: GenerationMode[] = ['text-to-video', 'image-to-video-first', 'image-to-video-first-tail']
-const TASK_STATUSES_ARR: TaskQueueStatus[] = ['done', 'generating', 'in_queue', 'failed', 'cancelled', 'expired', 'submitting', 'not_found']
+const TASK_STATUSES_ARR: TaskQueueStatus[] = ['done', 'generating', 'in_queue', 'failed', 'cancelled', 'submitting', 'not_found']
 const STATUS_WEIGHTS = [0.4, 0.15, 0.1, 0.1, 0.05, 0.05, 0.1, 0.05]
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)] }
@@ -543,7 +543,6 @@ function buildDemoDataset(): DemoDataset {
         status: 'done',
         progress: 100,
         videoUrl: TEST_VIDEO_URL,
-        videoExpiresAt: isoOffset(projectIndex * 3 + shotIndex + 20, 0),
         aigcMetaTagged: true,
         timeElapsed: `${38 + shotIndex * 3}s`,
         completedAt: isoOffset(projectIndex * 3 + shotIndex, 320),

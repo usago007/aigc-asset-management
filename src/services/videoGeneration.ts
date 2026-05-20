@@ -29,7 +29,3 @@ export async function queryTaskResult(
 export function getPollInterval(): number {
   return getAIConfig().general.pollInterval;
 }
-
-export function getVideoExpiryMs(): number {
-  return getAIConfig().general.videoExpiryMs;
-}

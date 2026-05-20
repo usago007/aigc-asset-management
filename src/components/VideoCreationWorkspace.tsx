@@ -30,7 +30,6 @@ const statusMap: Record<string, { label: string; className: string }> = {
   done: { label: '已完成', className: 'badge-success' },
   failed: { label: '失败', className: 'badge-error' },
   cancelled: { label: '已取消', className: 'badge-secondary' },
-  expired: { label: '已过期', className: 'badge-error' },
   not_found: { label: '未找到', className: 'badge-warning' },
 }
 

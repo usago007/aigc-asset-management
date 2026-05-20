@@ -2,9 +2,15 @@ export const detailPageShellClass = 'page-shell space-y-6'
 
 export const detailHeaderClass = 'page-intro'
 
-export const detailHeaderTopBarClass = 'flex items-center justify-between gap-4'
+export const detailHeaderTopBarClass = 'w-full'
 
-export const detailHeaderIntroClass = 'space-y-3'
+export const detailHeaderBackRowClass = 'flex items-center'
+
+export const detailHeaderContentRowClass = 'flex w-full flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'
+
+export const detailHeaderIntroClass = 'min-w-0 flex-1 space-y-3'
+
+export const detailHeaderActionsClass = 'flex flex-wrap items-center gap-2 lg:ml-6 lg:flex-none lg:justify-end'
 
 export const detailHeaderMetaRowClass = 'flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-500 dark:text-gray-400'
 

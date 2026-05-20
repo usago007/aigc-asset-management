@@ -246,16 +246,6 @@ export default function AIConfigPanel() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="surface-panel">
-              <p className="meta-text mb-1 font-medium">视频过期时间</p>
-              <p className="body-text text-gray-900 dark:text-gray-100">{formatMs(config.general.videoExpiryMs)} ({config.general.videoExpiryMs} ms)</p>
-              <input
-                type="number"
-                value={config.general.videoExpiryMs}
-                onChange={(e) => updateGeneral({ videoExpiryMs: parseInt(e.target.value) || 3600000 })}
-                className="input-field mt-2"
-              />
-            </div>
-            <div className="surface-panel">
               <p className="meta-text mb-1 font-medium">图片过期时间</p>
               <p className="body-text text-gray-900 dark:text-gray-100">{formatMs(config.general.imageExpiryMs)} ({config.general.imageExpiryMs} ms)</p>
               <input
