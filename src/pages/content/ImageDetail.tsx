@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Clapperboard, Download, FolderOpen, Image as ImageIcon, MoreHorizontal, Share2, Sparkles, Star, Video } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { PageShell } from '@/components/PageShell'
 import {
   detailActionTileClass,
@@ -12,6 +11,10 @@ import {
   detailFixedStageClass,
   detailFixedStageShellClass,
   detailHeaderClass,
+  detailHeaderIntroClass,
+  detailHeaderMetaRowClass,
+  detailHeaderMetaTextClass,
+  detailHeaderTopBarClass,
   detailIconButtonClass,
   detailMediaColumnClass,
   detailMetaPillClass,
@@ -36,10 +39,12 @@ const IMAGE_MODE_LABELS: Record<string, string> = {
 
 export default function ImageDetail() {
   const { taskId, resultIndex } = useParams<{ taskId: string; resultIndex: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const { imageTasks, projects, shots } = useAppStore()
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
+  const navState = location.state as { returnTo?: string; source?: string } | null
 
   const task = useMemo(() => imageTasks.find((item) => item.id === taskId), [imageTasks, taskId])
   const parsedIndex = Number(resultIndex)
@@ -48,11 +53,23 @@ export default function ImageDetail() {
   const totalResults = resultImages.length
   const currentImageUrl = currentIndex >= 0 ? resultImages[currentIndex] || '' : ''
 
+  const handleBack = () => {
+    if (navState?.returnTo) {
+      navigate(navState.returnTo)
+      return
+    }
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/content/assets')
+  }
+
   if (!task) {
     return (
       <PageShell>
         <div className="space-y-6">
-          <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+          <button onClick={handleBack} className={detailBackButtonClass}>
             <ArrowLeft size={18} />
           </button>
           <div className="page-section text-center">
@@ -68,7 +85,7 @@ export default function ImageDetail() {
     return (
       <PageShell>
         <div className="space-y-6">
-          <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+          <button onClick={handleBack} className={detailBackButtonClass}>
             <ArrowLeft size={18} />
           </button>
           <div className="page-section text-center">
@@ -95,7 +112,7 @@ export default function ImageDetail() {
     document.body.removeChild(anchor)
   }
 
-  const goToResult = (nextIndex: number) => navigate(`/content/image-detail/${task.id}/${nextIndex}`)
+  const goToResult = (nextIndex: number) => navigate(`/content/image-detail/${task.id}/${nextIndex}`, { state: navState ?? undefined })
 
   const actionTiles = [
     { icon: <Video size={16} />, label: '生成视频', action: () => navigate('/content/video-generation') },
@@ -114,32 +131,38 @@ export default function ImageDetail() {
     <PageShell>
       <div className={detailPageShellClass}>
         <section className={detailHeaderClass}>
-          <div className="space-y-3">
-            <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+          <div className={detailHeaderTopBarClass}>
+            <button onClick={handleBack} className={detailBackButtonClass}>
               <ArrowLeft size={18} />
             </button>
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge variant="outline">图片详情</Badge>
-                <span className={detailMetaPillClass}>第 {currentIndex + 1} 张 / 共 {totalResults} 张</span>
-                {task.resolution ? <span className={detailMetaPillClass}>{task.resolution}</span> : null}
-              </div>
-              <h1 className={detailTitleClass}>图片结果详情</h1>
+            <div className="flex items-center gap-2">
+              <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
+                <Download size={18} />
+              </button>
+              <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
+              </button>
+              <button className={detailIconButtonClass} title="分享">
+                <Share2 size={18} />
+              </button>
+              <button className={detailIconButtonClass} title="更多操作">
+                <MoreHorizontal size={18} />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
-              <Download size={18} />
-            </button>
-            <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
-              <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
-            </button>
-            <button className={detailIconButtonClass} title="分享">
-              <Share2 size={18} />
-            </button>
-            <button className={detailIconButtonClass} title="更多操作">
-              <MoreHorizontal size={18} />
-            </button>
+          <div className={detailHeaderIntroClass}>
+            <h1 className={detailTitleClass}>图片结果详情</h1>
+            <div className={detailHeaderMetaRowClass}>
+              <span className={detailHeaderMetaTextClass}>图片详情</span>
+              <span aria-hidden="true">·</span>
+              <span className={detailHeaderMetaTextClass}>第 {currentIndex + 1} 张 / 共 {totalResults} 张</span>
+              {task.resolution ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className={detailHeaderMetaTextClass}>{task.resolution.toUpperCase()}</span>
+                </>
+              ) : null}
+            </div>
           </div>
         </section>
 

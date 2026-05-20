@@ -16,6 +16,10 @@ interface ImageCreationWorkspaceProps {
   contextMode?: 'global' | 'shot-detail'
   hideContextSelector?: boolean
   filterTasksByShot?: boolean
+  detailNavState?: {
+    returnTo: string
+    source: 'image-generation' | 'video-generation' | 'shot-detail' | 'assets'
+  }
 }
 
 const modeOptions: { value: ImageGenerationMode; label: string; icon: typeof Palette; desc: string }[] = [
@@ -45,6 +49,7 @@ const RESOLUTION_OPTIONS = [
 
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
 const IMAGE_COUNT_OPTIONS = [1, 2, 3, 4]
+const IMAGE_DETAIL_NAV_STATE = { returnTo: '/content/image-generation', source: 'image-generation' } as const
 
 const modeCapabilities: Record<ImageGenerationMode, { maxReferenceImages: number; supportsReferenceImages: boolean; hint: string }> = {
   'text-to-image': { maxReferenceImages: 10, supportsReferenceImages: true, hint: '可选添加参考图，最多 10 张。' },
@@ -60,6 +65,7 @@ export default function ImageCreationWorkspace({
   contextMode = 'global',
   hideContextSelector = false,
   filterTasksByShot = false,
+  detailNavState,
 }: ImageCreationWorkspaceProps) {
   const navigate = useNavigate()
   const { imageTasks, projects, shots, submitImageTask: storeSubmitTask, retryImageTask, cancelImageTask } = useAppStore()
@@ -110,6 +116,7 @@ export default function ImageCreationWorkspace({
     () => (defaultShotId ? shots.find((shot) => shot.id === defaultShotId) || null : null),
     [defaultShotId, shots],
   )
+  const resolvedDetailNavState = detailNavState ?? IMAGE_DETAIL_NAV_STATE
 
   const handleImageUpload = useCallback(async (files: FileList | null) => {
     if (!files) return
@@ -239,7 +246,7 @@ export default function ImageCreationWorkspace({
           aspectRatio: '1:1',
           labels,
           footerTag: task.tokensUsed ? `${task.tokensUsed} tokens` : undefined,
-          onOpen: () => navigate(`/content/image-detail/${task.id}/${index}`),
+          onOpen: () => navigate(`/content/image-detail/${task.id}/${index}`, { state: resolvedDetailNavState }),
         }
       }),
       actions: [
@@ -259,11 +266,11 @@ export default function ImageCreationWorkspace({
           label: '更多操作',
           icon: 'more',
           variant: 'secondary',
-          onClick: () => navigate(`/content/image-detail/${task.id}/0`),
+          onClick: () => navigate(`/content/image-detail/${task.id}/0`, { state: resolvedDetailNavState }),
         },
       ],
     }
-  }), [completedTasks, currentContextShot?.firstFrameId, currentContextShot?.lastFrameId, imageModeLabelMap, loadTaskIntoEditor, navigate, retryImageTask])
+  }), [completedTasks, currentContextShot?.firstFrameId, currentContextShot?.lastFrameId, imageModeLabelMap, loadTaskIntoEditor, navigate, resolvedDetailNavState, retryImageTask])
 
   const paramSections = [
     {

@@ -15,6 +15,10 @@ interface VideoCreationWorkspaceProps {
   contextMode?: 'global' | 'shot-detail'
   hideContextSelector?: boolean
   filterTasksByShot?: boolean
+  detailNavState?: {
+    returnTo: string
+    source: 'image-generation' | 'video-generation' | 'shot-detail' | 'assets'
+  }
 }
 
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
@@ -37,6 +41,12 @@ const videoModeLabelMap: Record<GenerationMode, string> = {
   'action-imitation': '动作模仿',
   'digital-human-fast': '数字人快剪',
 }
+const VIDEO_DETAIL_NAV_STATE = { returnTo: '/content/video-generation', source: 'video-generation' } as const
+
+function formatPreviewDuration(frames: number) {
+  const seconds = Math.max(1, Math.round(frames / 24))
+  return `00:${String(seconds).padStart(2, '0')}`
+}
 
 export default function VideoCreationWorkspace({
   defaultProjectId = '',
@@ -44,6 +54,7 @@ export default function VideoCreationWorkspace({
   contextMode = 'global',
   hideContextSelector = false,
   filterTasksByShot = false,
+  detailNavState,
 }: VideoCreationWorkspaceProps) {
   const navigate = useNavigate()
   const { tasks, submitTask, retryTask, cancelTask } = useGenerationStore()
@@ -98,6 +109,7 @@ export default function VideoCreationWorkspace({
     () => (defaultShotId ? shots.find((shot) => shot.id === defaultShotId) || null : null),
     [defaultShotId, shots],
   )
+  const resolvedDetailNavState = detailNavState ?? VIDEO_DETAIL_NAV_STATE
 
   useEffect(() => {
     if (shotId && !filteredShots.some((shot) => shot.id === shotId)) {
@@ -228,8 +240,8 @@ export default function VideoCreationWorkspace({
         alt: task.prompt,
         aspectRatio: task.aspectRatio,
         labels: currentContextShot?.finalVideoTaskId === task.id ? ['当前最终视频'] : undefined,
-        footerTag: task.videoExpiresAt ? '已生成' : undefined,
-        onOpen: () => navigate(`/content/video-detail/${task.id}`),
+        leftFooterTag: formatPreviewDuration(task.frames),
+        onOpen: () => navigate(`/content/video-detail/${task.id}`, { state: resolvedDetailNavState }),
       },
     ],
     actions: [
@@ -249,7 +261,7 @@ export default function VideoCreationWorkspace({
         label: '更多操作',
         icon: 'more',
         variant: 'secondary',
-        onClick: () => navigate(`/content/video-detail/${task.id}`),
+        onClick: () => navigate(`/content/video-detail/${task.id}`, { state: resolvedDetailNavState }),
       },
       ...(contextMode === 'shot-detail' && defaultShotId
         ? currentContextShot?.finalVideoTaskId === task.id
@@ -261,7 +273,7 @@ export default function VideoCreationWorkspace({
             }]
         : []),
     ],
-  })), [completedTasks, contextMode, currentContextShot?.finalVideoTaskId, defaultShotId, handleSelectFinalVideo, loadTaskIntoEditor, navigate, retryTask])
+  })), [completedTasks, contextMode, currentContextShot?.finalVideoTaskId, defaultShotId, handleSelectFinalVideo, loadTaskIntoEditor, navigate, resolvedDetailNavState, retryTask])
 
   const paramSections = [
     {

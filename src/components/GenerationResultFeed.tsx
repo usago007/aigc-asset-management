@@ -15,6 +15,7 @@ export interface ResultFeedMediaItem {
   alt: string
   aspectRatio?: string
   labels?: string[]
+  leftFooterTag?: string
   footerTag?: string
   onOpen?: () => void
 }
@@ -242,6 +243,12 @@ function MediaCard({
               {label}
             </span>
           ))}
+        </div>
+      ) : null}
+
+      {item.leftFooterTag ? (
+        <div className="absolute bottom-3 left-3 rounded-full bg-black/75 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm dark:bg-white/80 dark:text-gray-950">
+          {item.leftFooterTag}
         </div>
       ) : null}
 

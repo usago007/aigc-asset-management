@@ -13,6 +13,31 @@ interface MenuItem {
   children?: { path: string; label: string }[]
 }
 
+function ContentCenterIcon() {
+  return (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 19 19"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <path
+        d="M9.5 1.75L11.08 5.36L14.69 6.94L11.08 8.52L9.5 12.13L7.92 8.52L4.31 6.94L7.92 5.36L9.5 1.75Z"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.62 11.54L15.36 13.24L17.07 13.99L15.36 14.74L14.62 16.43L13.88 14.74L12.18 13.99L13.88 13.24L14.62 11.54Z"
+        fill="currentColor"
+      />
+      <circle cx="4.1" cy="14.9" r="1.05" fill="currentColor" fillOpacity="0.72" />
+    </svg>
+  )
+}
+
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation()
   const currentPath = location.pathname
@@ -20,7 +45,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const menuItems: MenuItem[] = [
     {
       path: '/content',
-      icon: <ImagePlus size={19} strokeWidth={1.8} />,
+      icon: <ContentCenterIcon />,
       label: '内容中心',
       children: [
         { path: '/content/image-generation', label: '图片创作' },

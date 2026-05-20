@@ -2,6 +2,14 @@ export const detailPageShellClass = 'page-shell space-y-6'
 
 export const detailHeaderClass = 'page-intro'
 
+export const detailHeaderTopBarClass = 'flex items-center justify-between gap-4'
+
+export const detailHeaderIntroClass = 'space-y-3'
+
+export const detailHeaderMetaRowClass = 'flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-500 dark:text-gray-400'
+
+export const detailHeaderMetaTextClass = 'whitespace-nowrap'
+
 export const detailContentGridClass = 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_440px]'
 
 export const detailBackButtonClass = 'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50'

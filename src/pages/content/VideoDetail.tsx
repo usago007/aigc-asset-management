@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Clapperboard, Clock, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star, Volume2, VolumeX } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { useAppStore } from '@/store/appStore'
@@ -13,6 +13,10 @@ import {
   detailFixedStageClass,
   detailFixedStageShellClass,
   detailHeaderClass,
+  detailHeaderIntroClass,
+  detailHeaderMetaRowClass,
+  detailHeaderMetaTextClass,
+  detailHeaderTopBarClass,
   detailIconButtonClass,
   detailMediaColumnClass,
   detailMetaPillClass,
@@ -44,8 +48,18 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'destructive' | 'in
   expired: 'warning',
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  done: '已完成',
+  generating: '生成中',
+  in_queue: '排队中',
+  submitting: '提交中',
+  failed: '生成失败',
+  expired: '已过期',
+}
+
 export default function VideoDetail() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const { tasks, updateTask } = useGenerationStore()
   const { projects, shots } = useAppStore()
@@ -61,6 +75,19 @@ export default function VideoDetail() {
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const navState = location.state as { returnTo?: string; source?: string } | null
+
+  const handleBack = useCallback(() => {
+    if (navState?.returnTo) {
+      navigate(navState.returnTo)
+      return
+    }
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/content/assets')
+  }, [navState, navigate])
 
   useEffect(() => {
     if (!task?.videoExpiresAt || task.status !== 'done') return
@@ -95,7 +122,7 @@ export default function VideoDetail() {
     return (
       <PageShell>
         <div className="space-y-6">
-          <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+          <button onClick={handleBack} className={detailBackButtonClass}>
             <ArrowLeft size={18} />
           </button>
           <div className="page-section text-center">
@@ -113,6 +140,7 @@ export default function VideoDetail() {
   const shotName = shots.find((shot) => shot.id === task.shotId)?.shotName || '未绑定镜头'
   const promptNeedsExpand = task.prompt.length > 160
   const statusVariant = STATUS_VARIANT[task.status] || 'info'
+  const statusLabel = STATUS_LABELS[task.status] || task.status
 
   const actionTiles = [
     { icon: <RefreshCw size={16} />, label: '再次生成', action: () => navigate('/content/video-generation') },
@@ -186,33 +214,35 @@ export default function VideoDetail() {
     <PageShell>
       <div className={detailPageShellClass}>
         <section className={detailHeaderClass}>
-          <div className="space-y-3">
-            <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+          <div className={detailHeaderTopBarClass}>
+            <button onClick={handleBack} className={detailBackButtonClass}>
               <ArrowLeft size={18} />
             </button>
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge variant={statusVariant}>{task.status}</Badge>
-                <span className={detailMetaPillClass}>{modeLabel}</span>
-                <span className={detailMetaPillClass}>{frameLabel}</span>
-                <span className={detailMetaPillClass}>{task.aspectRatio}</span>
-              </div>
-              <h1 className={detailTitleClass}>视频结果详情</h1>
+            <div className="flex items-center gap-2">
+              <button className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl || isExpired}>
+                <Download size={18} />
+              </button>
+              <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
+              </button>
+              <button className={detailIconButtonClass} title="分享">
+                <Share2 size={18} />
+              </button>
+              <button className={detailIconButtonClass} title="更多操作">
+                <MoreHorizontal size={18} />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl || isExpired}>
-              <Download size={18} />
-            </button>
-            <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
-              <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
-            </button>
-            <button className={detailIconButtonClass} title="分享">
-              <Share2 size={18} />
-            </button>
-            <button className={detailIconButtonClass} title="更多操作">
-              <MoreHorizontal size={18} />
-            </button>
+          <div className={detailHeaderIntroClass}>
+            <h1 className={detailTitleClass}>视频结果详情</h1>
+            <div className={detailHeaderMetaRowClass}>
+              <Badge variant={statusVariant}>{statusLabel}</Badge>
+              <span className={detailHeaderMetaTextClass}>{modeLabel}</span>
+              <span aria-hidden="true">·</span>
+              <span className={detailHeaderMetaTextClass}>{frameLabel}</span>
+              <span aria-hidden="true">·</span>
+              <span className={detailHeaderMetaTextClass}>{task.aspectRatio}</span>
+            </div>
           </div>
         </section>
 

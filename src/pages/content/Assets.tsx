@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Plus, Edit2, Trash2, Search, FileText, Play, ExternalLink } from 'lucide-react'
+import { Eye, Edit2, Trash2, Search, FileText, Play, ExternalLink } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
@@ -79,7 +79,7 @@ function AssetThumb({
 
 export default function Assets() {
   const navigate = useNavigate()
-  const { assets, projects, shots, imageTasks, addAsset, updateAsset, deleteAsset } = useAppStore()
+  const { assets, projects, shots, imageTasks, updateAsset, deleteAsset } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Asset | null>(null)
@@ -154,45 +154,31 @@ export default function Assets() {
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  const handleOpenModal = (item?: Asset) => {
-    if (item) {
-      const inferredProjectId = getProjectId(item)
-      setEditingItem(item)
-      setFormData({
-        assetName: item.assetName,
-        type: item.type,
-        sourceType: item.sourceType,
-        sourceTaskId: item.sourceTaskId || '',
-        sourceResultIndex: String(item.sourceResultIndex ?? 0),
-        projectId: inferredProjectId,
-        shotId: item.shotId || '',
-        promptId: item.promptId,
-        modelName: item.modelName,
-        modelVersion: item.modelVersion,
-        parentAssetIds: item.parentAssetIds,
-        fileUrl: item.fileUrl,
-      })
-    } else {
-      setEditingItem(null)
-      setFormData({
-        assetName: '',
-        type: 'Image',
-        sourceType: 'image-task',
-        sourceTaskId: '',
-        sourceResultIndex: '0',
-        projectId: '',
-        shotId: '',
-        promptId: '',
-        modelName: '',
-        modelVersion: '',
-        parentAssetIds: [],
-        fileUrl: '',
-      })
-    }
+  const handleOpenModal = (item: Asset) => {
+    const inferredProjectId = getProjectId(item)
+    setEditingItem(item)
+    setFormData({
+      assetName: item.assetName,
+      type: item.type,
+      sourceType: item.sourceType,
+      sourceTaskId: item.sourceTaskId || '',
+      sourceResultIndex: String(item.sourceResultIndex ?? 0),
+      projectId: inferredProjectId,
+      shotId: item.shotId || '',
+      promptId: item.promptId,
+      modelName: item.modelName,
+      modelVersion: item.modelVersion,
+      parentAssetIds: item.parentAssetIds,
+      fileUrl: item.fileUrl,
+    })
     setIsModalOpen(true)
   }
 
   const handleSave = () => {
+    if (!editingItem) {
+      showToast('error', '当前页面仅支持编辑已有资产')
+      return
+    }
     if (!formData.assetName) {
       showToast('error', '请输入资产名称')
       return
@@ -226,13 +212,8 @@ export default function Assets() {
       projectId: selectedShot?.projectId || formData.projectId || undefined,
       shotId: formData.shotId || undefined,
     }
-    if (editingItem) {
-      updateAsset(editingItem.id, payload)
-      showToast('success', '更新成功')
-    } else {
-      addAsset(payload as Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>)
-      showToast('success', '创建成功')
-    }
+    updateAsset(editingItem.id, payload)
+    showToast('success', '更新成功')
     setIsModalOpen(false)
   }
 
@@ -322,10 +303,7 @@ export default function Assets() {
 
   return (
     <PageShell>
-      <PageIntro
-        title="资产库"
-        actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建资产</Button>}
-      />
+      <PageIntro title="资产库" />
 
       <PageSection className="space-y-5">
         <div className="flex flex-wrap items-center gap-4">
@@ -391,7 +369,7 @@ export default function Assets() {
                 const thumbnail = getAssetThumbnail(asset)
                 const detailPath = getAssetDetailPath(asset)
                 const openDetail = () => {
-                  if (detailPath) navigate(detailPath)
+                  if (detailPath) navigate(detailPath, { state: { returnTo: '/content/assets', source: 'assets' } })
                 }
 
                 return (
@@ -436,7 +414,7 @@ export default function Assets() {
         <Pagination currentPage={currentPage} pageSize={pageSize} totalItems={filteredItems.length} onPageChange={setCurrentPage} />
       </PageSection>
 
-      <Modal title={editingItem ? '编辑资产' : '创建资产'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
+      <Modal title="编辑资产" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave}>
         <div className="space-y-5">
           <div className="space-y-2"><Label>资产名称 *</Label><Input value={formData.assetName} onChange={(e) => setFormData({ ...formData, assetName: e.target.value })} placeholder="输入资产名称" /></div>
           <div className="space-y-2"><Label>类型</Label><Select value={formData.type} onValueChange={(value) => handleTypeChange(value as Asset['type'])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Image">图片</SelectItem><SelectItem value="Video">视频</SelectItem><SelectItem value="Script">脚本</SelectItem></SelectContent></Select></div>

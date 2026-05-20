@@ -245,6 +245,9 @@ export default function ShotDetail() {
       return bTime - aTime
     })[0] || null
   }, [shotImageTasks])
+  const shotDetailNavState = useMemo(() => (
+    shot ? { returnTo: `/content/shots/${shot.id}`, source: 'shot-detail' as const } : null
+  ), [shot])
 
   const getFrameLookup = (frameId: string | null): FrameLookup => {
     if (!frameId) return { frame: null, previewUrl: null, sourceTask: null }
@@ -458,9 +461,20 @@ export default function ShotDetail() {
       </PageSection>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <ShotVideoCard lookup={videoLookup} onOpenDetail={(taskId) => navigate(`/content/video-detail/${taskId}`)} />
-        <FrameTraceCard label="首图" lookup={opening} onOpenDetail={(taskId, resultIndex) => navigate(`/content/image-detail/${taskId}/${resultIndex}`)} />
-        <FrameTraceCard label="尾图" lookup={ending} onOpenDetail={(taskId, resultIndex) => navigate(`/content/image-detail/${taskId}/${resultIndex}`)} />
+        <ShotVideoCard
+          lookup={videoLookup}
+          onOpenDetail={(taskId) => navigate(`/content/video-detail/${taskId}`, { state: shotDetailNavState ?? undefined })}
+        />
+        <FrameTraceCard
+          label="首图"
+          lookup={opening}
+          onOpenDetail={(taskId, resultIndex) => navigate(`/content/image-detail/${taskId}/${resultIndex}`, { state: shotDetailNavState ?? undefined })}
+        />
+        <FrameTraceCard
+          label="尾图"
+          lookup={ending}
+          onOpenDetail={(taskId, resultIndex) => navigate(`/content/image-detail/${taskId}/${resultIndex}`, { state: shotDetailNavState ?? undefined })}
+        />
       </div>
 
       <PageSection className="space-y-6">
@@ -494,6 +508,7 @@ export default function ShotDetail() {
             defaultShotId={shot.id}
             hideContextSelector
             filterTasksByShot
+            detailNavState={shotDetailNavState ?? undefined}
           />
         ) : (
           <VideoCreationWorkspace
@@ -502,6 +517,7 @@ export default function ShotDetail() {
             defaultShotId={shot.id}
             hideContextSelector
             filterTasksByShot
+            detailNavState={shotDetailNavState ?? undefined}
           />
         )}
       </PageSection>
@@ -534,12 +550,22 @@ export default function ShotDetail() {
                       <div className="helper-text">文件：<span className="break-all">{asset.fileUrl || '未记录'}</span></div>
                     </div>
                     {asset.sourceTaskId && asset.type === 'Image' && asset.sourceResultIndex != null ? (
-                      <Button variant="secondary" size="sm" className="gap-2" onClick={() => navigate(`/content/image-detail/${asset.sourceTaskId}/${asset.sourceResultIndex}`)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => navigate(`/content/image-detail/${asset.sourceTaskId}/${asset.sourceResultIndex}`, { state: shotDetailNavState ?? undefined })}
+                      >
                         <ImageIcon size={14} />
                         查看结果
                       </Button>
                     ) : asset.sourceTaskId && asset.type === 'Video' ? (
-                      <Button variant="secondary" size="sm" className="gap-2" onClick={() => navigate(`/content/video-detail/${asset.sourceTaskId}`)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => navigate(`/content/video-detail/${asset.sourceTaskId}`, { state: shotDetailNavState ?? undefined })}
+                      >
                         <Video size={14} />
                         查看结果
                       </Button>
