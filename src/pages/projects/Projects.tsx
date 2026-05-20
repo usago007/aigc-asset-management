@@ -1,18 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Plus, Edit2, Trash2, Search, Video } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, Video } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { showToast } from '@/utils/toast'
 import { matchesKeyword } from '@/utils/search'
 import { formatDate } from '@/utils/date'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/Pagination'
-import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Project, ProjectStage, RiskLevel } from '@/types'
@@ -32,9 +30,8 @@ const riskMap: Record<RiskLevel, { label: string; variant: 'success' | 'warning'
 
 export default function Projects() {
   const navigate = useNavigate()
-  const { projects, brands, addProject, updateProject, deleteProject } = useAppStore()
+  const { projects, brands, customers, addProject, updateProject, deleteProject } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [viewingItem, setViewingItem] = useState<Project | null>(null)
   const [editingItem, setEditingItem] = useState<Project | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [brandFilter, setBrandFilter] = useState('all')
@@ -45,6 +42,7 @@ export default function Projects() {
 
   const [formData, setFormData] = useState({
     projectName: '',
+    customerId: '',
     brandId: '',
     projectOwner: '',
     progress: 0,
@@ -54,7 +52,15 @@ export default function Projects() {
   })
 
   const getBrandName = (id: string) => brands.find((brand) => brand.id === id)?.brandName || '-'
+  const getCustomerNameByBrandId = (brandId: string) => {
+    const brand = brands.find((item) => item.id === brandId)
+    return brand ? customers.find((customer) => customer.id === brand.customerId)?.customerName || '-' : '-'
+  }
   const goToDetail = (projectId: string) => navigate(`/projects/projects/${projectId}`)
+  const filteredBrands = useMemo(
+    () => brands.filter((brand) => brand.customerId === formData.customerId),
+    [brands, formData.customerId],
+  )
 
   const filteredItems = useMemo(() => (
     projects.filter((project) => {
@@ -67,21 +73,21 @@ export default function Projects() {
         project.projectOwner,
         stageMap[project.stage].label,
         riskMap[project.riskLevel].label,
-        project.progress,
-        project.pendingReviews,
         formatDate(project.createdAt),
       ])
       return matchBrand && matchStage && matchRisk && matchSearch
     })
-  ), [projects, brands, searchQuery, brandFilter, stageFilter, riskFilter])
+  ), [projects, searchQuery, brandFilter, stageFilter, riskFilter])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const handleOpenModal = (item?: Project) => {
     if (item) {
+      const currentBrand = brands.find((brand) => brand.id === item.brandId)
       setEditingItem(item)
       setFormData({
         projectName: item.projectName,
+        customerId: currentBrand?.customerId || '',
         brandId: item.brandId,
         projectOwner: item.projectOwner,
         progress: item.progress,
@@ -91,7 +97,7 @@ export default function Projects() {
       })
     } else {
       setEditingItem(null)
-      setFormData({ projectName: '', brandId: '', projectOwner: '', progress: 0, stage: 'Planning', riskLevel: 'Low', pendingReviews: 0 })
+      setFormData({ projectName: '', customerId: '', brandId: '', projectOwner: '', progress: 0, stage: 'Planning', riskLevel: 'Low', pendingReviews: 0 })
     }
     setIsModalOpen(true)
   }
@@ -102,10 +108,26 @@ export default function Projects() {
       return
     }
     if (editingItem) {
-      updateProject(editingItem.id, formData)
+      updateProject(editingItem.id, {
+        projectName: formData.projectName,
+        brandId: formData.brandId,
+        projectOwner: formData.projectOwner,
+        progress: formData.progress,
+        stage: formData.stage,
+        riskLevel: formData.riskLevel,
+        pendingReviews: formData.pendingReviews,
+      })
       showToast('success', '项目更新成功')
     } else {
-      addProject(formData as Omit<Project, 'id' | 'createdAt' | 'updatedAt'>)
+      addProject({
+        projectName: formData.projectName,
+        brandId: formData.brandId,
+        projectOwner: formData.projectOwner,
+        progress: formData.progress,
+        stage: formData.stage,
+        riskLevel: formData.riskLevel,
+        pendingReviews: formData.pendingReviews,
+      } as Omit<Project, 'id' | 'createdAt' | 'updatedAt'>)
       showToast('success', '项目创建成功')
     }
     setIsModalOpen(false)
@@ -134,7 +156,7 @@ export default function Projects() {
           <div className="relative max-w-sm flex-1">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="搜索项目名称、品牌、负责人或进度..."
+              placeholder="搜索项目名称、品牌、负责人、阶段或风险..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => {
@@ -178,10 +200,8 @@ export default function Projects() {
                 <th className="table-header">项目名称</th>
                 <th className="table-header">品牌</th>
                 <th className="table-header">负责人</th>
-                <th className="table-header">进度</th>
                 <th className="table-header">阶段</th>
                 <th className="table-header">风险</th>
-                <th className="table-header">待审核</th>
                 <th className="table-header">操作</th>
               </tr>
             </thead>
@@ -210,32 +230,24 @@ export default function Projects() {
                   <td className="table-cell">{getBrandName(project.brandId)}</td>
                   <td className="table-cell">{project.projectOwner || '-'}</td>
                   <td className="table-cell">
-                    <div className="flex min-w-[140px] items-center gap-3">
-                      <Progress value={project.progress} className="w-20" />
-                      <span className="helper-text w-8">{project.progress}%</span>
-                    </div>
-                  </td>
-                  <td className="table-cell">
                     <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
                   </td>
                   <td className="table-cell">
                     <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
                   </td>
-                  <td className="table-cell text-center">
-                    {project.pendingReviews > 0 ? <Badge variant="warning">{project.pendingReviews}</Badge> : <span className="text-gray-500">0</span>}
-                  </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-1">
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="secondary"
+                        size="sm"
                         onClick={(event) => {
                           event.stopPropagation()
-                          setViewingItem(project)
+                          goToDetail(project.id)
                         }}
-                        title="查看"
+                        className="gap-2"
+                        title="项目详情"
                       >
-                        <Eye size={14} className="text-gray-500 dark:text-gray-400" />
+                        项目详情
                       </Button>
                       <Button
                         variant="ghost"
@@ -278,24 +290,39 @@ export default function Projects() {
             <Input id="projectName" value={formData.projectName} onChange={(e) => setFormData({ ...formData, projectName: e.target.value })} placeholder="输入项目名称" />
           </div>
           <div className="space-y-2">
-            <Label>所属品牌</Label>
-            <Select value={formData.brandId || 'none'} onValueChange={(value) => setFormData({ ...formData, brandId: value === 'none' ? '' : value })}>
+            <Label>所属客户</Label>
+            <Select
+              value={formData.customerId || 'none'}
+              onValueChange={(value) => {
+                const nextCustomerId = value === 'none' ? '' : value
+                const nextBrandId = brands.some((brand) => brand.id === formData.brandId && brand.customerId === nextCustomerId) ? formData.brandId : ''
+                setFormData({ ...formData, customerId: nextCustomerId, brandId: nextBrandId })
+              }}
+            >
               <SelectTrigger><SelectValue placeholder="选择品牌" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">未选择</SelectItem>
-                {brands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
+                {customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.customerName}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="projectOwner">负责人</Label>
-              <Input id="projectOwner" value={formData.projectOwner} onChange={(e) => setFormData({ ...formData, projectOwner: e.target.value })} placeholder="输入负责人" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="progress">进度 (%)</Label>
-              <Input id="progress" type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value, 10) || 0 })} />
-            </div>
+          <div className="space-y-2">
+            <Label>所属品牌</Label>
+            <Select
+              value={formData.brandId || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, brandId: value === 'none' ? '' : value })}
+              disabled={!formData.customerId}
+            >
+              <SelectTrigger><SelectValue placeholder={formData.customerId ? '选择品牌' : '请先选择客户'} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">未选择</SelectItem>
+                {filteredBrands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="projectOwner">负责人</Label>
+            <Input id="projectOwner" value={formData.projectOwner} onChange={(e) => setFormData({ ...formData, projectOwner: e.target.value })} placeholder="输入负责人" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -322,27 +349,7 @@ export default function Projects() {
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="pendingReviews">待审核数</Label>
-            <Input id="pendingReviews" type="number" min="0" value={formData.pendingReviews} onChange={(e) => setFormData({ ...formData, pendingReviews: parseInt(e.target.value, 10) || 0 })} />
-          </div>
         </div>
-      </Modal>
-
-      <Modal title="查看项目" isOpen={Boolean(viewingItem)} onClose={() => setViewingItem(null)} width="max-w-2xl">
-        {viewingItem && (
-          <ReadOnlySection>
-            <ReadOnlyField label="项目名称" value={viewingItem.projectName} />
-            <ReadOnlyField label="所属品牌" value={getBrandName(viewingItem.brandId)} />
-            <ReadOnlyField label="负责人" value={viewingItem.projectOwner} />
-            <ReadOnlyField label="进度" value={`${viewingItem.progress}%`} />
-            <ReadOnlyField label="阶段" value={<Badge variant={stageMap[viewingItem.stage].variant}>{stageMap[viewingItem.stage].label}</Badge>} />
-            <ReadOnlyField label="风险" value={<Badge variant={riskMap[viewingItem.riskLevel].variant}>{riskMap[viewingItem.riskLevel].label}</Badge>} />
-            <ReadOnlyField label="待审核数" value={String(viewingItem.pendingReviews)} />
-            <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
-            <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
-          </ReadOnlySection>
-        )}
       </Modal>
     </PageShell>
   )

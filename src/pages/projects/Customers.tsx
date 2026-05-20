@@ -10,11 +10,8 @@ import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import { ReadOnlyField, ReadOnlySection } from '@/components/ReadOnlyDetails'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import type { Customer } from '@/types'
 
 const includesText = (value: unknown, query: string) => {
@@ -24,14 +21,13 @@ const includesText = (value: unknown, query: string) => {
 }
 
 export default function Customers() {
-  const { customers, roles: systemRoles, addCustomer, updateCustomer, deleteCustomer } = useAppStore()
+  const { customers, addCustomer, updateCustomer, deleteCustomer } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Customer | null>(null)
   const [editingItem, setEditingItem] = useState<Customer | null>(null)
   const [filters, setFilters] = useState({
     customerName: '',
     contactPerson: '',
-    role: 'all',
     notes: '',
   })
   const [currentPage, setCurrentPage] = useState(1)
@@ -40,22 +36,15 @@ export default function Customers() {
   const [formData, setFormData] = useState({
     customerName: '',
     contactPerson: '',
-    roles: [] as string[],
     notes: '',
   })
-
-  const availableRoleNames = useMemo(
-    () => Array.from(new Set(systemRoles.map((role) => role.roleName).filter(Boolean))),
-    [systemRoles],
-  )
 
   const filteredItems = useMemo(() => (
     customers.filter((customer) => {
       const matchName = includesText(customer.customerName, filters.customerName)
       const matchContact = includesText(customer.contactPerson, filters.contactPerson)
       const matchNotes = includesText(customer.notes, filters.notes)
-      const matchRoles = filters.role === 'all' || customer.roles.includes(filters.role)
-      return matchName && matchContact && matchNotes && matchRoles
+      return matchName && matchContact && matchNotes
     })
   ), [customers, filters])
 
@@ -66,35 +55,17 @@ export default function Customers() {
     setCurrentPage(1)
   }
 
-  const updateRoleFilter = (value: string) => {
-    setFilters((current) => ({
-      ...current,
-      role: value,
-    }))
-    setCurrentPage(1)
-  }
-
-  const toggleFormRole = (roleName: string) => {
-    setFormData((current) => ({
-      ...current,
-      roles: current.roles.includes(roleName)
-        ? current.roles.filter((item) => item !== roleName)
-        : [...current.roles, roleName],
-    }))
-  }
-
   const handleOpenModal = (item?: Customer) => {
     if (item) {
       setEditingItem(item)
       setFormData({
         customerName: item.customerName,
         contactPerson: item.contactPerson,
-        roles: [...item.roles],
         notes: item.notes,
       })
     } else {
       setEditingItem(null)
-      setFormData({ customerName: '', contactPerson: '', roles: [], notes: '' })
+      setFormData({ customerName: '', contactPerson: '', notes: '' })
     }
     setIsModalOpen(true)
   }
@@ -105,10 +76,10 @@ export default function Customers() {
       return
     }
     if (editingItem) {
-      updateCustomer(editingItem.id, formData)
+      updateCustomer(editingItem.id, { ...formData, roles: editingItem.roles ?? [] })
       showToast('success', '客户更新成功')
     } else {
-      addCustomer(formData as Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>)
+      addCustomer({ ...formData, roles: [] } as Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>)
       showToast('success', '客户创建成功')
     }
     setIsModalOpen(false)
@@ -120,23 +91,6 @@ export default function Customers() {
       showToast('success', '客户删除成功')
     }
   }
-
-  const roleBadges = (roles: string[]) => (
-    <div className="flex flex-wrap gap-1.5">
-      {roles.length > 0 ? roles.map((role) => <Badge key={role} variant="info">{role}</Badge>) : <span className="text-gray-500">-</span>}
-    </div>
-  )
-
-  const roleChecklist = (selectedRoles: string[], onToggle: (roleName: string) => void) => (
-    <div className="flex flex-wrap gap-3 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-700 dark:bg-gray-950">
-      {availableRoleNames.length > 0 ? availableRoleNames.map((roleName) => (
-        <label key={roleName} className="field-label flex items-center gap-2">
-          <Checkbox checked={selectedRoles.includes(roleName)} onCheckedChange={() => onToggle(roleName)} />
-          <span>{roleName}</span>
-        </label>
-      )) : <span className="helper-text">暂无可用角色</span>}
-    </div>
-  )
 
   return (
     <PageShell>
@@ -152,12 +106,12 @@ export default function Customers() {
             <p className="summary-value">{customers.length}</p>
           </div>
           <div className="summary-card">
-            <p className="summary-label">已配置角色</p>
-            <p className="summary-value">{customers.filter((item) => item.roles.length > 0).length}</p>
+            <p className="summary-label">已填写联系人</p>
+            <p className="summary-value">{customers.filter((item) => Boolean(item.contactPerson)).length}</p>
           </div>
           <div className="summary-card">
-            <p className="summary-label">可用角色模板</p>
-            <p className="summary-value">{availableRoleNames.length}</p>
+            <p className="summary-label">已填写备注</p>
+            <p className="summary-value">{customers.filter((item) => Boolean(item.notes)).length}</p>
           </div>
           <div className="summary-card">
             <p className="summary-label">当前筛中</p>
@@ -165,7 +119,7 @@ export default function Customers() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="customer-filter-name">客户名称</Label>
           <Input id="customer-filter-name" value={filters.customerName} onChange={(e) => updateFilter('customerName', e.target.value)} placeholder="按客户名称筛选" />
@@ -177,21 +131,6 @@ export default function Customers() {
         <div className="space-y-2">
           <Label htmlFor="customer-filter-notes">备注</Label>
           <Input id="customer-filter-notes" value={filters.notes} onChange={(e) => updateFilter('notes', e.target.value)} placeholder="按备注筛选" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="customer-filter-role">角色</Label>
-          <NativeSelect
-            id="customer-filter-role"
-            value={filters.role}
-            onChange={(e) => updateRoleFilter(e.target.value)}
-          >
-            <option value="all">全部角色</option>
-            {availableRoleNames.map((roleName) => (
-              <option key={roleName} value={roleName}>
-                {roleName}
-              </option>
-            ))}
-          </NativeSelect>
         </div>
         </div>
 
@@ -206,7 +145,6 @@ export default function Customers() {
             <tr className="border-b border-gray-200 dark:border-gray-800">
               <th className="table-header">客户名称</th>
               <th className="table-header">联系人</th>
-              <th className="table-header">角色</th>
               <th className="table-header">备注</th>
               <th className="table-header">创建时间</th>
               <th className="table-header">操作</th>
@@ -217,7 +155,6 @@ export default function Customers() {
               <tr key={customer.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
                 <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{customer.customerName}</td>
                 <td className="table-cell">{customer.contactPerson || '-'}</td>
-                <td className="table-cell">{roleBadges(customer.roles)}</td>
                 <td className="table-cell max-w-[200px] truncate">{customer.notes || '-'}</td>
                 <td className="table-cell text-gray-500">{formatDate(customer.createdAt)}</td>
                 <td className="table-cell">
@@ -254,10 +191,6 @@ export default function Customers() {
             <Input id="contactPerson" value={formData.contactPerson} onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })} placeholder="输入联系人" />
           </div>
           <div className="space-y-2">
-            <Label>角色</Label>
-            {roleChecklist(formData.roles, toggleFormRole)}
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="notes">备注</Label>
             <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="输入备注信息" className="min-h-[80px]" />
           </div>
@@ -269,7 +202,6 @@ export default function Customers() {
           <ReadOnlySection>
             <ReadOnlyField label="客户名称" value={viewingItem.customerName} />
             <ReadOnlyField label="联系人" value={viewingItem.contactPerson} />
-            <ReadOnlyField label="角色" value={roleBadges(viewingItem.roles)} />
             <ReadOnlyField label="创建时间" value={formatDate(viewingItem.createdAt)} />
             <ReadOnlyField label="更新时间" value={formatDate(viewingItem.updatedAt)} />
             <ReadOnlyField label="备注" value={viewingItem.notes} span="full" />
