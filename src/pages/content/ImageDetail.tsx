@@ -9,11 +9,11 @@ import {
   detailActionTileClass,
   detailBackButtonClass,
   detailContentGridClass,
+  detailFixedStageClass,
+  detailFixedStageShellClass,
   detailHeaderClass,
   detailIconButtonClass,
   detailMediaColumnClass,
-  detailMediaShellClass,
-  detailMediaStageClass,
   detailMetaPillClass,
   detailPageShellClass,
   detailPanelClass,
@@ -44,8 +44,9 @@ export default function ImageDetail() {
   const task = useMemo(() => imageTasks.find((item) => item.id === taskId), [imageTasks, taskId])
   const parsedIndex = Number(resultIndex)
   const currentIndex = Number.isInteger(parsedIndex) && parsedIndex >= 0 ? parsedIndex : -1
-  const totalResults = task?.outputImageUrls.length || task?.outputImageBase64.length || 0
-  const currentImageUrl = currentIndex >= 0 ? task?.outputImageUrls[currentIndex] || task?.outputImageBase64[currentIndex] || '' : ''
+  const resultImages = task?.outputImageUrls.length ? task.outputImageUrls : task?.outputImageBase64 || []
+  const totalResults = resultImages.length
+  const currentImageUrl = currentIndex >= 0 ? resultImages[currentIndex] || '' : ''
 
   if (!task) {
     return (
@@ -105,10 +106,9 @@ export default function ImageDetail() {
     { icon: <Sparkles size={16} />, label: '扩图延展', disabled: true, note: '即将开放' },
   ]
 
-  const imageDetailContentGridClass = `${detailContentGridClass} lg:items-stretch`
-  const imageDetailMediaColumnClass = 'space-y-4 lg:col-span-3 lg:flex'
-  const imageDetailMediaShellClass = `${detailMediaShellClass} flex h-full min-h-[760px] flex-col`
-  const imageDetailStageClass = `${detailMediaStageClass} min-h-0 flex-1`
+  const imageDetailContentGridClass = detailContentGridClass
+  const imageDetailMediaColumnClass = detailMediaColumnClass
+  const imageDetailStageClass = detailFixedStageClass
 
   return (
     <PageShell>
@@ -145,9 +145,13 @@ export default function ImageDetail() {
 
         <div className={imageDetailContentGridClass}>
           <div className={imageDetailMediaColumnClass}>
-            <div className={imageDetailMediaShellClass}>
+            <div className={detailFixedStageShellClass}>
               <div className={imageDetailStageClass}>
-                <img src={currentImageUrl} alt={task.prompt} className="max-h-[72vh] w-full object-contain" />
+                <img
+                  src={currentImageUrl}
+                  alt={task.prompt}
+                  className="block h-auto max-h-full w-auto max-w-full rounded-[24px] object-contain shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
+                />
                 {totalResults > 1 ? (
                   <>
                     <button
@@ -167,25 +171,27 @@ export default function ImageDetail() {
                   </>
                 ) : null}
               </div>
-              {totalResults > 1 ? (
-                <div className="mt-auto border-t border-gray-200 p-4 dark:border-gray-800">
-                  <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
-                    {task.outputImageUrls.map((url, index) => (
-                      <button
-                        key={`${task.id}-${index}`}
-                        className={`aspect-square overflow-hidden rounded-2xl border transition-colors ${index === currentIndex ? 'border-gray-950 ring-2 ring-gray-900/10 dark:border-white dark:ring-white/10' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'}`}
-                        onClick={() => goToResult(index)}
-                      >
-                        <img src={url} alt="" className="h-full w-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
           </div>
 
           <aside className={detailSidebarClass}>
+            {totalResults > 1 ? (
+              <div className={detailPanelClass}>
+                <div className={`${detailPanelTitleClass} mb-3`}>结果列表</div>
+                <div className="grid grid-cols-4 gap-3">
+                  {resultImages.map((url, index) => (
+                    <button
+                      key={`${task.id}-${index}`}
+                      className={`aspect-square overflow-hidden rounded-2xl border transition-colors ${index === currentIndex ? 'border-gray-950 ring-2 ring-gray-900/10 dark:border-white dark:ring-white/10' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'}`}
+                      onClick={() => goToResult(index)}
+                    >
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className={detailPanelMutedClass}>
               <div className={`${detailPanelTitleClass} mb-2`}>提示词</div>
               <div className={`${detailPanelTextClass} whitespace-pre-wrap`}>

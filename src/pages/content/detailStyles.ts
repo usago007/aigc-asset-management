@@ -2,7 +2,7 @@ export const detailPageShellClass = 'page-shell space-y-6'
 
 export const detailHeaderClass = 'page-intro'
 
-export const detailContentGridClass = 'grid items-start gap-6 lg:grid-cols-5'
+export const detailContentGridClass = 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_440px]'
 
 export const detailBackButtonClass = 'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50'
 
@@ -14,13 +14,17 @@ export const detailIconButtonClass = 'inline-flex h-10 w-10 items-center justify
 
 export const detailPrimaryActionClass = 'btn-primary gap-2'
 
-export const detailMediaColumnClass = 'space-y-4 self-start lg:col-span-3'
+export const detailMediaColumnClass = 'min-w-0 self-start'
 
 export const detailMediaShellClass = 'h-fit overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.06)] dark:border-gray-800 dark:bg-gray-900'
 
 export const detailMediaStageClass = 'relative flex min-h-[420px] items-center justify-center bg-[#f4f3ef] dark:bg-black'
 
-export const detailSidebarClass = 'space-y-4 self-start lg:col-span-2'
+export const detailFixedStageShellClass = 'overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_16px_44px_rgba(15,23,42,0.06)] dark:border-gray-800 dark:bg-gray-900'
+
+export const detailFixedStageClass = 'relative flex min-h-[420px] items-center justify-center bg-[#f4f3ef] p-6 dark:bg-black lg:h-[clamp(560px,calc(100vh-260px),820px)]'
+
+export const detailSidebarClass = 'space-y-4 self-start lg:h-[clamp(560px,calc(100vh-260px),820px)] lg:overflow-y-auto lg:pr-1'
 
 export const detailPanelClass = 'rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-gray-800 dark:bg-gray-900'
 

@@ -10,11 +10,11 @@ import {
   detailActionTileClass,
   detailBackButtonClass,
   detailContentGridClass,
+  detailFixedStageClass,
+  detailFixedStageShellClass,
   detailHeaderClass,
   detailIconButtonClass,
   detailMediaColumnClass,
-  detailMediaShellClass,
-  detailMediaStageClass,
   detailMetaPillClass,
   detailPageShellClass,
   detailPanelClass,
@@ -121,119 +121,63 @@ export default function VideoDetail() {
     { icon: <Sparkles size={16} />, label: '智能超清', disabled: true, note: '即将开放' },
   ]
 
-  const videoDetailContentGridClass = `${detailContentGridClass} lg:items-stretch`
-  const videoDetailMediaColumnClass = 'space-y-4 lg:col-span-3 lg:flex'
-  const videoDetailMediaShellClass = `${detailMediaShellClass} flex h-full min-h-[760px] flex-col`
-  const videoDetailStageClass = `${detailMediaStageClass} min-h-0 flex-1`
+  const videoDetailContentGridClass = detailContentGridClass
+  const videoDetailMediaColumnClass = detailMediaColumnClass
+  const videoDetailStageClass = detailFixedStageClass
 
   const renderVideoState = () => {
     if (task.status === 'done' && task.videoUrl && !isExpired) {
       return (
-        <div className="flex h-full min-h-[760px] flex-col">
-          <div className={`${videoDetailStageClass} p-6`}>
-            <video
-              ref={videoRef}
-              src={task.videoUrl}
-              controls
-              muted={isMuted}
-              preload="metadata"
-              className="h-full w-full object-contain"
-              onTimeUpdate={(event) => {
-                setProgress(event.currentTarget.currentTime)
-                setDuration(event.currentTarget.duration || 0)
-              }}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-            />
-          </div>
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <button
-                className={detailIconButtonClass}
-                onClick={() => {
-                  if (!videoRef.current) return
-                  if (isPlaying) videoRef.current.pause()
-                  else videoRef.current.play()
-                }}
-              >
-                <Film size={16} />
-              </button>
-              <button className={detailIconButtonClass} onClick={() => setIsMuted(!isMuted)}>
-                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-              </button>
-              <select
-                value={playbackSpeed}
-                onChange={(event) => {
-                  const next = Number(event.target.value)
-                  setPlaybackSpeed(next)
-                  if (videoRef.current) videoRef.current.playbackRate = next
-                }}
-                className="input-field h-10 px-3"
-              >
-                {[0.5, 1, 1.5, 2].map((value) => (
-                  <option key={value} value={value}>{value}x</option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-[220px] flex-1">
-              <input
-                type="range"
-                min={0}
-                max={duration || 0}
-                value={progress}
-                onChange={(event) => {
-                  const next = Number(event.target.value)
-                  if (videoRef.current) videoRef.current.currentTime = next
-                  setProgress(next)
-                }}
-                className="w-full accent-gray-950 dark:accent-white"
-              />
-            </div>
-            <div className="helper-text">
-              {Math.floor(progress)}s / {Math.floor(duration)}s
-            </div>
-          </div>
+        <div className={videoDetailStageClass}>
+          <video
+            ref={videoRef}
+            src={task.videoUrl}
+            controls
+            muted={isMuted}
+            preload="metadata"
+            className="block h-auto max-h-full w-auto max-w-full rounded-[24px] bg-black object-contain shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
+            onTimeUpdate={(event) => {
+              setProgress(event.currentTarget.currentTime)
+              setDuration(event.currentTarget.duration || 0)
+            }}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+          />
         </div>
       )
     }
 
     if (task.status === 'failed') {
       return (
-        <div className="flex h-full min-h-[760px] flex-col">
-          <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
-            <Badge variant="destructive">生成失败</Badge>
-            <p className="body-muted max-w-md">{task.errorMessage || '当前任务未返回可播放视频。'}</p>
-            <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
-              <RefreshCw size={14} />
-              重新生成
-            </Button>
-          </div>
+        <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+          <Badge variant="destructive">生成失败</Badge>
+          <p className="body-muted max-w-md">{task.errorMessage || '当前任务未返回可播放视频。'}</p>
+          <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
+            <RefreshCw size={14} />
+            重新生成
+          </Button>
         </div>
       )
     }
 
     if (isExpired || task.status === 'expired') {
       return (
-        <div className="flex h-full min-h-[760px] flex-col">
-          <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
-            <Badge variant="warning">视频已过期</Badge>
-            <p className="body-muted max-w-md">视频链接已失效，请返回创作页重新生成。</p>
-            <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
-              <RefreshCw size={14} />
-              返回重新生成
-            </Button>
-          </div>
+        <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+          <Badge variant="warning">视频已过期</Badge>
+          <p className="body-muted max-w-md">视频链接已失效，请返回创作页重新生成。</p>
+          <Button className="gap-2" onClick={() => navigate('/content/video-generation')}>
+            <RefreshCw size={14} />
+            返回重新生成
+          </Button>
         </div>
       )
     }
 
     return (
-      <div className="flex h-full min-h-[760px] flex-col">
-        <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
-          <Badge variant="info">{task.status === 'in_queue' ? '排队中' : task.status === 'submitting' ? '提交中' : '生成中'}</Badge>
-          <p className="body-muted">视频任务正在处理中，生成完成后可在这里预览。</p>
-          {task.progress != null ? <span className={detailMetaPillClass}>{task.progress}%</span> : null}
-        </div>
+      <div className={`${videoDetailStageClass} flex-col gap-3 text-center`}>
+        <Badge variant="info">{task.status === 'in_queue' ? '排队中' : task.status === 'submitting' ? '提交中' : '生成中'}</Badge>
+        <p className="body-muted">视频任务正在处理中，生成完成后可在这里预览。</p>
+        {task.progress != null ? <span className={detailMetaPillClass}>{task.progress}%</span> : null}
       </div>
     )
   }
@@ -274,7 +218,7 @@ export default function VideoDetail() {
 
         <div className={videoDetailContentGridClass}>
           <div className={videoDetailMediaColumnClass}>
-            <div className={videoDetailMediaShellClass}>
+            <div className={detailFixedStageShellClass}>
               {renderVideoState()}
             </div>
           </div>
@@ -308,6 +252,57 @@ export default function VideoDetail() {
                 <div className="panel-value flex items-center gap-2">
                   <Clock size={14} />
                   视频将在 {timeRemaining} 后过期
+                </div>
+              </div>
+            ) : null}
+
+            {task.status === 'done' && task.videoUrl && !isExpired ? (
+              <div className={detailPanelClass}>
+                <div className={`${detailPanelTitleClass} mb-3`}>播放控制</div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    className={detailIconButtonClass}
+                    onClick={() => {
+                      if (!videoRef.current) return
+                      if (isPlaying) videoRef.current.pause()
+                      else videoRef.current.play()
+                    }}
+                  >
+                    <Film size={16} />
+                  </button>
+                  <button className={detailIconButtonClass} onClick={() => setIsMuted(!isMuted)}>
+                    {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
+                  <select
+                    value={playbackSpeed}
+                    onChange={(event) => {
+                      const next = Number(event.target.value)
+                      setPlaybackSpeed(next)
+                      if (videoRef.current) videoRef.current.playbackRate = next
+                    }}
+                    className="input-field h-10 px-3"
+                  >
+                    {[0.5, 1, 1.5, 2].map((value) => (
+                      <option key={value} value={value}>{value}x</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <input
+                    type="range"
+                    min={0}
+                    max={duration || 0}
+                    value={progress}
+                    onChange={(event) => {
+                      const next = Number(event.target.value)
+                      if (videoRef.current) videoRef.current.currentTime = next
+                      setProgress(next)
+                    }}
+                    className="w-full accent-gray-950 dark:accent-white"
+                  />
+                  <div className="helper-text">
+                    {Math.floor(progress)}s / {Math.floor(duration)}s
+                  </div>
                 </div>
               </div>
             ) : null}
