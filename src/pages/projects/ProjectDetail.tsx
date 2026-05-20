@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowDown, ArrowLeft, ArrowUp, Film, FolderKanban, Link2, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
@@ -6,21 +6,23 @@ import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import { normalizeSearchText } from '@/utils/search'
 import { showToast } from '@/utils/toast'
+import MediaResultCard from '@/components/MediaResultCard'
 import Modal from '@/components/Modal'
 import { PageSection, PageShell } from '@/components/PageShell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import {
-  detailHeaderBackRowClass,
-  detailHeaderClass,
-  detailHeaderContentRowClass,
-  detailHeaderIntroClass,
-  detailHeaderTopBarClass,
   detailPageShellClass,
-  detailTitleClass,
+  projectSummaryCardClass,
+  projectSummaryEyebrowClass,
+  projectSummaryGridClass,
+  projectSummaryHeaderClass,
+  projectSummaryMetaListClass,
+  projectSummaryMetaRowClass,
+  projectSummaryTitleClass,
+  projectSummaryValueClass,
 } from '@/pages/content/detailStyles'
 import type {
   Brief,
@@ -84,99 +86,81 @@ const includesText = (value: unknown, query: string) => {
   return normalizeSearchText(value).includes(normalizedQuery)
 }
 
+const getProjectProgressNarrative = (progress: number) => {
+  if (progress >= 90) return '交付完成'
+  if (progress >= 60) return '制作与审核收口中'
+  if (progress >= 25) return '素材与提案推进中'
+  return '项目建立中'
+}
+
 const FrameTraceCard = ({ label, lookup }: { label: string; lookup: FrameLookup }) => {
   if (!lookup.frame) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="panel-title">{label}</div>
-        <p className="body-muted mt-3">未绑定{label}记录</p>
-      </div>
+      <MediaResultCard
+        title={label}
+        subtitle={`未绑定${label}`}
+        mediaClassName="h-48 border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+        media={<div className="body-muted flex h-full items-center justify-center px-6 text-center">暂无结果</div>}
+        rows={[
+          { label: '状态', value: `未绑定${label}` },
+          { label: '提示词', value: `当前镜头还没有绑定${label}记录。`, multiline: true },
+        ]}
+      />
     )
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="panel-title">{label}</div>
-          <p className="panel-value mt-1 font-semibold">{lookup.frame.name}</p>
-        </div>
-        <Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>
-      </div>
-      {lookup.previewUrl ? (
-        <img
-          src={lookup.previewUrl}
-          alt={lookup.frame.name}
-          className="mt-4 h-40 w-full rounded-lg bg-gray-100 object-cover dark:bg-gray-800"
-        />
+    <MediaResultCard
+      title={label}
+      subtitle={lookup.frame.name}
+      badge={<Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>}
+      mediaClassName="h-48"
+      media={lookup.previewUrl ? (
+        <img src={lookup.previewUrl} alt={lookup.frame.name} className="h-full w-full object-cover" />
       ) : (
-        <div className="body-muted mt-4 flex h-40 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/50">
+        <div className="body-muted flex h-full items-center justify-center border border-dashed border-gray-200 bg-gray-50 px-6 text-center dark:border-gray-800 dark:bg-gray-950">
           暂无可追溯图片
         </div>
       )}
-      <div className="helper-text mt-4 space-y-2">
-        <div>
-          <span className="field-label">提示词：</span>
-          {summarizeText(lookup.frame.promptText, 120)}
-        </div>
-        <div>
-          <span className="field-label">模型：</span>
-          {lookup.frame.modelName} {lookup.frame.modelVersion}
-        </div>
-        <div>
-          <span className="field-label">生成时间：</span>
-          {formatDate(lookup.frame.createdAt)}
-        </div>
-        <div>
-          <span className="field-label">来源任务：</span>
-          {lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}
-        </div>
-      </div>
-    </div>
+      rows={[
+        { label: '提示词', value: summarizeText(lookup.frame.promptText, 120), multiline: true },
+        { label: '模型', value: `${lookup.frame.modelName} ${lookup.frame.modelVersion}`.trim() || '-' },
+        { label: '时间', value: formatDate(lookup.frame.createdAt) },
+        { label: 'TOKENS', value: lookup.sourceTask?.tokensUsed ?? '-' },
+      ]}
+    />
   )
 }
 
 const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="panel-title">视频预览</div>
-        <p className="body-muted mt-3">当前镜头还没有可播放的视频预览。</p>
-      </div>
+      <MediaResultCard
+        title="视频预览"
+        subtitle="暂无视频结果"
+        mediaClassName="h-48 border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+        media={<div className="body-muted flex h-full items-center justify-center px-6 text-center">当前镜头还没有可播放的视频预览。</div>}
+        rows={[
+          { label: '状态', value: '暂无结果' },
+          { label: '提示词', value: '先生成视频，再回到这里查看对应结果。', multiline: true },
+        ]}
+      />
     )
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="panel-title">视频预览</div>
-          <p className="panel-value mt-1 font-semibold">{lookup.task.mode}</p>
-        </div>
-        <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
-          {lookup.task.status}
-        </Badge>
-      </div>
-      <video src={lookup.previewUrl} controls preload="metadata" className="mt-4 h-56 w-full rounded-lg bg-black object-cover" />
-      <div className="mt-4 space-y-2 text-sm">
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">提示词：</span>
-          {summarizeText(lookup.task.prompt, 120)}
-        </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">任务模型：</span>
-          {lookup.task.reqKey}
-        </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">生成时间：</span>
-          {formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}
-        </div>
-        <div className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Tokens：</span>
-          {lookup.task.tokensUsed ?? '-'}
-        </div>
-      </div>
-    </div>
+    <MediaResultCard
+      title="视频预览"
+      subtitle={lookup.task.mode}
+      mediaClassName="h-48 bg-black"
+      media={<video src={lookup.previewUrl} controls preload="metadata" className="h-full w-full bg-black object-cover" />}
+      rows={[
+        { label: '提示词', value: summarizeText(lookup.task.prompt, 120), multiline: true },
+        { label: '模型', value: lookup.task.reqKey },
+        { label: '时间', value: formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt) },
+        { label: 'Tokens', value: lookup.task.tokensUsed ?? '-' },
+      ]}
+    />
   )
 }
 
@@ -208,6 +192,7 @@ export default function ProjectDetail() {
   const [linkModalOpen, setLinkModalOpen] = useState(false)
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null)
   const [slotSearchQuery, setSlotSearchQuery] = useState('')
+  const slotListRef = useRef<HTMLDivElement | null>(null)
 
   const [briefForm, setBriefForm] = useState({
     briefTitle: '',
@@ -247,6 +232,24 @@ export default function ProjectDetail() {
   )
   const projectKeyFrameIds = useMemo(() => new Set(projectKeyFrames.map((frame) => frame.id)), [projectKeyFrames])
   const projectBriefs = useMemo(() => briefs.filter((brief) => brief.projectId === id), [briefs, id])
+  const primaryBrief = useMemo(() => {
+    if (projectBriefs.length === 0) return null
+
+    const byTimeDesc = (a: Brief, b: Brief) => {
+      const aTime = new Date(a.updatedAt || a.createdAt).getTime()
+      const bTime = new Date(b.updatedAt || b.createdAt).getTime()
+      return bTime - aTime
+    }
+
+    const boundBrief = [...projectBriefs]
+      .filter((brief) => Boolean(brief.currentVersionId))
+      .sort(byTimeDesc)[0]
+
+    return boundBrief || [...projectBriefs].sort(byTimeDesc)[0] || null
+  }, [projectBriefs])
+  const progressNarrative = useMemo(() => getProjectProgressNarrative(project?.progress ?? 0), [project?.progress])
+  const slotCoverageComplete = slotItems.length > 0 && filledSlotItems.length === slotItems.length
+  const briefStatusVariant = primaryBrief?.currentVersionId ? 'success' : 'outline'
   const relatedImageTasks = useMemo(
     () => imageTasks.filter((task) => task.projectId === id || (task.shotId ? projectShotIds.has(task.shotId) : false)),
     [imageTasks, id, projectShotIds],
@@ -474,6 +477,13 @@ export default function ProjectDetail() {
   const handleAddSlot = () => {
     if (!project) return
     appendProjectShotSlot(project.id)
+    showToast('success', '已添加镜头位')
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const lastSlot = slotListRef.current?.lastElementChild as HTMLElement | null
+        lastSlot?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
   }
 
   if (!project) {
@@ -494,119 +504,178 @@ export default function ProjectDetail() {
   return (
     <PageShell>
       <div className={detailPageShellClass}>
-        <section className={detailHeaderClass}>
-          <div className="w-full space-y-3">
-            <div className={detailHeaderTopBarClass}>
-              <div className={detailHeaderBackRowClass}>
-                <Button variant="secondary" className="gap-2" onClick={() => navigate('/projects/projects')}>
-                  <ArrowLeft size={16} />
-                  返回项目列表
-                </Button>
-              </div>
-            </div>
-            <div className={detailHeaderContentRowClass}>
-              <div className={detailHeaderIntroClass}>
-                <h1 className={detailTitleClass}>{project.projectName}</h1>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      <div className="grid gap-4 lg:grid-cols-4">
-        <PageSection className="space-y-4 lg:col-span-2">
-          <div className="body-text flex items-center gap-2 font-medium">
-            <FolderKanban size={16} />
-            项目基础信息
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <div className="eyebrow">品牌</div>
-              <div className="mt-1 body-text font-medium text-gray-900 dark:text-gray-100">{brandName}</div>
-            </div>
-            <div>
-              <div className="eyebrow">负责人</div>
-              <div className="mt-1 body-text font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</div>
-            </div>
-            <div>
-              <div className="eyebrow">阶段</div>
-              <div className="mt-2">
-                <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
-              </div>
-            </div>
-            <div>
-              <div className="eyebrow">风险</div>
-              <div className="mt-2">
-                <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
-              </div>
-            </div>
-            <div className="md:col-span-2">
-              <div className="eyebrow">项目进度</div>
-              <div className="mt-2 flex items-center gap-3">
-                <Progress value={project.progress} className="w-full max-w-xs" />
-                <span className="body-text font-medium">{project.progress}%</span>
-              </div>
-            </div>
-          </div>
-        </PageSection>
-
-        <div className="summary-card space-y-3">
-          <div className="eyebrow">镜头位编排</div>
-          <div className="metric-value">{filledSlotItems.length}</div>
-          <p className="metric-caption">已关联镜头 / 共 {slotItems.length} 个镜头位</p>
-        </div>
-
-        <div className="summary-card space-y-3">
-          <div className="eyebrow">提案与待审</div>
-          <div className="flex items-end gap-4">
-            <div>
-              <div className="metric-value">{projectBriefs.length}</div>
-              <div className="metric-caption">项目提案</div>
-            </div>
-            <div>
-              <div className="metric-value">{project.pendingReviews}</div>
-              <div className="metric-caption">待审核</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <PageSection className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="section-title">镜头位编排</h2>
-            <p className="section-subtitle">默认保留 1-5 个镜头位，可关联镜头管理中的现有镜头，并在这里做上下排序。</p>
-          </div>
-          <Button className="gap-2" onClick={handleAddSlot}>
-            <Plus size={16} />
-            添加镜头位
+        <div className="flex items-center">
+          <Button variant="secondary" className="gap-2" onClick={() => navigate('/projects/projects')}>
+            <ArrowLeft size={16} />
+            返回项目列表
           </Button>
         </div>
 
-        <div className="space-y-4">
-          {slotItems.map((item, index) => {
-            const { slot, shot } = item
-            const canMoveUp = index > 0
-            const canMoveDown = index < slotItems.length - 1
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <h1 className="page-title-compact sm:text-[30px]">{project.projectName}</h1>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 dark:text-gray-400 lg:justify-end">
+            <div className="flex items-center gap-2">
+              <span className="field-label">品牌</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{brandName}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="field-label">负责人</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{project.projectOwner || '-'}</span>
+            </div>
+          </div>
+        </div>
 
-            if (!shot) {
-              return (
-                <div key={slot.id} className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-5 dark:border-gray-700 dark:bg-gray-900/40">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">镜头 {slot.position}</Badge>
-                        <span className="body-muted">未关联镜头</span>
-                      </div>
-                      <p className="body-muted">这个排序位已经预留，可以从内容中心挑一个现有镜头关联进来。</p>
-                    </div>
-                    <Button variant="secondary" className="gap-2" onClick={() => openLinkModal(slot.id)}>
-                      <Link2 size={14} />
-                      关联镜头
-                    </Button>
+        <PageSection className="space-y-4">
+          <div className={projectSummaryGridClass}>
+            <section className={projectSummaryCardClass}>
+              <div className={projectSummaryHeaderClass}>
+                <div className={projectSummaryEyebrowClass}>项目状态</div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <div className="text-right">
+                  <div className={projectSummaryValueClass}>
+                    {project.progress}%
                   </div>
                 </div>
-              )
-            }
+              </div>
+              <div className={`mt-4 ${projectSummaryMetaListClass}`}>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">阶段</span>
+                  <Badge variant={stageMap[project.stage].variant}>{stageMap[project.stage].label}</Badge>
+                </div>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">风险</span>
+                  <Badge variant={riskMap[project.riskLevel].variant}>{riskMap[project.riskLevel].label}</Badge>
+                </div>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">待审核</span>
+                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{project.pendingReviews}</span>
+                </div>
+              </div>
+            </section>
+
+            <section className={projectSummaryCardClass}>
+              <div className={projectSummaryHeaderClass}>
+                <div className={projectSummaryEyebrowClass}>镜头位覆盖</div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <div className="flex items-end gap-2 text-right">
+                  <div className={projectSummaryValueClass}>
+                    {filledSlotItems.length}
+                  </div>
+                  <div className="pb-1 text-lg text-gray-500 dark:text-gray-400">/ {slotItems.length}</div>
+                </div>
+              </div>
+              <div className={`mt-4 ${projectSummaryMetaListClass}`}>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">已关联</span>
+                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{filledSlotItems.length}</span>
+                </div>
+                <div className={projectSummaryMetaRowClass}>
+                  <span className="field-label">总镜头位</span>
+                  <span className="text-base font-semibold text-gray-950 dark:text-gray-50">{slotItems.length}</span>
+                </div>
+              </div>
+            </section>
+
+            <section className={projectSummaryCardClass}>
+              <div className={projectSummaryHeaderClass}>
+                <div className={projectSummaryEyebrowClass}>提案</div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {projectBriefs.length > 0 ? `${projectBriefs.length} 个提案` : '暂无提案'}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className={projectSummaryTitleClass}>
+                    {primaryBrief ? primaryBrief.briefTitle : '还没有主提案'}
+                  </div>
+                </div>
+                <Button size="sm" className="shrink-0 gap-2" onClick={() => openBriefModal(primaryBrief || undefined)}>
+                  <Plus size={14} />
+                  {primaryBrief ? '编辑提案' : '新建提案'}
+                </Button>
+              </div>
+              {primaryBrief ? (
+                <>
+                  <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    {summarizeText(primaryBrief.description, 120)}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <Badge variant={briefStatusVariant} className="px-2 py-0.5">
+                      {primaryBrief.currentVersionId ? '当前版本已绑定' : '当前版本未绑定'}
+                    </Badge>
+                    <Button variant="ghost" size="sm" className="shrink-0 gap-2 text-error hover:text-error" onClick={() => removeBrief(primaryBrief.id)}>
+                      <Trash2 size={14} />
+                      删除
+                    </Button>
+                  </div>
+                  <div className={`mt-4 ${projectSummaryMetaListClass}`}>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">目标受众</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{primaryBrief.targetAudience || '未填写'}</span>
+                    </div>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">交付平台</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{primaryBrief.platform || '未填写'}</span>
+                    </div>
+                    <div className={projectSummaryMetaRowClass}>
+                      <span className="field-label">截止日期</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {primaryBrief.deadline ? formatDate(primaryBrief.deadline, 'date') : '未设置'}
+                      </span>
+                    </div>
+                  </div>
+                  {primaryBrief.fileUrl ? (
+                    <div className="mt-3 rounded-xl bg-gray-50 px-3 py-3 text-sm text-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
+                      <span className="field-label">文件链接</span>
+                      <a href={primaryBrief.fileUrl} target="_blank" rel="noreferrer" className="mt-1 block break-all font-medium text-gray-900 underline-offset-4 hover:underline dark:text-gray-100">
+                        {primaryBrief.fileUrl}
+                      </a>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="mt-4 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                  当前项目还没有提案，先补充提案内容和交付要求。
+                </div>
+              )}
+            </section>
+          </div>
+        </PageSection>
+
+        <PageSection className="space-y-6">
+          <div>
+            <h2 className="section-title">镜头位编排</h2>
+          </div>
+
+          <div ref={slotListRef} className="space-y-4">
+            {slotItems.map((item, index) => {
+              const { slot, shot } = item
+              const canMoveUp = index > 0
+              const canMoveDown = index < slotItems.length - 1
+
+              if (!shot) {
+                return (
+                  <div key={slot.id} className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-5 dark:border-gray-700 dark:bg-gray-900/40">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">镜头 {slot.position}</Badge>
+                          <span className="body-muted">未关联镜头</span>
+                        </div>
+                        <p className="body-muted">这个排序位已经预留，可以从内容中心挑一个现有镜头关联进来。</p>
+                      </div>
+                      <Button variant="secondary" className="gap-2" onClick={() => openLinkModal(slot.id)}>
+                        <Link2 size={14} />
+                        关联镜头
+                      </Button>
+                    </div>
+                  </div>
+                )
+              }
 
             const opening = getFrameLookup(shot.firstFrameId)
             const ending = getFrameLookup(shot.lastFrameId)
@@ -640,7 +709,7 @@ export default function ProjectDetail() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-end gap-2 lg:mt-10 xl:mt-9">
                     <Button variant="secondary" size="sm" className="gap-2" disabled={!canMoveUp} onClick={() => moveProjectShotSlot(project.id, slot.id, 'up')}>
                       <ArrowUp size={14} />
                       上移
@@ -671,81 +740,15 @@ export default function ProjectDetail() {
               </div>
             )
           })}
-        </div>
-      </PageSection>
 
-      <PageSection className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="section-title">提案</h2>
-            <p className="section-subtitle">复用项目提案数据，直接维护当前项目提案。</p>
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-5 text-center dark:border-gray-700 dark:bg-gray-900/40">
+              <Button className="gap-2" onClick={handleAddSlot}>
+                <Plus size={16} />
+                添加镜头位
+              </Button>
+            </div>
           </div>
-          <Button className="gap-2" onClick={() => openBriefModal()}>
-            <Plus size={16} />
-            新建提案
-          </Button>
-        </div>
-
-        {projectBriefs.length === 0 ? (
-          <div className="empty-state rounded-xl border-0 bg-transparent py-12">
-            当前项目还没有提案，先补充提案内容和交付要求。
-          </div>
-        ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {projectBriefs.map((brief) => (
-              <div key={brief.id} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="card-title">{brief.briefTitle}</h3>
-                    <p className="body-muted mt-2">{summarizeText(brief.description, 120)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" className="gap-2" onClick={() => openBriefModal(brief)}>
-                      编辑
-                    </Button>
-                    <Button variant="ghost" size="sm" className="gap-2 text-error hover:text-error" onClick={() => removeBrief(brief.id)}>
-                      <Trash2 size={14} />
-                      删除
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="field-label">目标受众</div>
-                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.targetAudience || '未填写'}</div>
-                  </div>
-                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="field-label">交付平台</div>
-                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.platform || '未填写'}</div>
-                  </div>
-                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="field-label">截止日期</div>
-                    <div className="panel-value mt-2 text-gray-900 dark:text-gray-100">{brief.deadline ? formatDate(brief.deadline, 'date') : '未设置'}</div>
-                  </div>
-                  <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50">
-                    <div className="field-label">版本绑定</div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Badge variant={brief.currentVersionId ? 'success' : 'outline'}>
-                        {brief.currentVersionId ? '当前版本已绑定' : '当前版本未绑定'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {brief.fileUrl && (
-                  <div className="panel-value rounded-xl bg-gray-50 p-3 dark:bg-gray-900/50 dark:text-gray-300">
-                    <span className="font-medium text-gray-800 dark:text-gray-200">文件链接：</span>
-                    <a href={brief.fileUrl} target="_blank" rel="noreferrer" className="break-all text-gray-900 underline-offset-4 hover:underline dark:text-gray-100">
-                      {brief.fileUrl}
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </PageSection>
+        </PageSection>
 
       <PageSection className="space-y-6">
         <div>

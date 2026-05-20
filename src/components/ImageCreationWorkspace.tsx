@@ -50,6 +50,8 @@ const RESOLUTION_OPTIONS = [
 const ASPECT_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9']
 const IMAGE_COUNT_OPTIONS = [1, 2, 3, 4]
 const IMAGE_DETAIL_NAV_STATE = { returnTo: '/content/image-generation', source: 'image-generation' } as const
+const optionChipBaseClass =
+  'h-11 w-full rounded-2xl border px-3 text-center text-sm font-medium transition-colors'
 
 const modeCapabilities: Record<ImageGenerationMode, { maxReferenceImages: number; supportsReferenceImages: boolean; hint: string }> = {
   'text-to-image': { maxReferenceImages: 10, supportsReferenceImages: true, hint: '可选添加参考图，最多 10 张。' },
@@ -411,9 +413,8 @@ export default function ImageCreationWorkspace({
       />
 
       <div className="surface-subtle space-y-5 p-5">
-        <div className="flex flex-col gap-2">
+        <div>
           <h3 className="panel-title text-gray-950 dark:text-gray-50">演示主控区</h3>
-          <p className="helper-text">把最影响画面效果的选择放到第一屏，便于直接演示结果差异。</p>
         </div>
 
         <div className="space-y-4">
@@ -443,11 +444,11 @@ export default function ImageCreationWorkspace({
           <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_0.9fr]">
             <div className="space-y-2">
               <label className="field-label">宽高比</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {ASPECT_RATIOS.map((ratio) => (
                   <button
                     key={ratio}
-                    className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
+                    className={`${optionChipBaseClass} ${
                       aspectRatio === ratio
                         ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'
@@ -462,20 +463,21 @@ export default function ImageCreationWorkspace({
 
             <div className="space-y-2">
               <label className="field-label">分辨率</label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {RESOLUTION_OPTIONS.map((option) => (
-                  <button
-                    key={option.label}
-                    className={`flex-1 rounded-2xl border p-3 text-center transition-colors ${
-                      resolution === option.size
-                        ? 'border-gray-950 bg-gray-50 dark:border-white dark:bg-gray-800'
-                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-800'
-                    }`}
-                    onClick={() => setResolution(option.size)}
-                  >
-                    <div className="panel-value font-medium">{option.label}</div>
+                  <div key={option.label} className="space-y-1.5 text-center">
+                    <button
+                      className={`${optionChipBaseClass} ${
+                        resolution === option.size
+                          ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'
+                      }`}
+                      onClick={() => setResolution(option.size)}
+                    >
+                      {option.label}
+                    </button>
                     <div className="helper-text">{option.desc}</div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -486,7 +488,7 @@ export default function ImageCreationWorkspace({
                 {IMAGE_COUNT_OPTIONS.map((count) => (
                   <button
                     key={count}
-                    className={`rounded-2xl border px-3 py-3 text-center text-sm font-medium transition-colors ${
+                    className={`${optionChipBaseClass} ${
                       numImages === count
                         ? 'border-gray-950 bg-gray-50 text-gray-950 dark:border-white dark:bg-gray-800 dark:text-gray-50'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:text-gray-300'

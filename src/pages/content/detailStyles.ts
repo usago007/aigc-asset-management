@@ -61,3 +61,46 @@ export const detailAccordionTriggerClass = 'flex w-full items-center justify-bet
 export const detailAccordionContentClass = 'helper-text space-y-2 border-t border-gray-100 px-4 py-4 dark:border-gray-800'
 
 export const detailStatusCardClass = 'rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950'
+
+export const projectHeroShell =
+  'overflow-hidden rounded-[32px] border border-gray-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(247,247,244,0.96)_52%,rgba(243,247,250,0.98)_100%)] shadow-[0_22px_60px_rgba(15,23,42,0.06)] dark:border-gray-800 dark:bg-[linear-gradient(135deg,rgba(18,21,26,0.98)_0%,rgba(20,23,28,0.96)_52%,rgba(15,18,23,0.98)_100%)]'
+
+export const projectHeroTop =
+  'flex flex-col gap-6 border-b border-gray-200/80 px-6 py-6 dark:border-gray-800/80 lg:px-8 lg:py-7'
+
+export const projectHeroMetaRow =
+  'flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-500 dark:text-gray-400'
+
+export const projectHeroStatusCluster = 'flex flex-wrap items-center gap-2'
+
+export const projectHeroDivider = 'hidden h-5 w-px bg-gray-200 dark:bg-gray-800 sm:block'
+
+export const projectHeroProgress = 'grid gap-6 px-6 py-6 dark:bg-white/[0.01] lg:grid-cols-[minmax(0,1.3fr)_360px] lg:px-8 lg:py-8'
+
+export const projectHeroInsightGrid = 'grid gap-3 sm:grid-cols-3 lg:grid-cols-1'
+
+export const projectHeroInsightCard =
+  'rounded-[24px] border border-gray-200/90 bg-white/88 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/82'
+
+export const projectHeroMetric = 'text-[52px] font-semibold leading-none tracking-[-0.07em] text-gray-950 dark:text-gray-50 lg:text-[60px]'
+
+export const projectHeroSupportText = 'text-sm leading-6 text-gray-500 dark:text-gray-400'
+
+export const projectSummaryGridClass = 'grid gap-3 md:grid-cols-2 xl:grid-cols-3'
+
+export const projectSummaryCardClass =
+  'flex min-h-[186px] flex-col rounded-[24px] border border-gray-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)] dark:border-gray-800 dark:bg-gray-900 lg:p-5'
+
+export const projectSummaryHeaderClass = 'flex items-start justify-between gap-3'
+
+export const projectSummaryEyebrowClass = 'text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500'
+
+export const projectSummaryValueClass = 'text-[34px] font-semibold leading-none tracking-[-0.05em] text-gray-950 dark:text-gray-50'
+
+export const projectSummaryTitleClass = 'text-[22px] font-semibold leading-[1.15] tracking-[-0.035em] text-gray-950 dark:text-gray-50'
+
+export const projectSummaryMetaListClass = 'space-y-2 text-sm text-gray-500 dark:text-gray-400'
+
+export const projectSummaryMetaRowClass = 'flex items-start justify-between gap-4 border-t border-gray-100 pt-2 dark:border-gray-800'
+
+export const projectSummarySupportClass = 'text-sm leading-6 text-gray-500 dark:text-gray-400'

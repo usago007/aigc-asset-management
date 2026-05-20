@@ -1,10 +1,11 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Edit2, FolderKanban, ImageIcon, Sparkles, Video, Clapperboard } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import { showToast } from '@/utils/toast'
+import MediaResultCard from '@/components/MediaResultCard'
 import Modal from '@/components/Modal'
 import ImageCreationWorkspace from '@/components/ImageCreationWorkspace'
 import VideoCreationWorkspace from '@/components/VideoCreationWorkspace'
@@ -34,35 +35,6 @@ const summarizeText = (value: string, max = 96) => {
   return value.length > max ? `${value.slice(0, max)}...` : value
 }
 
-const ResultShell = ({
-  title,
-  subtitle,
-  badge,
-  media,
-  children,
-  footer,
-}: {
-  title: string
-  subtitle: string
-  badge?: ReactNode
-  media: ReactNode
-  children: ReactNode
-  footer?: ReactNode
-}) => (
-  <div className="card space-y-4">
-    <div className="flex items-start justify-between gap-3">
-      <div className="space-y-1">
-        <p className="field-label">{title}</p>
-        <h3 className="card-title">{subtitle}</h3>
-      </div>
-      {badge}
-    </div>
-    {media}
-    <div className="body-muted space-y-2">{children}</div>
-    {footer ? <div className="border-t border-gray-200 pt-3 dark:border-gray-800">{footer}</div> : null}
-  </div>
-)
-
 const FrameTraceCard = ({
   label,
   lookup,
@@ -74,52 +46,59 @@ const FrameTraceCard = ({
 }) => {
   if (!lookup.frame) {
     return (
-      <ResultShell
+      <MediaResultCard
         title={label}
         subtitle={`未绑定${label}`}
-        media={<div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">暂无结果</div>}
-      >
-        <div>当前镜头还没有绑定{label}记录。</div>
-      </ResultShell>
+        mediaClassName="h-48 border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+        media={<div className="body-muted flex h-full items-center justify-center px-6 text-center">暂无结果</div>}
+        rows={[
+          { label: '状态', value: `未绑定${label}` },
+          { label: '提示词', value: `当前镜头还没有绑定${label}记录。`, multiline: true },
+        ]}
+        reserveFooter
+      />
     )
   }
 
   const resultIndex = lookup.sourceTask ? lookup.sourceTask.keyFrameIds.indexOf(lookup.frame.id) : -1
 
   return (
-    <ResultShell
+    <MediaResultCard
       title={label}
       subtitle={lookup.frame.name}
       badge={<Badge variant="outline">{lookup.frame.type === 'Opening' ? '首图' : '尾图'}</Badge>}
+      mediaClassName="h-48"
       media={lookup.previewUrl ? (
         <button
           type="button"
-          className="block w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800"
+          className="block h-full w-full"
           onClick={() => {
             if (lookup.sourceTask && resultIndex >= 0) {
               onOpenDetail(lookup.sourceTask.id, resultIndex)
             }
           }}
         >
-          <img src={lookup.previewUrl} alt={lookup.frame.name} className="h-48 w-full object-cover" />
+          <img src={lookup.previewUrl} alt={lookup.frame.name} className="h-full w-full object-cover" />
         </button>
       ) : (
-        <div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">
+        <div className="body-muted flex h-full items-center justify-center border border-dashed border-gray-200 bg-gray-50 px-6 text-center dark:border-gray-800 dark:bg-gray-950">
           暂无可追溯图片
         </div>
       )}
+      rows={[
+        { label: '提示词', value: summarizeText(lookup.frame.promptText, 120), multiline: true },
+        { label: '模型', value: `${lookup.frame.modelName} ${lookup.frame.modelVersion}`.trim() || '-' },
+        { label: '时间', value: formatDate(lookup.frame.createdAt) },
+        { label: 'TOKENS', value: lookup.sourceTask?.tokensUsed ?? '-' },
+      ]}
       footer={lookup.sourceTask && resultIndex >= 0 ? (
         <Button variant="secondary" size="sm" className="gap-2" onClick={() => onOpenDetail(lookup.sourceTask!.id, resultIndex)}>
           <ImageIcon size={14} />
           查看图片详情
         </Button>
       ) : undefined}
-    >
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">提示词：</span>{summarizeText(lookup.frame.promptText, 120)}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">模型：</span>{lookup.frame.modelName} {lookup.frame.modelVersion}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">生成时间：</span>{formatDate(lookup.frame.createdAt)}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">来源任务：</span>{lookup.sourceTask ? summarizeText(lookup.sourceTask.prompt, 48) : '未找到来源任务'}</div>
-    </ResultShell>
+      reserveFooter
+    />
   )
 }
 
@@ -132,41 +111,40 @@ const ShotVideoCard = ({
 }) => {
   if (!lookup.task || !lookup.previewUrl) {
     return (
-      <ResultShell
+      <MediaResultCard
         title="最终视频"
         subtitle="暂无视频结果"
-        media={<div className="body-muted flex h-48 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950">当前镜头还没有可播放的视频预览。</div>}
-      >
-        <div>先在下方工作区生成视频，再回到这里确认最终版本。</div>
-      </ResultShell>
+        mediaClassName="h-48 border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+        media={<div className="body-muted flex h-full items-center justify-center px-6 text-center">当前镜头还没有可播放的视频预览。</div>}
+        rows={[
+          { label: '状态', value: '暂无结果' },
+          { label: '提示', value: '先在下方工作区生成视频，再回到这里确认最终版本。', multiline: true },
+        ]}
+        reserveFooter
+      />
     )
   }
 
   return (
-    <ResultShell
+    <MediaResultCard
       title="最终视频"
       subtitle={lookup.task.mode}
-      badge={(
-        <div className="flex items-center gap-2">
-          {lookup.isSelected && <Badge variant="success">最终视频</Badge>}
-          <Badge variant={lookup.task.status === 'done' ? 'success' : 'warning'}>
-            {lookup.task.status}
-          </Badge>
-        </div>
-      )}
-      media={<video src={lookup.previewUrl} controls preload="metadata" className="h-56 w-full rounded-2xl bg-black object-cover" />}
+      mediaClassName="h-48 bg-black"
+      media={<video src={lookup.previewUrl} controls preload="metadata" className="h-full w-full bg-black object-cover" />}
+      rows={[
+        { label: '提示词', value: summarizeText(lookup.task.prompt, 120), multiline: true },
+        { label: '模型', value: lookup.task.reqKey },
+        { label: '时间', value: formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt) },
+        { label: 'Tokens', value: lookup.task.tokensUsed ?? '-' },
+      ]}
       footer={(
         <Button variant="secondary" size="sm" className="gap-2" onClick={() => onOpenDetail(lookup.task!.id)}>
           <Video size={14} />
           查看视频详情
         </Button>
       )}
-    >
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">提示词：</span>{summarizeText(lookup.task.prompt, 120)}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">任务模型：</span>{lookup.task.reqKey}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">生成时间：</span>{formatDate(lookup.task.completedAt || lookup.task.updatedAt || lookup.task.createdAt)}</div>
-      <div><span className="font-medium text-gray-900 dark:text-gray-100">Tokens：</span>{lookup.task.tokensUsed ?? '-'}</div>
-    </ResultShell>
+      reserveFooter
+    />
   )
 }
 
@@ -374,6 +352,50 @@ export default function ShotDetail() {
   const ending = getFrameLookup(shot.lastFrameId)
   const videoLookup = getVideoLookup()
   const hasFrames = Boolean(shot.firstFrameId || shot.lastFrameId)
+  const overviewMetaItems = [
+    { label: '品牌', value: brand?.brandName || '-' },
+    { label: '客户', value: customer?.customerName || '-' },
+  ]
+  const overviewSpecItems = [
+    { label: '镜头提示词标识', value: shot.promptId || '未填写' },
+    { label: '基础模型', value: `${shot.modelName || '未记录'} ${shot.modelVersion || ''}`.trim() || '未记录' },
+  ]
+  const statusToneMap: Record<string, { dotClassName: string; valueClassName: string; pillClassName: string; pillLabel: string }> = {
+    '首尾帧绑定': {
+      dotClassName: hasFrames ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600',
+      valueClassName: hasFrames ? 'text-gray-950 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400',
+      pillLabel: hasFrames ? '已绑定' : '未绑定',
+      pillClassName: hasFrames
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-300'
+        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
+    },
+    '视频结果': {
+      dotClassName: selectedVideoTask ? 'bg-sky-500' : latestVideoTask ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600',
+      valueClassName: selectedVideoTask ? 'text-gray-950 dark:text-gray-50' : latestVideoTask ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400',
+      pillLabel: selectedVideoTask ? '最终结果' : latestVideoTask ? '候选结果' : '待生成',
+      pillClassName: selectedVideoTask
+        ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/70 dark:bg-sky-950/40 dark:text-sky-300'
+        : latestVideoTask
+          ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/40 dark:text-amber-300'
+          : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
+    },
+    '图片结果': {
+      dotClassName: latestImageTask ? 'bg-violet-500' : 'bg-gray-300 dark:bg-gray-600',
+      valueClassName: latestImageTask ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400',
+      pillLabel: latestImageTask ? '已产出' : '待生成',
+      pillClassName: latestImageTask
+        ? 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300'
+        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
+    },
+    '关联资产': {
+      dotClassName: shotAssets.length > 0 ? 'bg-slate-500' : 'bg-gray-300 dark:bg-gray-600',
+      valueClassName: shotAssets.length > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400',
+      pillLabel: shotAssets.length > 0 ? '已沉淀' : '未沉淀',
+      pillClassName: shotAssets.length > 0
+        ? 'border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
+    },
+  }
   const statusCards = [
     { label: '首尾帧绑定', value: hasFrames ? `${[shot.firstFrameId && '首图', shot.lastFrameId && '尾图'].filter(Boolean).join(' / ')}` : '未绑定', hint: `共 ${shotFrames.length} 条关键帧记录` },
     {
@@ -420,43 +442,73 @@ export default function ShotDetail() {
           <Clapperboard size={16} />
           镜头概览
         </div>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">所属项目</div>
-              <div className="panel-value mt-2 font-medium">{project.projectName}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">所属品牌</div>
-              <div className="panel-value mt-2 font-medium">{brand?.brandName || '-'}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">所属客户</div>
-              <div className="panel-value mt-2 font-medium">{customer?.customerName || '-'}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">镜头提示词标识</div>
-              <div className="panel-value mt-2 font-medium">{shot.promptId || '未填写'}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">基础模型</div>
-              <div className="panel-value mt-2 font-medium">{shot.modelName || '未记录'} {shot.modelVersion || ''}</div>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-              <div className="field-label">创建 / 更新时间</div>
-              <div className="panel-value mt-2 font-medium">{formatDate(shot.createdAt)}</div>
-              <div className="helper-text mt-1">{formatDate(shot.updatedAt)}</div>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            {statusCards.map((card) => (
-              <div key={card.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-900">
-                <div className="field-label">{card.label}</div>
-                <div className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-gray-950 dark:text-gray-50">{card.value}</div>
-                <p className="body-muted mt-2">{card.hint}</p>
+        <div className="overflow-hidden rounded-[28px] border border-gray-200 bg-gradient-to-br from-[#f8f7f2] via-white to-[#f6f5ef] shadow-[0_18px_44px_rgba(15,23,42,0.06)] dark:border-gray-800 dark:from-[#16181c] dark:via-[#111317] dark:to-[#0f1115]">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.95fr)]">
+            <div className="space-y-6 p-6 lg:p-7">
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h2 className="max-w-4xl text-[30px] font-semibold tracking-[-0.05em] text-gray-950 dark:text-gray-50">
+                    {project.projectName}
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {overviewMetaItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/85 px-3 py-1.5 text-sm text-gray-600 shadow-[0_8px_24px_rgba(15,23,42,0.03)] dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-300"
+                    >
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+
+              <div className="grid gap-0 rounded-[24px] border border-gray-200/80 bg-white/70 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/60">
+                {overviewSpecItems.map((item, index) => (
+                  <div
+                    key={item.label}
+                    className={`grid gap-2 px-5 py-4 md:grid-cols-[140px_minmax(0,1fr)] md:items-center ${index > 0 ? 'border-t border-gray-200/80 dark:border-gray-800' : ''}`}
+                  >
+                    <dt className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</dt>
+                    <dd className="text-[15px] font-medium leading-6 text-gray-800 dark:text-gray-200">{item.value}</dd>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-3 rounded-[22px] border border-dashed border-gray-200/90 bg-white/45 px-5 py-4 md:grid-cols-2 dark:border-gray-800 dark:bg-gray-950/30">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">创建时间</div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{formatDate(shot.createdAt)}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">更新时间</div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{formatDate(shot.updatedAt)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200/80 bg-[#fcfbf7] p-6 dark:border-gray-800 dark:bg-[#14171b] lg:border-l lg:border-t-0 lg:p-7">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {statusCards.map((card) => (
+                  <div key={card.label} className="rounded-[22px] border border-gray-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.03)] dark:border-gray-800 dark:bg-gray-900">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${statusToneMap[card.label].dotClassName}`} />
+                          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{card.label}</div>
+                        </div>
+                        <div className={`mt-3 text-[24px] font-semibold tracking-[-0.04em] ${statusToneMap[card.label].valueClassName}`}>{card.value}</div>
+                      </div>
+                      <span className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusToneMap[card.label].pillClassName}`}>
+                        {statusToneMap[card.label].pillLabel}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">{card.hint}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </PageSection>
