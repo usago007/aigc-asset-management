@@ -505,7 +505,7 @@ export default function VideoCreationWorkspace({
         </div>
       )}
 
-      <ParamPanel title="补充设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
+      <ParamPanel title="高级设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">

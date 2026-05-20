@@ -79,16 +79,15 @@ function AssetThumb({
 
 export default function Assets() {
   const navigate = useNavigate()
-  const { assets, projects, shots, imageTasks, updateAsset, deleteAsset } = useAppStore()
+  const { assets, projects, shots, brands, customers, imageTasks, updateAsset, deleteAsset } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Asset | null>(null)
   const [editingItem, setEditingItem] = useState<Asset | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | Asset['type']>('all')
-  const [projectFilter, setProjectFilter] = useState('all')
-  const [shotFilter, setShotFilter] = useState('all')
-  const [sourceTypeFilter, setSourceTypeFilter] = useState<'all' | Asset['sourceType']>('all')
+  const [customerFilter, setCustomerFilter] = useState('all')
+  const [brandFilter, setBrandFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
@@ -112,9 +111,23 @@ export default function Assets() {
   const completedVideoTasks = useMemo(() => videoTasks.filter((task) => task.status === 'done'), [videoTasks])
   const selectedImageTask = useMemo(() => completedImageTasks.find((task) => task.id === formData.sourceTaskId), [completedImageTasks, formData.sourceTaskId])
   const selectedVideoTask = useMemo(() => completedVideoTasks.find((task) => task.id === formData.sourceTaskId), [completedVideoTasks, formData.sourceTaskId])
+  const filteredBrands = useMemo(
+    () => customerFilter === 'all' ? brands : brands.filter((brand) => brand.customerId === customerFilter),
+    [brands, customerFilter],
+  )
 
   const getProjectId = (asset: Asset) => asset.projectId || shots.find((shot) => shot.id === asset.shotId)?.projectId || ''
+  const getProject = (asset: Asset) => projects.find((project) => project.id === getProjectId(asset)) || null
   const getProjectName = (asset: Asset) => projects.find((project) => project.id === getProjectId(asset))?.projectName || '-'
+  const getBrand = (asset: Asset) => {
+    const project = getProject(asset)
+    return project ? brands.find((brand) => brand.id === project.brandId) || null : null
+  }
+  const getBrandName = (asset: Asset) => getBrand(asset)?.brandName || '-'
+  const getCustomerName = (asset: Asset) => {
+    const brand = getBrand(asset)
+    return brand ? customers.find((customer) => customer.id === brand.customerId)?.customerName || '-' : '-'
+  }
   const getShotName = (shotId?: string) => shotId ? shots.find((shot) => shot.id === shotId)?.shotName || '-' : '-'
   const getTaskSummary = (asset: Asset) => {
     if (!asset.sourceTaskId) return '-'
@@ -132,15 +145,16 @@ export default function Assets() {
   const filteredItems = useMemo(() => (
     assets.filter((asset) => {
       const matchType = typeFilter === 'all' || asset.type === typeFilter
-      const matchProject = projectFilter === 'all' || getProjectId(asset) === projectFilter
-      const matchShot = shotFilter === 'all' || asset.shotId === shotFilter
-      const matchSourceType = sourceTypeFilter === 'all' || asset.sourceType === sourceTypeFilter
+      const brand = getBrand(asset)
+      const matchCustomer = customerFilter === 'all' || brand?.customerId === customerFilter
+      const matchBrand = brandFilter === 'all' || brand?.id === brandFilter
       const matchSearch = matchesKeyword(searchQuery, [
         asset.assetName,
         assetTypeLabelMap[asset.type],
         sourceTypeLabelMap[asset.sourceType],
         getProjectName(asset),
-        getShotName(asset.shotId),
+        getBrandName(asset),
+        getCustomerName(asset),
         asset.promptId,
         asset.modelName,
         asset.modelVersion,
@@ -148,9 +162,9 @@ export default function Assets() {
         getTaskSummary(asset),
         asset.parentAssetIds,
       ])
-      return matchType && matchProject && matchShot && matchSourceType && matchSearch
+      return matchType && matchCustomer && matchBrand && matchSearch
     })
-  ), [assets, projects, shots, imageTasks, videoTasks, searchQuery, typeFilter, projectFilter, shotFilter, sourceTypeFilter])
+  ), [assets, searchQuery, typeFilter, customerFilter, brandFilter, brands, customers, projects, shots, imageTasks, videoTasks])
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
@@ -309,7 +323,7 @@ export default function Assets() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative max-w-sm flex-1">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <Input placeholder="搜索资产、项目、镜头、模型或文件地址..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
+            <Input placeholder="搜索资产、项目、品牌、客户、模型或文件地址..." className="pl-10" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
           </div>
           <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value as 'all' | Asset['type']); setCurrentPage(1) }}>
             <SelectTrigger className="w-[140px]"><SelectValue placeholder="全部类型" /></SelectTrigger>
@@ -320,27 +334,22 @@ export default function Assets() {
               <SelectItem value="Script">脚本</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={projectFilter} onValueChange={(value) => { setProjectFilter(value); setCurrentPage(1) }}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部项目" /></SelectTrigger>
+          <Select value={customerFilter} onValueChange={(value) => {
+            setCustomerFilter(value)
+            setBrandFilter((current) => value === 'all' || current === 'all' || brands.some((brand) => brand.id === current && brand.customerId === value) ? current : 'all')
+            setCurrentPage(1)
+          }}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部客户" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部项目</SelectItem>
-              {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.projectName}</SelectItem>)}
+              <SelectItem value="all">全部客户</SelectItem>
+              {customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.customerName}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={shotFilter} onValueChange={(value) => { setShotFilter(value); setCurrentPage(1) }}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部镜头" /></SelectTrigger>
+          <Select value={brandFilter} onValueChange={(value) => { setBrandFilter(value); setCurrentPage(1) }}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="全部品牌" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部镜头</SelectItem>
-              {shots.map((shot) => <SelectItem key={shot.id} value={shot.id}>{shot.shotName}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={sourceTypeFilter} onValueChange={(value) => { setSourceTypeFilter(value as 'all' | Asset['sourceType']); setCurrentPage(1) }}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部来源" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部来源</SelectItem>
-              <SelectItem value="image-task">图片任务</SelectItem>
-              <SelectItem value="video-task">视频任务</SelectItem>
-              <SelectItem value="script">脚本录入</SelectItem>
+              <SelectItem value="all">全部品牌</SelectItem>
+              {filteredBrands.map((brand) => <SelectItem key={brand.id} value={brand.id}>{brand.brandName}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -349,15 +358,16 @@ export default function Assets() {
           <span>共 {filteredItems.length} 条资产记录</span>
         </div>
 
-        <div className="card overflow-x-auto p-0 shadow-none">
-          <table className="w-full">
+        <div className="card overflow-hidden p-0 shadow-none">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800">
                 <th className="table-header">缩略图</th>
                 <th className="table-header">资产名称</th>
                 <th className="table-header">类型</th>
                 <th className="table-header">所属项目</th>
-                <th className="table-header">所属镜头</th>
+                <th className="table-header">品牌</th>
+                <th className="table-header">客户</th>
                 <th className="table-header">AI模型</th>
                 <th className="table-header">创建时间</th>
                 <th className="table-header text-right">操作</th>
@@ -373,29 +383,27 @@ export default function Assets() {
 
                 return (
                   <tr key={asset.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
-                    <td className="table-cell">
+                    <td className="table-cell w-[88px] align-top">
                       <AssetThumb asset={asset} thumbnail={thumbnail} detailPath={detailPath} onOpen={openDetail} />
                     </td>
-                    <td className="table-cell">
+                    <td className="table-cell !whitespace-normal align-top">
                       <div className="space-y-1">
                         {detailPath ? (
                           <button className="text-left font-medium text-gray-900 transition-colors hover:text-black dark:text-gray-100" onClick={openDetail}>
                             {asset.assetName}
                           </button>
                         ) : <div className="font-medium text-gray-900 dark:text-gray-100">{asset.assetName}</div>}
-                        <div className="helper-text max-w-[280px] truncate">
-                          {sourceTypeLabelMap[asset.sourceType]} · {getTaskSummary(asset)}
-                        </div>
                       </div>
                     </td>
-                    <td className="table-cell"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[asset.type]}</Badge></td>
-                    <td className="table-cell">{getProjectName(asset)}</td>
-                    <td className="table-cell">{getShotName(asset.shotId)}</td>
-                    <td className="table-cell">
-                      <div className="max-w-[220px] truncate text-gray-600 dark:text-gray-400">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '-'}</div>
+                    <td className="table-cell align-top"><Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>{assetTypeLabelMap[asset.type]}</Badge></td>
+                    <td className="table-cell !whitespace-normal align-top break-words">{getProjectName(asset)}</td>
+                    <td className="table-cell !whitespace-normal align-top break-words">{getBrandName(asset)}</td>
+                    <td className="table-cell !whitespace-normal align-top break-words">{getCustomerName(asset)}</td>
+                    <td className="table-cell !whitespace-normal align-top">
+                      <div className="break-words text-gray-600 dark:text-gray-400">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '-'}</div>
                     </td>
-                    <td className="table-cell text-gray-500 dark:text-gray-400">{formatDate(asset.createdAt)}</td>
-                    <td className="table-cell">
+                    <td className="table-cell !whitespace-normal align-top text-gray-500 dark:text-gray-400">{formatDate(asset.createdAt)}</td>
+                    <td className="table-cell w-[132px] align-top">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setViewingItem(asset)} title="查看"><Eye size={14} className="text-gray-500 dark:text-gray-400" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleOpenModal(asset)} title="编辑"><Edit2 size={14} className="text-gray-500 dark:text-gray-400" /></Button>

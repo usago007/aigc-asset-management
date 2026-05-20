@@ -414,7 +414,7 @@ export default function ImageCreationWorkspace({
 
       <div className="surface-subtle space-y-5 p-5">
         <div>
-          <h3 className="panel-title text-gray-950 dark:text-gray-50">演示主控区</h3>
+          <h3 className="panel-title text-gray-950 dark:text-gray-50">核心设置</h3>
         </div>
 
         <div className="space-y-4">
@@ -507,7 +507,7 @@ export default function ImageCreationWorkspace({
         </div>
       </div>
 
-      <ParamPanel title="补充设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
+      <ParamPanel title="高级设置" sections={paramSections} defaultExpanded={contextMode === 'global'} />
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">
