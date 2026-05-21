@@ -1,6 +1,7 @@
 import { Image as ImageIcon, MoreHorizontal, Pencil, Play, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import FakeVideoFrame from '@/components/FakeVideoFrame'
 
 function formatChineseDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -213,13 +214,16 @@ function MediaCard({
     >
       {item.src ? (
         isVideo ? (
-          <video
+          <FakeVideoFrame
             src={item.src}
+            alt={item.alt}
+            aspectRatio={item.aspectRatio}
+            durationLabel={item.leftFooterTag}
             className={cn(
-              'h-full w-full object-cover',
+              'h-full w-full',
               variant === 'video-stream' && 'rounded-[16px]',
             )}
-            muted
+            showChrome={variant === 'video-stream'}
           />
         ) : (
           <img src={item.src} alt={item.alt} className="h-full w-full object-cover" loading="lazy" />
@@ -246,7 +250,7 @@ function MediaCard({
         </div>
       ) : null}
 
-      {item.leftFooterTag ? (
+      {item.leftFooterTag && !isVideo ? (
         <div className="absolute bottom-3 left-3 rounded-full bg-black/75 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm dark:bg-white/80 dark:text-gray-950">
           {item.leftFooterTag}
         </div>

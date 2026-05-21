@@ -16,16 +16,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Asset } from '@/types'
+import { DEMO_BEAUTY_IMAGES, DEMO_BEAUTY_VIDEO_POSTERS, isDemoMediaPath } from '@/utils/demoMedia'
 
-const ASSET_PLACEHOLDER_IMAGES = [
-  'https://picsum.photos/seed/asset1/100/100',
-  'https://picsum.photos/seed/asset2/100/100',
-  'https://picsum.photos/seed/asset3/100/100',
-  'https://picsum.photos/seed/asset4/100/100',
-  'https://picsum.photos/seed/asset5/100/100',
-]
+const ASSET_PLACEHOLDER_IMAGES = DEMO_BEAUTY_IMAGES.slice(0, 5)
 
-const VIDEO_PLACEHOLDER = 'https://picsum.photos/seed/video/100/100'
+const VIDEO_PLACEHOLDER = DEMO_BEAUTY_VIDEO_POSTERS[0]
 
 const assetTypeLabelMap: Record<Asset['type'], string> = {
   Image: '图片',
@@ -250,7 +245,12 @@ export default function Assets() {
 
   const getAssetThumbnail = (asset: Asset) => {
     if (asset.fileUrl) {
-      if (asset.fileUrl.startsWith('http') || asset.fileUrl.startsWith('data:') || asset.fileUrl.startsWith('blob:')) return asset.fileUrl
+      if (
+        asset.fileUrl.startsWith('http')
+        || asset.fileUrl.startsWith('data:')
+        || asset.fileUrl.startsWith('blob:')
+        || isDemoMediaPath(asset.fileUrl)
+      ) return asset.fileUrl
       if (asset.type === 'Video') return VIDEO_PLACEHOLDER
       if (asset.type === 'Image') {
         const hash = asset.id.split('').reduce((acc, current) => acc + current.charCodeAt(0), 0)

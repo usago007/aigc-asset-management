@@ -3,6 +3,7 @@ import { Play, Download, Eye, AlertCircle, RefreshCw, Zap } from 'lucide-react'
 import type { VideoGenerationTask } from '@/types/generation'
 import { formatDate } from '@/utils/date'
 import { Button } from '@/components/ui/button'
+import FakeVideoFrame from '@/components/FakeVideoFrame'
 
 interface TaskCardProps {
   task: VideoGenerationTask
@@ -40,7 +41,15 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
     <div className="page-section-tight space-y-4">
       {task.videoUrl && (
         <div className="media-tile" style={{ aspectRatio: task.aspectRatio?.replace(':', '/') || '16/9', maxHeight: '160px' }}>
-          <video src={task.videoUrl} className="w-full h-full object-contain" muted />
+          <FakeVideoFrame
+            src={task.videoUrl}
+            alt={task.prompt}
+            aspectRatio={task.aspectRatio}
+            durationLabel={task.frames === 241 ? '10 秒' : '5 秒'}
+            modeLabel={task.mode === 'text-to-video' ? '文生视频' : '图生视频'}
+            className="h-full w-full rounded-[22px]"
+            showChrome={false}
+          />
         </div>
       )}
 
@@ -101,7 +110,7 @@ export default function TaskCard({ task, onViewDetail, onDownload, onCancel, onR
         {task.status === 'done' && onDownload && (
           <Button onClick={onDownload} size="sm" className="gap-1">
             <Download size={14} />
-            下载
+            下载封面
           </Button>
         )}
 

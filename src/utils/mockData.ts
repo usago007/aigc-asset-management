@@ -6,17 +6,12 @@ import type {
 } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask, TaskQueueStatus, GenerationMode, ImageGenerationMode } from '@/types/generation'
 import { AVATAR_COLOR_PALETTE } from '@/constants/brandColors'
-
-function makeColorImage(seed: number): string {
-  const hue = (seed * 37) % 360
-  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="hsl(${hue},70%,60%)"/><stop offset="100%" stop-color="hsl(${(hue+60)%360},70%,40%)"/></linearGradient></defs><rect width="400" height="300" fill="url(%23g${seed})"/><text x="200" y="155" text-anchor="middle" fill="white" font-size="16" font-family="sans-serif">Asset Image ${seed}</text></svg>`)}`
-}
-
-function makeImageVariants(baseSeed: number, count: number): string[] {
-  return Array.from({ length: count }, (_, index) => makeColorImage(baseSeed + index))
-}
-
-const COSMETIC_IMAGES = Array.from({ length: 32 }, (_, i) => makeColorImage(i))
+import {
+  getDemoBeautyEndingImage,
+  getDemoBeautyImageBatch,
+  getDemoBeautyOpeningImage,
+  getDemoBeautyVideoPoster,
+} from '@/utils/demoMedia'
 
 const CUSTOMER_NAMES = [
   '华美集团', '星辰科技', '绿意生活', '美妆时代', '雅诗集团',
@@ -285,7 +280,6 @@ export function generateBrands(count: number = 35, customers: Customer[] = []): 
 
 const DEMO_PROJECT_COUNT = 12
 const SHOT_COUNT_PATTERN = [5, 6, 7]
-const TEST_VIDEO_URL = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
 
 interface DemoDataset {
   customers: Customer[]
@@ -411,8 +405,8 @@ function buildDemoDataset(): DemoDataset {
       const openingPrompt = `${basePrompt}，开场镜头，建立产品与人物关系，画面干净，主体明确。`
       const endingPrompt = `${basePrompt}，收尾镜头，品牌资产回收，光线更集中，氛围更完整。`
       const videoPrompt = `${basePrompt}，镜头推进自然，适合 8-10 秒品牌短视频，节奏克制。`
-      const openingImage = COSMETIC_IMAGES[(projectIndex * 7 + shotIndex * 2) % COSMETIC_IMAGES.length]
-      const endingImage = COSMETIC_IMAGES[(projectIndex * 7 + shotIndex * 2 + 1) % COSMETIC_IMAGES.length]
+      const openingImage = getDemoBeautyOpeningImage(projectIndex * 7 + shotIndex * 2)
+      const endingImage = getDemoBeautyEndingImage(projectIndex * 7 + shotIndex * 2 + 1)
 
       shots.push({
         ...demoEntity(shotId, shotCreatedAt, isoOffset(projectIndex * 3 + shotIndex + 2, 210)),
@@ -454,8 +448,8 @@ function buildDemoDataset(): DemoDataset {
       const videoTaskId = `video-task-${projectIndex + 1}-${shotIndex + 1}`
       const openingCount = (globalShotIndex % 4) + 1
       const endingCount = ((globalShotIndex + 2) % 4) + 1
-      const openingOutputs = makeImageVariants(globalShotIndex * 10 + 1, openingCount)
-      const endingOutputs = makeImageVariants(globalShotIndex * 10 + 101, endingCount)
+      const openingOutputs = getDemoBeautyImageBatch(globalShotIndex * 10 + 1, openingCount, 'product')
+      const endingOutputs = getDemoBeautyImageBatch(globalShotIndex * 10 + 101, endingCount, 'lifestyle')
       const openingKeyFrameIds = Array.from({ length: openingCount }, (_, index) =>
         index === 0 ? openingFrameId : `${openingFrameId}-variant-${index + 1}`,
       )
@@ -542,7 +536,7 @@ function buildDemoDataset(): DemoDataset {
         projectId,
         status: 'done',
         progress: 100,
-        videoUrl: TEST_VIDEO_URL,
+        videoUrl: getDemoBeautyVideoPoster(globalShotIndex),
         aigcMetaTagged: true,
         timeElapsed: `${38 + shotIndex * 3}s`,
         completedAt: isoOffset(projectIndex * 3 + shotIndex, 320),
@@ -602,7 +596,7 @@ function buildDemoDataset(): DemoDataset {
           modelName: 'Seedance',
           modelVersion: '1.5 Pro',
           parentAssetIds: [],
-          fileUrl: TEST_VIDEO_URL,
+          fileUrl: getDemoBeautyVideoPoster(globalShotIndex),
         },
       )
     }

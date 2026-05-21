@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Clapperboard, Download, FolderOpen, Image, RefreshCw, Video } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Clapperboard, Download, FolderOpen, Image, RefreshCw } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
+import FakeVideoFrame from '@/components/FakeVideoFrame'
+import { getMediaDownloadName } from '@/utils/demoMedia'
 import {
   detailBackButtonClass,
   detailHeaderClass,
@@ -65,7 +67,7 @@ export default function TaskDetail() {
     if (!task.videoUrl) return
     const anchor = document.createElement('a')
     anchor.href = task.videoUrl
-    anchor.download = `video_${task.taskId}.mp4`
+    anchor.download = getMediaDownloadName(task.videoUrl, `video-poster_${task.taskId || task.id}`)
     anchor.click()
   }
 
@@ -95,7 +97,7 @@ export default function TaskDetail() {
             </Button>
             <Button className="gap-2" onClick={handleDownload} disabled={!task.videoUrl}>
               <Download size={14} />
-              下载结果
+              下载封面
             </Button>
           </div>
         </section>
@@ -104,7 +106,14 @@ export default function TaskDetail() {
           <div className="space-y-4 lg:col-span-3">
             <div className={detailMediaShellClass}>
               {task.status === 'done' && task.videoUrl ? (
-                <video src={task.videoUrl} controls preload="metadata" className="aspect-video w-full bg-black object-contain" />
+                <FakeVideoFrame
+                  src={task.videoUrl}
+                  alt={task.prompt}
+                  aspectRatio={task.aspectRatio}
+                  modeLabel={modeLabel}
+                  durationLabel={task.frames === 241 ? '10 秒' : '5 秒'}
+                  className="w-full rounded-[24px]"
+                />
               ) : task.status === 'failed' ? (
                 <div className={`${detailMediaStageClass} flex-col gap-3 text-center`}>
                   <Badge variant="destructive">生成失败</Badge>

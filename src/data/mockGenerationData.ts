@@ -1,5 +1,6 @@
 import type { VideoGenerationTask } from '@/types/generation';
 import { generateUUID } from '@/utils/uuid';
+import { getDemoBeautyPosterFromKey } from '@/utils/demoMedia';
 
 const now = Date.now();
 
@@ -14,7 +15,7 @@ export const mockGenerationTasks: VideoGenerationTask[] = [
     seed: 123456789,
     frames: 121,
     aspectRatio: '16:9',
-    videoUrl: '',
+    videoUrl: getDemoBeautyPosterFromKey('mock-generation-task-1'),
     status: 'done',
     aigcMetaTagged: true,
     timeElapsed: '45.2s',

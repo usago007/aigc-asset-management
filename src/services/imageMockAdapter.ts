@@ -1,4 +1,5 @@
 import type { ImageGenerationMode, ImageSubmitTaskParams, ImageSubmitTaskResponse, ImageTaskResultResponse } from '@/types/generation';
+import { getDemoBeautyImageBatchFromKey } from '@/utils/demoMedia';
 
 interface MockImageTask {
   status: string;
@@ -11,15 +12,6 @@ interface MockImageTask {
 }
 
 const mockImageStore = new Map<string, MockImageTask>();
-
-const MOCK_IMAGE_URLS = [
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(200,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 1</text></svg>'),
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(280,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 2</text></svg>'),
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(120,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 3</text></svg>'),
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(40,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 4</text></svg>'),
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(340,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 5</text></svg>'),
-  'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="hsl(180,70%,60%)"/><text x="512" y="520" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">AI Generated 6</text></svg>'),
-];
 
 export function generateMockImageTaskId(): string {
   return '7' + Math.random().toString().slice(2, 19);
@@ -107,7 +99,7 @@ export async function mockImageQueryTaskResult(taskId: string): Promise<ImageTas
   }
 
   const count = task.outputCount;
-  const urls = MOCK_IMAGE_URLS.slice(0, count);
+  const urls = getDemoBeautyImageBatchFromKey(taskId, count, 'mixed');
 
   return {
     code: 10000,

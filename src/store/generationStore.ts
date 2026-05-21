@@ -6,6 +6,7 @@ import { showToast } from '@/utils/toast';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockSubmitTask } from '@/services/mockAdapter';
 import { MOCK_VIDEO_TASKS } from '@/utils/mockData';
+import { getDemoBeautyPosterFromKey } from '@/utils/demoMedia';
 
 const _videoTasks = MOCK_VIDEO_TASKS;
 
@@ -103,10 +104,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           get().updateTask(tempId, { status: mappedStatus });
         },
         (result) => {
+          const data = result.data as { video_url?: string };
           const completedTime = new Date().toISOString();
           get().updateTask(tempId, {
             status: 'done',
-            videoUrl: '',
+            videoUrl: data.video_url || getDemoBeautyPosterFromKey(`${tempId}:${params.prompt}`),
             aigcMetaTagged: true,
             progress: 100,
             completedAt: completedTime,
@@ -185,10 +187,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           get().updateTask(taskId, { status: mappedStatus });
         },
         (result) => {
+          const data = result.data as { video_url?: string };
           const completedTime = new Date().toISOString();
           get().updateTask(taskId, {
             status: 'done',
-            videoUrl: '',
+            videoUrl: data.video_url || getDemoBeautyPosterFromKey(`${taskId}:${task.prompt}`),
             aigcMetaTagged: true,
             progress: 100,
             completedAt: completedTime,

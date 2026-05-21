@@ -9,6 +9,7 @@ import {
   MOCK_VIDEO_TASKS,
   generateMembers,
 } from '@/utils/mockData';
+import { getDemoBeautyImageBatchFromKey } from '@/utils/demoMedia';
 import { IMAGE_MODEL_NAMES, IMAGE_MODEL_VERSIONS, getImageReqKeyForMode, getImagePollInterval, getImageExpiryMs } from '@/services/imageGeneration';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockImageSubmitTask } from '@/services/imageMockAdapter';
@@ -782,12 +783,15 @@ export const useAppStore = create<AppState>((set, get) => ({
           get().updateImageTask(tempId, { status: mappedStatus });
         },
         (result) => {
-          const imageUrls = [
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(200,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image A</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(280,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image B</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(120,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image C</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(25,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image D</text></svg>'),
-          ].slice(0, params.forceSingle ? 1 : Math.min(params.numImages ?? 1, 4));
+          const data = result.data as { image_urls?: string[] };
+          const desiredCount = params.forceSingle ? 1 : Math.min(params.numImages ?? 1, 4);
+          const imageUrls = data.image_urls?.length
+            ? data.image_urls.slice(0, desiredCount)
+            : getDemoBeautyImageBatchFromKey(
+                `${tempId}:${params.prompt}:${params.frameType || 'Opening'}`,
+                desiredCount,
+                params.frameType === 'Ending' ? 'lifestyle' : 'product',
+              );
 
           const kfIds = get().createKeyFramesFromImages(
             imageUrls,
@@ -884,12 +888,15 @@ export const useAppStore = create<AppState>((set, get) => ({
           get().updateImageTask(taskId, { status: mappedStatus });
         },
         (result) => {
-          const imageUrls = [
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(40,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image X</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(340,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image Y</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(210,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image Z</text></svg>'),
-            'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048"><rect width="2048" height="2048" fill="hsl(150,70%,60%)"/><text x="1024" y="1030" text-anchor="middle" fill="white" font-size="40" font-family="sans-serif">Image W</text></svg>'),
-          ].slice(0, task.forceSingle ? 1 : Math.min(task.numImages ?? 1, 4));
+          const data = result.data as { image_urls?: string[] };
+          const desiredCount = task.forceSingle ? 1 : Math.min(task.numImages ?? 1, 4);
+          const imageUrls = data.image_urls?.length
+            ? data.image_urls.slice(0, desiredCount)
+            : getDemoBeautyImageBatchFromKey(
+                `${taskId}:${task.prompt}:${task.frameType || 'Opening'}`,
+                desiredCount,
+                task.frameType === 'Ending' ? 'lifestyle' : 'product',
+              );
 
           const kfIds = get().createKeyFramesFromImages(
             imageUrls,

@@ -1,11 +1,13 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Clapperboard, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Clapperboard, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { useAppStore } from '@/store/appStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
+import FakeVideoFrame from '@/components/FakeVideoFrame'
+import { getMediaDownloadName } from '@/utils/demoMedia'
 import {
   detailActionTileClass,
   detailBackButtonClass,
@@ -68,12 +70,6 @@ export default function VideoDetail() {
   const task = useMemo(() => tasks.find((item) => item.id === id), [tasks, id])
   const [showPromptExpanded, setShowPromptExpanded] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playbackSpeed, setPlaybackSpeed] = useState(1)
-  const [progress, setProgress] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
   const navState = location.state as { returnTo?: string; source?: string } | null
 
   const handleBack = useCallback(() => {
@@ -92,7 +88,7 @@ export default function VideoDetail() {
     if (!task?.videoUrl) return
     const anchor = document.createElement('a')
     anchor.href = task.videoUrl
-    anchor.download = `video_${task.taskId}.mp4`
+    anchor.download = getMediaDownloadName(task.videoUrl, `video-poster_${task.taskId || task.id}`)
     anchor.click()
   }, [task])
 
@@ -135,19 +131,13 @@ export default function VideoDetail() {
     if (task.status === 'done' && task.videoUrl) {
       return (
         <div className={videoDetailStageClass}>
-          <video
-            ref={videoRef}
+          <FakeVideoFrame
             src={task.videoUrl}
-            controls
-            muted={isMuted}
-            preload="metadata"
-            className="block h-auto max-h-full w-auto max-w-full rounded-[24px] bg-black object-contain shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
-            onTimeUpdate={(event) => {
-              setProgress(event.currentTarget.currentTime)
-              setDuration(event.currentTarget.duration || 0)
-            }}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
+            alt={task.prompt}
+            aspectRatio={task.aspectRatio}
+            modeLabel={modeLabel}
+            durationLabel={frameLabel}
+            className="block h-auto max-h-full w-full max-w-full rounded-[24px] shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
           />
         </div>
       )
@@ -251,51 +241,10 @@ export default function VideoDetail() {
 
             {task.status === 'done' && task.videoUrl ? (
               <div className={detailPanelClass}>
-                <div className={`${detailPanelTitleClass} mb-3`}>播放控制</div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    className={detailIconButtonClass}
-                    onClick={() => {
-                      if (!videoRef.current) return
-                      if (isPlaying) videoRef.current.pause()
-                      else videoRef.current.play()
-                    }}
-                  >
-                    <Film size={16} />
-                  </button>
-                  <button className={detailIconButtonClass} onClick={() => setIsMuted(!isMuted)}>
-                    {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                  </button>
-                  <select
-                    value={playbackSpeed}
-                    onChange={(event) => {
-                      const next = Number(event.target.value)
-                      setPlaybackSpeed(next)
-                      if (videoRef.current) videoRef.current.playbackRate = next
-                    }}
-                    className="input-field h-10 px-3"
-                  >
-                    {[0.5, 1, 1.5, 2].map((value) => (
-                      <option key={value} value={value}>{value}x</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mt-4 space-y-2">
-                  <input
-                    type="range"
-                    min={0}
-                    max={duration || 0}
-                    value={progress}
-                    onChange={(event) => {
-                      const next = Number(event.target.value)
-                      if (videoRef.current) videoRef.current.currentTime = next
-                      setProgress(next)
-                    }}
-                    className="w-full accent-gray-950 dark:accent-white"
-                  />
-                  <div className="helper-text">
-                    {Math.floor(progress)}s / {Math.floor(duration)}s
-                  </div>
+                <div className={`${detailPanelTitleClass} mb-3`}>演示预览</div>
+                <div className="helper-text space-y-2">
+                  <div>当前页展示的是本地静态封面，用于演示视频位的真实观感。</div>
+                  <div>画面、比例、模式标签和播放器外观均已保留，避免出现空黑框或失效链接。</div>
                 </div>
               </div>
             ) : null}

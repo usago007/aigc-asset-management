@@ -6,6 +6,7 @@ import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
 import { showToast } from '@/utils/toast'
 import MediaResultCard from '@/components/MediaResultCard'
+import FakeVideoFrame from '@/components/FakeVideoFrame'
 import Modal from '@/components/Modal'
 import ImageCreationWorkspace from '@/components/ImageCreationWorkspace'
 import VideoCreationWorkspace from '@/components/VideoCreationWorkspace'
@@ -126,11 +127,21 @@ const ShotVideoCard = ({
   }
 
   return (
-    <MediaResultCard
+      <MediaResultCard
       title="最终视频"
       subtitle={lookup.task.mode}
       mediaClassName="h-48 bg-black"
-      media={<video src={lookup.previewUrl} controls preload="metadata" className="h-full w-full bg-black object-cover" />}
+      media={(
+        <FakeVideoFrame
+          src={lookup.previewUrl}
+          alt={lookup.task.prompt}
+          aspectRatio={lookup.task.aspectRatio}
+          durationLabel={lookup.task.frames === 241 ? '10 秒' : '5 秒'}
+          modeLabel={lookup.task.mode}
+          className="h-full w-full"
+          showChrome={false}
+        />
+      )}
       rows={[
         { label: '提示词', value: summarizeText(lookup.task.prompt, 120), multiline: true },
         { label: '模型', value: lookup.task.reqKey },
