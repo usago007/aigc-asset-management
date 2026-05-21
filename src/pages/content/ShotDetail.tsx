@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit2, FolderKanban, ImageIcon, Sparkles, Video, Clapperboard } from 'lucide-react'
+import { ArrowLeft, Edit2, FolderKanban, ImageIcon, Video, Clapperboard } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { formatDate } from '@/utils/date'
@@ -148,16 +148,6 @@ const ShotVideoCard = ({
   )
 }
 
-type ProcessRecord = {
-  id: string
-  title: string
-  category: string
-  model: string
-  time: string
-  prompt: string
-  extra?: string
-}
-
 export default function ShotDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -167,7 +157,6 @@ export default function ShotDetail() {
     brands,
     customers,
     keyFrames,
-    assets,
     imageTasks,
     updateShot,
   } = useAppStore()
@@ -188,7 +177,6 @@ export default function ShotDetail() {
   const brand = project ? brands.find((item) => item.id === project.brandId) || null : null
   const customer = brand ? customers.find((item) => item.id === brand.customerId) || null : null
   const shotFrames = useMemo(() => keyFrames.filter((frame) => frame.parentShotId === shot?.id), [keyFrames, shot?.id])
-  const shotAssets = useMemo(() => assets.filter((asset) => asset.shotId === shot?.id), [assets, shot?.id])
   const shotImageTasks = useMemo(() => imageTasks.filter((task) => task.shotId === shot?.id), [imageTasks, shot?.id])
   const shotVideoTasks = useMemo(() => videoTasks.filter((task) => task.shotId === shot?.id), [videoTasks, shot?.id])
 
@@ -245,54 +233,6 @@ export default function ShotDetail() {
       isSelected: Boolean(selectedVideoTask && displayTask?.id === selectedVideoTask.id),
     }
   }
-
-  const processRecords = useMemo<ProcessRecord[]>(() => {
-    if (!shot) return []
-
-    const shotRecord: ProcessRecord = {
-      id: `shot-${shot.id}`,
-      title: shot.shotName,
-      category: '镜头模型',
-      model: `${shot.modelName || '-'} ${shot.modelVersion || ''}`.trim(),
-      time: shot.updatedAt || shot.createdAt,
-      prompt: shot.promptId ? `镜头提示词标识：${shot.promptId}` : '未绑定镜头提示词标识',
-      extra: '镜头基础记录',
-    }
-
-    const frameRecords = shotFrames.map((frame) => ({
-      id: `frame-${frame.id}`,
-      title: frame.name,
-      category: frame.type === 'Opening' ? '首图记录' : '尾图记录',
-      model: `${frame.modelName} ${frame.modelVersion}`.trim(),
-      time: frame.updatedAt || frame.createdAt,
-      prompt: frame.promptText,
-      extra: frame.status,
-    }))
-
-    const imageRecords = shotImageTasks.map((task) => ({
-      id: `image-task-${task.id}`,
-      title: task.prompt || '图片生成任务',
-      category: '图片任务',
-      model: task.reqKey,
-      time: task.completedAt || task.updatedAt || task.createdAt,
-      prompt: task.prompt,
-      extra: `结果 ${task.outputImageUrls.length} 张${task.frameType ? ` / ${task.frameType === 'Opening' ? '首图' : '尾图'}` : ''}`,
-    }))
-
-    const videoRecords = shotVideoTasks.map((task) => ({
-      id: `video-task-${task.id}`,
-      title: task.prompt || '视频生成任务',
-      category: '视频任务',
-      model: task.reqKey,
-      time: task.completedAt || task.updatedAt || task.createdAt,
-      prompt: task.prompt,
-      extra: `${task.mode} / ${task.status}`,
-    }))
-
-    return [shotRecord, ...frameRecords, ...imageRecords, ...videoRecords].sort(
-      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
-    )
-  }, [shot, shotFrames, shotImageTasks, shotVideoTasks])
 
   const openShotModal = (currentShot: Shot) => {
     const currentProject = projects.find((item) => item.id === currentShot.projectId) || null
@@ -387,14 +327,6 @@ export default function ShotDetail() {
         ? 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/40 dark:text-violet-300'
         : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
     },
-    '关联资产': {
-      dotClassName: shotAssets.length > 0 ? 'bg-slate-500' : 'bg-gray-300 dark:bg-gray-600',
-      valueClassName: shotAssets.length > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400',
-      pillLabel: shotAssets.length > 0 ? '已沉淀' : '未沉淀',
-      pillClassName: shotAssets.length > 0
-        ? 'border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
-        : 'border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400',
-    },
   }
   const statusCards = [
     { label: '首尾帧绑定', value: hasFrames ? `${[shot.firstFrameId && '首图', shot.lastFrameId && '尾图'].filter(Boolean).join(' / ')}` : '未绑定', hint: `共 ${shotFrames.length} 条关键帧记录` },
@@ -408,7 +340,6 @@ export default function ShotDetail() {
           : '尚未生成视频',
     },
     { label: '图片结果', value: latestImageTask ? `${latestImageTask.outputImageUrls.length} 张` : '暂无', hint: latestImageTask ? formatDate(latestImageTask.completedAt || latestImageTask.updatedAt || latestImageTask.createdAt) : '尚未生成图片' },
-    { label: '关联资产', value: `${shotAssets.length}`, hint: shotAssets.length > 0 ? `${shotAssets.filter((asset) => asset.type === 'Video').length} 个视频 / ${shotAssets.filter((asset) => asset.type === 'Image').length} 张图片` : '还未沉淀为资产' },
   ]
 
   return (
@@ -574,97 +505,6 @@ export default function ShotDetail() {
           />
         )}
       </PageSection>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <PageSection className="space-y-6">
-          <div>
-            <h2 className="section-title">关联资产</h2>
-            <p className="section-subtitle">沉淀当前镜头已经产出的图片、视频和脚本资产。</p>
-          </div>
-
-          {shotAssets.length === 0 ? (
-            <div className="body-muted rounded-2xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-800">
-              当前镜头还没有关联资产。
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {shotAssets.map((asset) => (
-                <div key={asset.id} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={asset.type === 'Image' ? 'info' : asset.type === 'Video' ? 'success' : 'warning'}>
-                          {asset.type === 'Image' ? '图片' : asset.type === 'Video' ? '视频' : '脚本'}
-                        </Badge>
-                        <Badge variant="outline">{asset.sourceType}</Badge>
-                      </div>
-                      <h3 className="card-title">{asset.assetName}</h3>
-                      <div className="helper-text">{[asset.modelName, asset.modelVersion].filter(Boolean).join(' ') || '未记录模型信息'}</div>
-                      <div className="helper-text">文件：<span className="break-all">{asset.fileUrl || '未记录'}</span></div>
-                    </div>
-                    {asset.sourceTaskId && asset.type === 'Image' && asset.sourceResultIndex != null ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => navigate(`/content/image-detail/${asset.sourceTaskId}/${asset.sourceResultIndex}`, { state: shotDetailNavState ?? undefined })}
-                      >
-                        <ImageIcon size={14} />
-                        查看结果
-                      </Button>
-                    ) : asset.sourceTaskId && asset.type === 'Video' ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => navigate(`/content/video-detail/${asset.sourceTaskId}`, { state: shotDetailNavState ?? undefined })}
-                      >
-                        <Video size={14} />
-                        查看结果
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </PageSection>
-
-        <PageSection className="space-y-6">
-          <div>
-            <h2 className="section-title">过程记录 / 模型记录</h2>
-            <p className="section-subtitle">汇总当前镜头使用过的模型、关键帧记录以及图片/视频生成任务。</p>
-          </div>
-
-          {processRecords.length === 0 ? (
-            <div className="body-muted rounded-2xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-800">
-              当前镜头还没有可追溯的模型或生成过程记录。
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {processRecords.map((record) => (
-                <div key={record.id} className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <Badge variant="outline">{record.category}</Badge>
-                      <h3 className="card-title">{summarizeText(record.title, 80)}</h3>
-                      <p className="body-muted">{summarizeText(record.prompt, 180)}</p>
-                    </div>
-                    <div className="helper-text min-w-[220px] space-y-2">
-                      <div className="panel-value flex items-center gap-2">
-                        <Sparkles size={14} />
-                        <span>{record.model || '-'}</span>
-                      </div>
-                      <div>时间：{formatDate(record.time)}</div>
-                      {record.extra && <div>备注：{record.extra}</div>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </PageSection>
-      </section>
 
       <Modal title="编辑镜头" isOpen={shotModalOpen} onClose={() => setShotModalOpen(false)} onSave={saveShot}>
         <div className="space-y-5">

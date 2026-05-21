@@ -54,8 +54,18 @@ type ProcessRecord = {
   model: string
   time: string
   prompt: string
+  shotId?: string
   shotName?: string
   extra?: string
+  actionLabel?: string
+  actionPath?: string
+}
+
+type ProjectTraceSummaryItem = {
+  id: string
+  label: string
+  value: string
+  hint: string
 }
 
 type FrameLookup = {
@@ -346,6 +356,23 @@ export default function ProjectDetail() {
     })[0] || null
   }, [latestVideoTaskByShotId])
 
+  const boundFrameShotCount = useMemo(
+    () => projectShots.filter((shot) => Boolean(shot.firstFrameId || shot.lastFrameId)).length,
+    [projectShots],
+  )
+  const imageReadyShotCount = useMemo(
+    () => new Set(relatedImageTasks.filter((task) => task.outputImageUrls.length > 0 && task.shotId).map((task) => task.shotId as string)).size,
+    [relatedImageTasks],
+  )
+  const videoReadyShotCount = useMemo(
+    () => new Set(relatedVideoTasks.filter((task) => task.status === 'done' && task.videoUrl && task.shotId).map((task) => task.shotId as string)).size,
+    [relatedVideoTasks],
+  )
+  const selectedVersionCount = useMemo(
+    () => relatedGenerationVersions.filter((version) => version.isSelected).length,
+    [relatedGenerationVersions],
+  )
+
   const processRecords = useMemo<ProcessRecord[]>(() => {
     const shotRecords: ProcessRecord[] = filledSlotItems.map(({ slot, shot }) => ({
       id: `shot-${shot!.id}`,
@@ -354,8 +381,11 @@ export default function ProjectDetail() {
       model: `${shot!.modelName || '-'} ${shot!.modelVersion || ''}`.trim(),
       time: shot!.updatedAt || shot!.createdAt,
       prompt: shot!.promptId ? `镜头提示词标识：${shot!.promptId}` : '未绑定镜头提示词标识',
+      shotId: shot!.id,
       shotName: shot!.shotName,
       extra: `排序位 ${slot.position}`,
+      actionLabel: '查看镜头',
+      actionPath: `/content/shots/${shot!.id}`,
     }))
 
     const frameRecords: ProcessRecord[] = projectKeyFrames.map((frame) => {
@@ -367,12 +397,33 @@ export default function ProjectDetail() {
         model: `${frame.modelName} ${frame.modelVersion}`.trim(),
         time: frame.updatedAt || frame.createdAt,
         prompt: frame.promptText,
+        shotId: shot?.id,
         shotName: shot?.shotName,
         extra: frame.status,
+        actionLabel: shot ? '查看镜头' : undefined,
+        actionPath: shot ? `/content/shots/${shot.id}` : undefined,
       }
     })
 
-    const versionRecords: ProcessRecord[] = relatedGenerationVersions.map((version: GenerationVersion) => {
+    const versionCandidateMap = new Map<string, GenerationVersion>()
+    relatedGenerationVersions.forEach((version) => {
+      const current = versionCandidateMap.get(version.keyFrameId)
+      if (!current) {
+        versionCandidateMap.set(version.keyFrameId, version)
+        return
+      }
+      if (version.isSelected && !current.isSelected) {
+        versionCandidateMap.set(version.keyFrameId, version)
+        return
+      }
+      const currentTime = new Date(current.generatedAt || current.createdAt).getTime()
+      const nextTime = new Date(version.generatedAt || version.createdAt).getTime()
+      if (nextTime > currentTime) {
+        versionCandidateMap.set(version.keyFrameId, version)
+      }
+    })
+
+    const versionRecords: ProcessRecord[] = [...versionCandidateMap.values()].map((version: GenerationVersion) => {
       const frame = keyFrameById.get(version.keyFrameId)
       const shot = frame ? shotById.get(frame.parentShotId) : null
       return {
@@ -382,12 +433,17 @@ export default function ProjectDetail() {
         model: `${version.modelName} ${version.modelVersion}`.trim(),
         time: version.generatedAt || version.createdAt,
         prompt: frame?.promptText || '未找到对应提示词',
+        shotId: shot?.id,
         shotName: shot?.shotName,
         extra: version.isSelected ? '当前选中版本' : version.status,
+        actionLabel: shot ? '查看镜头' : undefined,
+        actionPath: shot ? `/content/shots/${shot.id}` : undefined,
       }
     })
 
-    const imageTaskRecords: ProcessRecord[] = relatedImageTasks.map((task: ImageGenerationTask) => {
+    const imageTaskRecords: ProcessRecord[] = relatedImageTasks
+      .filter((task: ImageGenerationTask) => task.outputImageUrls.length > 0 || Boolean(task.completedAt))
+      .map((task: ImageGenerationTask) => {
       const shot = task.shotId ? shotById.get(task.shotId) : null
       return {
         id: `image-task-${task.id}`,
@@ -396,12 +452,17 @@ export default function ProjectDetail() {
         model: task.reqKey,
         time: task.completedAt || task.updatedAt || task.createdAt,
         prompt: task.prompt,
+        shotId: shot?.id,
         shotName: shot?.shotName,
         extra: `结果 ${task.outputImageUrls.length} 张${task.frameType ? ` / ${task.frameType === 'Opening' ? '首图' : '尾图'}` : ''}`,
+        actionLabel: task.outputImageUrls.length > 0 ? '查看图片' : shot ? '查看镜头' : undefined,
+        actionPath: task.outputImageUrls.length > 0 ? `/content/image-detail/${task.id}/0` : shot ? `/content/shots/${shot.id}` : undefined,
       }
     })
 
-    const videoTaskRecords: ProcessRecord[] = relatedVideoTasks.map((task: VideoGenerationTask) => {
+    const videoTaskRecords: ProcessRecord[] = relatedVideoTasks
+      .filter((task: VideoGenerationTask) => (task.status === 'done' && Boolean(task.videoUrl)) || Boolean(task.completedAt))
+      .map((task: VideoGenerationTask) => {
       const shot = task.shotId ? shotById.get(task.shotId) : null
       return {
         id: `video-task-${task.id}`,
@@ -410,8 +471,11 @@ export default function ProjectDetail() {
         model: task.reqKey,
         time: task.completedAt || task.updatedAt || task.createdAt,
         prompt: task.prompt,
+        shotId: shot?.id,
         shotName: shot?.shotName,
         extra: `${task.mode} / ${task.status}`,
+        actionLabel: task.videoUrl ? '查看视频' : shot ? '查看镜头' : undefined,
+        actionPath: task.videoUrl ? `/content/video-detail/${task.id}` : shot ? `/content/shots/${shot.id}` : undefined,
       }
     })
 
@@ -419,6 +483,43 @@ export default function ProjectDetail() {
       (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
     )
   }, [filledSlotItems, projectKeyFrames, relatedGenerationVersions, relatedImageTasks, relatedVideoTasks, keyFrameById, shotById])
+
+  const recentActivities = useMemo(
+    () => processRecords.slice(0, 5),
+    [processRecords],
+  )
+  const traceSummaryItems = useMemo<ProjectTraceSummaryItem[]>(() => [
+    {
+      id: 'shot-coverage',
+      label: '镜头位覆盖',
+      value: `${filledSlotItems.length}/${slotItems.length || 0}`,
+      hint: slotItems.length > 0 ? `已关联 ${filledSlotItems.length} 个镜头位` : '当前项目还没有镜头位',
+    },
+    {
+      id: 'frame-binding',
+      label: '首尾帧绑定',
+      value: `${boundFrameShotCount}`,
+      hint: projectShots.length > 0 ? `${projectShots.length} 个镜头中已有 ${boundFrameShotCount} 个镜头绑定首图或尾图` : '当前项目还没有镜头',
+    },
+    {
+      id: 'image-ready',
+      label: '图片结果',
+      value: `${imageReadyShotCount}`,
+      hint: relatedImageTasks.length > 0 ? `共 ${relatedImageTasks.length} 个图片任务，覆盖 ${imageReadyShotCount} 个镜头` : '当前项目还没有图片结果',
+    },
+    {
+      id: 'video-ready',
+      label: '视频结果',
+      value: `${videoReadyShotCount}`,
+      hint: relatedVideoTasks.length > 0 ? `共 ${relatedVideoTasks.length} 个视频任务，已有 ${videoReadyShotCount} 个镜头产出视频` : '当前项目还没有视频结果',
+    },
+    {
+      id: 'version-selected',
+      label: '当前版本',
+      value: `${selectedVersionCount}`,
+      hint: relatedGenerationVersions.length > 0 ? `共 ${relatedGenerationVersions.length} 条关键帧版本记录` : '当前项目还没有版本记录',
+    },
+  ], [boundFrameShotCount, filledSlotItems.length, imageReadyShotCount, projectShots.length, relatedGenerationVersions.length, relatedImageTasks.length, relatedVideoTasks.length, selectedVersionCount, slotItems.length, videoReadyShotCount])
 
   const openBriefModal = (brief?: Brief) => {
     if (brief) {
@@ -776,40 +877,65 @@ export default function ProjectDetail() {
 
       <PageSection className="space-y-6">
         <div>
-          <h2 className="section-title">过程记录 / 模型记录</h2>
-          <p className="section-subtitle">汇总当前项目使用过的镜头模型、关键帧模型、版本记录以及图片/视频生成任务。</p>
+          <h2 className="section-title">项目追溯摘要</h2>
         </div>
 
-        {processRecords.length === 0 ? (
-          <div className="empty-state rounded-xl border-0 bg-transparent py-12">
-            当前项目还没有可追溯的模型或生成过程记录。
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {traceSummaryItems.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+              <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</div>
+              <div className="mt-3 text-[28px] font-semibold tracking-[-0.04em] text-gray-950 dark:text-gray-50">{item.value}</div>
+              <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">{item.hint}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="panel-title text-gray-900 dark:text-gray-100">最近关键动态</h3>
+            </div>
+            <Badge variant="outline">{recentActivities.length} 条</Badge>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {processRecords.map((record) => (
-              <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{record.category}</Badge>
-                      {record.shotName && <span className="body-muted">镜头：{record.shotName}</span>}
+
+          {recentActivities.length === 0 ? (
+            <div className="empty-state rounded-xl border-0 bg-transparent py-10">
+              当前项目还没有形成可追溯的创作结果。
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivities.map((record) => (
+                <div key={record.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 flex-1 space-y-2 text-left">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{record.category}</Badge>
+                        {record.shotName ? <span className="body-muted">镜头：{record.shotName}</span> : null}
+                      </div>
+                      <h3 className="panel-title text-gray-900 dark:text-gray-100">{summarizeText(record.title, 80)}</h3>
+                      <p className="body-muted">{summarizeText(record.prompt, 140)}</p>
                     </div>
-                    <h3 className="panel-title text-gray-900 dark:text-gray-100">{summarizeText(record.title, 80)}</h3>
-                    <p className="body-muted">{summarizeText(record.prompt, 180)}</p>
-                  </div>
-                  <div className="body-muted min-w-[220px] space-y-2">
-                    <div className="panel-value flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <Sparkles size={14} />
-                      <span>{record.model || '-'}</span>
+                    <div className="min-w-[220px] space-y-3 text-left lg:flex lg:flex-col lg:items-end lg:text-right">
+                      <div className="body-muted space-y-2 lg:flex lg:flex-col lg:items-end">
+                        <div className="panel-value flex items-center gap-2 text-gray-700 dark:text-gray-300 lg:justify-end">
+                          <Sparkles size={14} />
+                          <span>{record.model || '-'}</span>
+                        </div>
+                        <div>时间：{formatDate(record.time)}</div>
+                        {record.extra ? <div>附加信息：{record.extra}</div> : null}
+                      </div>
+                      {record.actionPath && record.actionLabel ? (
+                        <Button variant="secondary" size="sm" className="gap-2 self-start lg:self-end" onClick={() => navigate(record.actionPath!)}>
+                          {record.actionLabel}
+                        </Button>
+                      ) : null}
                     </div>
-                    <div>时间：{formatDate(record.time)}</div>
-                    {record.extra && <div>附加信息：{record.extra}</div>}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </PageSection>
       </div>
 
