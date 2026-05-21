@@ -4,12 +4,12 @@ import type { ImageGenerationTask, ImageGenerationMode, TaskQueueStatus } from '
 import { generateUUID } from '@/utils/uuid';
 import { showToast } from '@/utils/toast';
 import {
-  DEMO_DATASET,
+  MOCK_DATASET,
   MOCK_IMAGE_TASKS,
   MOCK_VIDEO_TASKS,
   generateMembers,
 } from '@/utils/mockData';
-import { getDemoBeautyImageBatchFromKey } from '@/utils/demoMedia';
+import { getBeautyLibraryImageBatchFromKey } from '@/utils/mediaLibrary';
 import { IMAGE_MODEL_NAMES, IMAGE_MODEL_VERSIONS, getImageReqKeyForMode, getImagePollInterval, getImageExpiryMs } from '@/services/imageGeneration';
 import { startPolling, stopPolling } from '@/services/poller';
 import { mockImageSubmitTask } from '@/services/imageMockAdapter';
@@ -90,17 +90,17 @@ interface AppState {
 }
 
 // Generate mock data
-const _customers = DEMO_DATASET.customers;
-const _brands = DEMO_DATASET.brands;
-const _projects = DEMO_DATASET.projects;
-const _shots = DEMO_DATASET.shots;
-const _keyFrames = DEMO_DATASET.keyFrames;
+const _customers = MOCK_DATASET.customers;
+const _brands = MOCK_DATASET.brands;
+const _projects = MOCK_DATASET.projects;
+const _shots = MOCK_DATASET.shots;
+const _keyFrames = MOCK_DATASET.keyFrames;
 const _imageTasks = MOCK_IMAGE_TASKS;
-const _assets = DEMO_DATASET.assets;
-const _generationVersions = DEMO_DATASET.generationVersions;
-const _briefs = DEMO_DATASET.briefs;
-const _tasks = DEMO_DATASET.tasks;
-const _reviews = DEMO_DATASET.reviews;
+const _assets = MOCK_DATASET.assets;
+const _generationVersions = MOCK_DATASET.generationVersions;
+const _briefs = MOCK_DATASET.briefs;
+const _tasks = MOCK_DATASET.tasks;
+const _reviews = MOCK_DATASET.reviews;
 const _roles = [
   { id: 'role-1', roleName: '超级管理员', permissions: ['*'], visibility: 'public' as const, createdAt: '2024-01-01T00:00:00.000Z' },
   { id: 'role-2', roleName: '项目经理', permissions: ['project:*', 'task:*', 'brief:*'], visibility: 'client-safe' as const, createdAt: '2024-01-01T00:00:00.000Z' },
@@ -787,7 +787,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const desiredCount = params.forceSingle ? 1 : Math.min(params.numImages ?? 1, 4);
           const imageUrls = data.image_urls?.length
             ? data.image_urls.slice(0, desiredCount)
-            : getDemoBeautyImageBatchFromKey(
+            : getBeautyLibraryImageBatchFromKey(
                 `${tempId}:${params.prompt}:${params.frameType || 'Opening'}`,
                 desiredCount,
                 params.frameType === 'Ending' ? 'lifestyle' : 'product',
@@ -892,7 +892,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const desiredCount = task.forceSingle ? 1 : Math.min(task.numImages ?? 1, 4);
           const imageUrls = data.image_urls?.length
             ? data.image_urls.slice(0, desiredCount)
-            : getDemoBeautyImageBatchFromKey(
+            : getBeautyLibraryImageBatchFromKey(
                 `${taskId}:${task.prompt}:${task.frameType || 'Opening'}`,
                 desiredCount,
                 task.frameType === 'Ending' ? 'lifestyle' : 'product',

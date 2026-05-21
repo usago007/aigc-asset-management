@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
 import FakeVideoFrame from '@/components/FakeVideoFrame'
-import { getMediaDownloadName } from '@/utils/demoMedia'
+import { getMediaDownloadName } from '@/utils/mediaLibrary'
 import {
   detailActionTileClass,
   detailBackButtonClass,
@@ -241,9 +241,9 @@ export default function VideoDetail() {
 
             {task.status === 'done' && task.videoUrl ? (
               <div className={detailPanelClass}>
-                <div className={`${detailPanelTitleClass} mb-3`}>演示预览</div>
+                <div className={`${detailPanelTitleClass} mb-3`}>视频预览</div>
                 <div className="helper-text space-y-2">
-                  <div>当前页展示的是本地静态封面，用于演示视频位的真实观感。</div>
+                  <div>当前页展示的是本地静态封面，用于还原视频位的真实观感。</div>
                   <div>画面、比例、模式标签和播放器外观均已保留，避免出现空黑框或失效链接。</div>
                 </div>
               </div>

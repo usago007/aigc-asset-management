@@ -7,11 +7,11 @@ import type {
 import type { ImageGenerationTask, VideoGenerationTask, TaskQueueStatus, GenerationMode, ImageGenerationMode } from '@/types/generation'
 import { AVATAR_COLOR_PALETTE } from '@/constants/brandColors'
 import {
-  getDemoBeautyEndingImage,
-  getDemoBeautyImageBatch,
-  getDemoBeautyOpeningImage,
-  getDemoBeautyVideoPoster,
-} from '@/utils/demoMedia'
+  getBeautyLibraryEndingImage,
+  getBeautyLibraryImageBatch,
+  getBeautyLibraryOpeningImage,
+  getBeautyLibraryVideoPoster,
+} from '@/utils/mediaLibrary'
 
 const CUSTOMER_NAMES = [
   '华美集团', '星辰科技', '绿意生活', '美妆时代', '雅诗集团',
@@ -49,7 +49,7 @@ const MEMBER_NAMES = [
   '潘磊', '董洁', '袁浩', '杨柳', '马超',
 ]
 
-const MEMBER_EMAILS = MEMBER_NAMES.map(n => `${n.toLowerCase().replace(/\s/g, '.')}@aigc-demo.com`)
+const MEMBER_EMAILS = MEMBER_NAMES.map(n => `${n.toLowerCase().replace(/\s/g, '.')}@aigc-asset-management.local`)
 const MEMBER_PHONES = Array.from({ length: 35 }, (_, i) => `1${3 + (i % 7)}${String(10000000 + (i * 7919) % 90000000).slice(0, 9)}`)
 const DEPARTMENTS = ['内容创作部', '项目管理部', '审核部', '技术支持部', '市场部', '运营部']
 const MEMBER_STATUSES: MemberStatus[] = ['active', 'active', 'active', 'active', 'active', 'active', 'active', 'disabled', 'pending']
@@ -112,11 +112,11 @@ const RISK_LEVELS: RiskLevel[] = ['Low', 'Medium', 'High']
 
 const SHOT_NAMES = [
   '开场镜头-产品特写', '成分展示-实验室', '模特使用场景', '效果对比镜头', '品牌LOGO结尾',
-  '开场-品牌故事', '质地展示-涂抹', '使用前后面部对比', '产品包装展示', '成分动画演示',
+  '开场-品牌故事', '质地展示-涂抹', '使用前后面部对比', '产品包装展示', '成分动画展示',
   '模特微笑使用', '实验室研发背景', '自然环境拍摄', '城市街头场景', 'SPA体验氛围',
   '水滴质地特写', '泡沫质感展示', '喷雾使用瞬间', '涂抹均匀过程', '吸收效果展示',
-  '光泽感面部特写', '水润感对比', '紧致提拉演示', '美白效果展示', '淡斑前后对比',
-  '防晒效果测试', '控油效果展示', '保湿水润测试', '修护效果演示', '抗皱效果对比',
+  '光泽感面部特写', '水润感对比', '紧致提拉呈现', '美白效果展示', '淡斑前后对比',
+  '防晒效果测试', '控油效果展示', '保湿水润测试', '修护效果呈现', '抗皱效果对比',
   '清洁力展示', '卸妆效果测试', '彩妆持久度', '唇色显色度', '眼影晕染效果',
 ]
 
@@ -278,10 +278,10 @@ export function generateBrands(count: number = 35, customers: Customer[] = []): 
   }))
 }
 
-const DEMO_PROJECT_COUNT = 12
+const MOCK_PROJECT_COUNT = 12
 const SHOT_COUNT_PATTERN = [5, 6, 7]
 
-interface DemoDataset {
+interface MockDataset {
   customers: Customer[]
   brands: Brand[]
   projects: Project[]
@@ -301,13 +301,13 @@ function isoOffset(dayOffset: number, minuteOffset: number = 0): string {
   return new Date(base + dayOffset * 86400000 + minuteOffset * 60000).toISOString()
 }
 
-function demoEntity(id: string, createdAt: string, updatedAt: string = createdAt) {
+function seedEntity(id: string, createdAt: string, updatedAt: string = createdAt) {
   return { id, createdAt, updatedAt }
 }
 
-function buildDemoDataset(): DemoDataset {
-  const customers = generateCustomers(DEMO_PROJECT_COUNT)
-  const brands = generateBrands(DEMO_PROJECT_COUNT, customers)
+function buildMockDataset(): MockDataset {
+  const customers = generateCustomers(MOCK_PROJECT_COUNT)
+  const brands = generateBrands(MOCK_PROJECT_COUNT, customers)
   const projects: Project[] = []
   const shots: Shot[] = []
   const keyFrames: KeyFrame[] = []
@@ -324,13 +324,13 @@ function buildDemoDataset(): DemoDataset {
   let globalTaskIndex = 0
   let globalReviewIndex = 0
 
-  for (let projectIndex = 0; projectIndex < DEMO_PROJECT_COUNT; projectIndex++) {
+  for (let projectIndex = 0; projectIndex < MOCK_PROJECT_COUNT; projectIndex++) {
     const projectId = `project-${projectIndex + 1}`
     const projectCreatedAt = isoOffset(projectIndex * 2, 30)
     const shotCount = SHOT_COUNT_PATTERN[projectIndex % SHOT_COUNT_PATTERN.length]
     const pendingReviews = 1 + (projectIndex % 4)
     const project: Project = {
-      ...demoEntity(projectId, projectCreatedAt, isoOffset(projectIndex * 2 + 7, 40)),
+      ...seedEntity(projectId, projectCreatedAt, isoOffset(projectIndex * 2 + 7, 40)),
       projectName: PROJECT_NAMES[projectIndex % PROJECT_NAMES.length],
       brandId: brands[projectIndex % brands.length]?.id || '',
       projectOwner: BRAND_OWNERS[(projectIndex + 5) % BRAND_OWNERS.length],
@@ -343,7 +343,7 @@ function buildDemoDataset(): DemoDataset {
 
     const firstProjectVersionId = `version-${projectIndex + 1}-1-1`
     briefs.push({
-      ...demoEntity(`brief-${projectIndex + 1}`, isoOffset(projectIndex * 2, 80), isoOffset(projectIndex * 2 + 6, 90)),
+      ...seedEntity(`brief-${projectIndex + 1}`, isoOffset(projectIndex * 2, 80), isoOffset(projectIndex * 2 + 6, 90)),
       briefTitle: BRIEF_TITLES[projectIndex % BRIEF_TITLES.length],
       projectId,
       description: BRIEF_DESCRIPTIONS[projectIndex % BRIEF_DESCRIPTIONS.length],
@@ -356,7 +356,7 @@ function buildDemoDataset(): DemoDataset {
 
     tasks.push(
       {
-        ...demoEntity(`task-${projectIndex + 1}-1`, isoOffset(projectIndex * 2 + 1, 120), isoOffset(projectIndex * 2 + 3, 130)),
+        ...seedEntity(`task-${projectIndex + 1}-1`, isoOffset(projectIndex * 2 + 1, 120), isoOffset(projectIndex * 2 + 3, 130)),
         taskName: TASK_NAMES[(projectIndex * 2) % TASK_NAMES.length],
         projectId,
         assignedTo: ASSIGNEES[projectIndex % ASSIGNEES.length],
@@ -366,7 +366,7 @@ function buildDemoDataset(): DemoDataset {
         notes: `${project.projectName} 的关键制作任务`,
       },
       {
-        ...demoEntity(`task-${projectIndex + 1}-2`, isoOffset(projectIndex * 2 + 2, 160), isoOffset(projectIndex * 2 + 5, 180)),
+        ...seedEntity(`task-${projectIndex + 1}-2`, isoOffset(projectIndex * 2 + 2, 160), isoOffset(projectIndex * 2 + 5, 180)),
         taskName: TASK_NAMES[(projectIndex * 2 + 1) % TASK_NAMES.length],
         projectId,
         assignedTo: ASSIGNEES[(projectIndex + 3) % ASSIGNEES.length],
@@ -379,7 +379,7 @@ function buildDemoDataset(): DemoDataset {
 
     for (let reviewIndex = 0; reviewIndex < pendingReviews; reviewIndex++) {
       reviews.push({
-        ...demoEntity(`review-${projectIndex + 1}-${reviewIndex + 1}`, isoOffset(projectIndex * 2 + 5, 45 + reviewIndex * 20)),
+        ...seedEntity(`review-${projectIndex + 1}-${reviewIndex + 1}`, isoOffset(projectIndex * 2 + 5, 45 + reviewIndex * 20)),
         targetId: projectId,
         targetType: reviewIndex % 2 === 0 ? 'Brief' : 'Shot',
         reviewer: REVIEWERS[(projectIndex + reviewIndex) % REVIEWERS.length],
@@ -405,11 +405,11 @@ function buildDemoDataset(): DemoDataset {
       const openingPrompt = `${basePrompt}，开场镜头，建立产品与人物关系，画面干净，主体明确。`
       const endingPrompt = `${basePrompt}，收尾镜头，品牌资产回收，光线更集中，氛围更完整。`
       const videoPrompt = `${basePrompt}，镜头推进自然，适合 8-10 秒品牌短视频，节奏克制。`
-      const openingImage = getDemoBeautyOpeningImage(projectIndex * 7 + shotIndex * 2)
-      const endingImage = getDemoBeautyEndingImage(projectIndex * 7 + shotIndex * 2 + 1)
+      const openingImage = getBeautyLibraryOpeningImage(projectIndex * 7 + shotIndex * 2)
+      const endingImage = getBeautyLibraryEndingImage(projectIndex * 7 + shotIndex * 2 + 1)
 
       shots.push({
-        ...demoEntity(shotId, shotCreatedAt, isoOffset(projectIndex * 3 + shotIndex + 2, 210)),
+        ...seedEntity(shotId, shotCreatedAt, isoOffset(projectIndex * 3 + shotIndex + 2, 210)),
         shotName,
         projectId,
         firstFrameId: openingFrameId,
@@ -422,7 +422,7 @@ function buildDemoDataset(): DemoDataset {
 
       keyFrames.push(
         {
-          ...demoEntity(openingFrameId, isoOffset(projectIndex * 3 + shotIndex, 150), isoOffset(projectIndex * 3 + shotIndex, 210)),
+          ...seedEntity(openingFrameId, isoOffset(projectIndex * 3 + shotIndex, 150), isoOffset(projectIndex * 3 + shotIndex, 210)),
           name: `${KEYFRAME_NAMES[(globalShotIndex * 2) % KEYFRAME_NAMES.length]} · 开场`,
           type: 'Opening',
           promptText: openingPrompt,
@@ -432,7 +432,7 @@ function buildDemoDataset(): DemoDataset {
           parentShotId: shotId,
         },
         {
-          ...demoEntity(endingFrameId, isoOffset(projectIndex * 3 + shotIndex, 180), isoOffset(projectIndex * 3 + shotIndex, 240)),
+          ...seedEntity(endingFrameId, isoOffset(projectIndex * 3 + shotIndex, 180), isoOffset(projectIndex * 3 + shotIndex, 240)),
           name: `${KEYFRAME_NAMES[(globalShotIndex * 2 + 1) % KEYFRAME_NAMES.length]} · 收尾`,
           type: 'Ending',
           promptText: endingPrompt,
@@ -448,8 +448,8 @@ function buildDemoDataset(): DemoDataset {
       const videoTaskId = `video-task-${projectIndex + 1}-${shotIndex + 1}`
       const openingCount = (globalShotIndex % 4) + 1
       const endingCount = ((globalShotIndex + 2) % 4) + 1
-      const openingOutputs = getDemoBeautyImageBatch(globalShotIndex * 10 + 1, openingCount, 'product')
-      const endingOutputs = getDemoBeautyImageBatch(globalShotIndex * 10 + 101, endingCount, 'lifestyle')
+      const openingOutputs = getBeautyLibraryImageBatch(globalShotIndex * 10 + 1, openingCount, 'product')
+      const endingOutputs = getBeautyLibraryImageBatch(globalShotIndex * 10 + 101, endingCount, 'lifestyle')
       const openingKeyFrameIds = Array.from({ length: openingCount }, (_, index) =>
         index === 0 ? openingFrameId : `${openingFrameId}-variant-${index + 1}`,
       )
@@ -459,7 +459,7 @@ function buildDemoDataset(): DemoDataset {
 
       imageTasks.push(
         {
-          ...demoEntity(openingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 145), isoOffset(projectIndex * 3 + shotIndex, 215)),
+          ...seedEntity(openingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 145), isoOffset(projectIndex * 3 + shotIndex, 215)),
           taskId: `img-task-${projectIndex + 1}-${shotIndex + 1}-opening`,
           requestId: `req-img-${projectIndex + 1}-${shotIndex + 1}-opening`,
           mode: IMAGE_MODES[(projectIndex + shotIndex) % IMAGE_MODES.length],
@@ -488,7 +488,7 @@ function buildDemoDataset(): DemoDataset {
           tokensUsed: 12000 + projectIndex * 400 + shotIndex * 130,
         },
         {
-          ...demoEntity(endingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 175), isoOffset(projectIndex * 3 + shotIndex, 255)),
+          ...seedEntity(endingImageTaskId, isoOffset(projectIndex * 3 + shotIndex, 175), isoOffset(projectIndex * 3 + shotIndex, 255)),
           taskId: `img-task-${projectIndex + 1}-${shotIndex + 1}-ending`,
           requestId: `req-img-${projectIndex + 1}-${shotIndex + 1}-ending`,
           mode: IMAGE_MODES[(projectIndex + shotIndex + 1) % IMAGE_MODES.length],
@@ -519,7 +519,7 @@ function buildDemoDataset(): DemoDataset {
       )
 
       videoTasks.push({
-        ...demoEntity(videoTaskId, isoOffset(projectIndex * 3 + shotIndex, 205), isoOffset(projectIndex * 3 + shotIndex, 320)),
+        ...seedEntity(videoTaskId, isoOffset(projectIndex * 3 + shotIndex, 205), isoOffset(projectIndex * 3 + shotIndex, 320)),
         taskId: `video-task-remote-${projectIndex + 1}-${shotIndex + 1}`,
         requestId: `req-video-${projectIndex + 1}-${shotIndex + 1}`,
         mode: VIDEO_MODES[(projectIndex + shotIndex) % VIDEO_MODES.length],
@@ -536,7 +536,7 @@ function buildDemoDataset(): DemoDataset {
         projectId,
         status: 'done',
         progress: 100,
-        videoUrl: getDemoBeautyVideoPoster(globalShotIndex),
+        videoUrl: getBeautyLibraryVideoPoster(globalShotIndex),
         aigcMetaTagged: true,
         timeElapsed: `${38 + shotIndex * 3}s`,
         completedAt: isoOffset(projectIndex * 3 + shotIndex, 320),
@@ -553,7 +553,7 @@ function buildDemoDataset(): DemoDataset {
       versionSpecs.forEach(({ frameId, total }) => {
         for (let versionIndex = 0; versionIndex < total; versionIndex++) {
           generationVersions.push({
-            ...demoEntity(
+            ...seedEntity(
               `version-${projectIndex + 1}-${shotIndex + 1}-${generationVersions.length + 1}`,
               isoOffset(projectIndex * 3 + shotIndex, 160 + versionIndex * 18),
             ),
@@ -570,7 +570,7 @@ function buildDemoDataset(): DemoDataset {
 
       assets.push(
         {
-          ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 216)),
+          ...seedEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 216)),
           assetName: `${ASSET_NAMES[(globalShotIndex * 2) % ASSET_NAMES.length]} · 首图`,
           type: 'Image',
           projectId,
@@ -585,7 +585,7 @@ function buildDemoDataset(): DemoDataset {
           fileUrl: openingImage,
         },
         {
-          ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 321)),
+          ...seedEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + shotIndex, 321)),
           assetName: `${ASSET_NAMES[(globalShotIndex * 2 + 1) % ASSET_NAMES.length]} · 视频`,
           type: 'Video',
           projectId,
@@ -596,13 +596,13 @@ function buildDemoDataset(): DemoDataset {
           modelName: 'Seedance',
           modelVersion: '1.5 Pro',
           parentAssetIds: [],
-          fileUrl: getDemoBeautyVideoPoster(globalShotIndex),
+          fileUrl: getBeautyLibraryVideoPoster(globalShotIndex),
         },
       )
     }
 
     assets.push({
-      ...demoEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + 1, 90)),
+      ...seedEntity(`asset-${++globalAssetIndex}`, isoOffset(projectIndex * 3 + 1, 90)),
       assetName: `${ASSET_NAMES[(projectIndex + 5) % ASSET_NAMES.length]} · 提案脚本`,
       type: 'Script',
       projectId,
@@ -631,52 +631,52 @@ function buildDemoDataset(): DemoDataset {
   }
 }
 
-export const DEMO_DATASET = buildDemoDataset()
+export const MOCK_DATASET = buildMockDataset()
 
-export function generateProjects(count: number = DEMO_PROJECT_COUNT, _brands: Brand[] = []): Project[] {
-  return DEMO_DATASET.projects.slice(0, count)
+export function generateProjects(count: number = MOCK_PROJECT_COUNT, _brands: Brand[] = []): Project[] {
+  return MOCK_DATASET.projects.slice(0, count)
 }
 
-export function generateShots(count: number = DEMO_DATASET.shots.length, _projects: Project[] = []): Shot[] {
-  return DEMO_DATASET.shots.slice(0, count)
+export function generateShots(count: number = MOCK_DATASET.shots.length, _projects: Project[] = []): Shot[] {
+  return MOCK_DATASET.shots.slice(0, count)
 }
 
-export function generateKeyFrames(count: number = DEMO_DATASET.keyFrames.length, _shots: Shot[] = []): KeyFrame[] {
-  return DEMO_DATASET.keyFrames.slice(0, count)
+export function generateKeyFrames(count: number = MOCK_DATASET.keyFrames.length, _shots: Shot[] = []): KeyFrame[] {
+  return MOCK_DATASET.keyFrames.slice(0, count)
 }
 
 export function generateAssets(
-  count: number = DEMO_DATASET.assets.length,
+  count: number = MOCK_DATASET.assets.length,
   _shots: Shot[] = [],
   _imageTasks: ImageGenerationTask[] = [],
   _videoTasks: VideoGenerationTask[] = [],
 ): Asset[] {
-  return DEMO_DATASET.assets.slice(0, count)
+  return MOCK_DATASET.assets.slice(0, count)
 }
 
-export function generateBriefs(count: number = DEMO_DATASET.briefs.length, _projects: Project[] = []): Brief[] {
-  return DEMO_DATASET.briefs.slice(0, count)
+export function generateBriefs(count: number = MOCK_DATASET.briefs.length, _projects: Project[] = []): Brief[] {
+  return MOCK_DATASET.briefs.slice(0, count)
 }
 
-export function generateTasks(count: number = DEMO_DATASET.tasks.length, _projects: Project[] = []): Task[] {
-  return DEMO_DATASET.tasks.slice(0, count)
+export function generateTasks(count: number = MOCK_DATASET.tasks.length, _projects: Project[] = []): Task[] {
+  return MOCK_DATASET.tasks.slice(0, count)
 }
 
-export function generateReviews(count: number = DEMO_DATASET.reviews.length): Review[] {
-  return DEMO_DATASET.reviews.slice(0, count)
+export function generateReviews(count: number = MOCK_DATASET.reviews.length): Review[] {
+  return MOCK_DATASET.reviews.slice(0, count)
 }
 
-export function generateGenerationVersions(count: number = DEMO_DATASET.generationVersions.length, _keyFrameIds: string[] = []): GenerationVersion[] {
-  return DEMO_DATASET.generationVersions.slice(0, count)
+export function generateGenerationVersions(count: number = MOCK_DATASET.generationVersions.length, _keyFrameIds: string[] = []): GenerationVersion[] {
+  return MOCK_DATASET.generationVersions.slice(0, count)
 }
 
-export function generateImageTasks(count: number = DEMO_DATASET.imageTasks.length): ImageGenerationTask[] {
-  return DEMO_DATASET.imageTasks.slice(0, count)
+export function generateImageTasks(count: number = MOCK_DATASET.imageTasks.length): ImageGenerationTask[] {
+  return MOCK_DATASET.imageTasks.slice(0, count)
 }
 
-export function generateVideoTasks(count: number = DEMO_DATASET.videoTasks.length): VideoGenerationTask[] {
-  return DEMO_DATASET.videoTasks.slice(0, count)
+export function generateVideoTasks(count: number = MOCK_DATASET.videoTasks.length): VideoGenerationTask[] {
+  return MOCK_DATASET.videoTasks.slice(0, count)
 }
 
-export const MOCK_IMAGE_TASKS = DEMO_DATASET.imageTasks
-export const MOCK_VIDEO_TASKS = DEMO_DATASET.videoTasks
+export const MOCK_IMAGE_TASKS = MOCK_DATASET.imageTasks
+export const MOCK_VIDEO_TASKS = MOCK_DATASET.videoTasks

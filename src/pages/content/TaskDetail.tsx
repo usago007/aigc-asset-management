@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
 import FakeVideoFrame from '@/components/FakeVideoFrame'
-import { getMediaDownloadName } from '@/utils/demoMedia'
+import { getMediaDownloadName } from '@/utils/mediaLibrary'
 import {
   detailBackButtonClass,
   detailHeaderClass,

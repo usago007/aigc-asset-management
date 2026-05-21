@@ -94,7 +94,7 @@ export default function Settings() {
               <Sun size={18} />
               <p className="panel-title text-inherit">浅色模式</p>
             </div>
-            <p className="mt-3 text-sm opacity-80">适合日间浏览与演示场景，保持更高的内容可读性。</p>
+            <p className="mt-3 text-sm opacity-80">适合日间浏览与汇报场景，保持更高的内容可读性。</p>
           </button>
           <button
             type="button"
@@ -132,7 +132,7 @@ export default function Settings() {
               <Sun size={16} className="text-gray-500" />
               <p className="panel-title">使用建议</p>
             </div>
-            <p className="body-muted mt-2">若以团队演示和日常录屏为主，建议默认使用浅色模式。</p>
+            <p className="body-muted mt-2">若以团队汇报和日常录屏为主，建议默认使用浅色模式。</p>
           </div>
         </div>
       </div>

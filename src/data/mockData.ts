@@ -139,7 +139,7 @@ export const mockShots: Shot[] = [
     id: 'shot-003',
     createdAt: '2024-03-01T08:00:00Z',
     updatedAt: '2024-03-01T08:00:00Z',
-    shotName: '功能演示',
+    shotName: '功能预览',
     projectId: 'project-002',
     firstFrameId: 'keyframe-005',
     lastFrameId: null,

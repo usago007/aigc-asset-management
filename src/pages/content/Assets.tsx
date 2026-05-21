@@ -16,11 +16,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Asset } from '@/types'
-import { DEMO_BEAUTY_IMAGES, DEMO_BEAUTY_VIDEO_POSTERS, isDemoMediaPath } from '@/utils/demoMedia'
+import { BEAUTY_IMAGES, BEAUTY_VIDEO_POSTERS, isBeautyMediaPath } from '@/utils/mediaLibrary'
 
-const ASSET_PLACEHOLDER_IMAGES = DEMO_BEAUTY_IMAGES.slice(0, 5)
+const ASSET_PLACEHOLDER_IMAGES = BEAUTY_IMAGES.slice(0, 5)
 
-const VIDEO_PLACEHOLDER = DEMO_BEAUTY_VIDEO_POSTERS[0]
+const VIDEO_PLACEHOLDER = BEAUTY_VIDEO_POSTERS[0]
 
 const assetTypeLabelMap: Record<Asset['type'], string> = {
   Image: '图片',
@@ -249,7 +249,7 @@ export default function Assets() {
         asset.fileUrl.startsWith('http')
         || asset.fileUrl.startsWith('data:')
         || asset.fileUrl.startsWith('blob:')
-        || isDemoMediaPath(asset.fileUrl)
+        || isBeautyMediaPath(asset.fileUrl)
       ) return asset.fileUrl
       if (asset.type === 'Video') return VIDEO_PLACEHOLDER
       if (asset.type === 'Image') {

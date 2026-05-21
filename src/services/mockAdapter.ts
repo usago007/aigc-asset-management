@@ -4,7 +4,7 @@ import type {
   SubmitTaskResponse,
   TaskResultResponse,
 } from '@/types/generation';
-import { getDemoBeautyPosterFromKey } from '@/utils/demoMedia';
+import { getBeautyLibraryPosterFromKey } from '@/utils/mediaLibrary';
 
 interface MockTaskStoreEntry {
   status: string;
@@ -109,7 +109,7 @@ export async function mockQueryTaskResult(taskId: string): Promise<TaskResultRes
     code: 200,
     data: {
       status: 'done',
-      video_url: getDemoBeautyPosterFromKey(taskId),
+      video_url: getBeautyLibraryPosterFromKey(taskId),
       aigc_meta_tagged: true,
     },
     message: 'success',

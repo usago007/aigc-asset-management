@@ -1,5 +1,5 @@
 import type { ImageGenerationMode, ImageSubmitTaskParams, ImageSubmitTaskResponse, ImageTaskResultResponse } from '@/types/generation';
-import { getDemoBeautyImageBatchFromKey } from '@/utils/demoMedia';
+import { getBeautyLibraryImageBatchFromKey } from '@/utils/mediaLibrary';
 
 interface MockImageTask {
   status: string;
@@ -99,7 +99,7 @@ export async function mockImageQueryTaskResult(taskId: string): Promise<ImageTas
   }
 
   const count = task.outputCount;
-  const urls = getDemoBeautyImageBatchFromKey(taskId, count, 'mixed');
+  const urls = getBeautyLibraryImageBatchFromKey(taskId, count, 'mixed');
 
   return {
     code: 10000,
