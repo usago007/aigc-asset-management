@@ -1,5 +1,5 @@
-const IMAGE_BASE = '/media/beauty/images'
-const VIDEO_POSTER_BASE = '/media/beauty/video-posters'
+const IMAGE_BASE = 'media/beauty/images'
+const VIDEO_POSTER_BASE = 'media/beauty/video-posters'
 
 const buildImagePath = (index: number) => `${IMAGE_BASE}/beauty-image-${String(index).padStart(2, '0')}.jpg`
 const buildVideoPosterPath = (index: number) => `${VIDEO_POSTER_BASE}/beauty-video-poster-${String(index).padStart(2, '0')}.jpg`
@@ -54,7 +54,7 @@ export function getBeautyLibraryPosterFromKey(key: string) {
 }
 
 export function isBeautyMediaPath(value?: string | null) {
-  return Boolean(value && value.startsWith('/media/beauty/'))
+  return Boolean(value && (value.startsWith('/media/beauty/') || value.startsWith('media/beauty/')))
 }
 
 export function getMediaDownloadName(url: string, fallbackBase: string) {

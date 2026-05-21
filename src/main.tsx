@@ -1,18 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, HashRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import App from './App'
 import './index.css'
 
-const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <Router>
+      <HashRouter>
         <App />
-      </Router>
+      </HashRouter>
     </ThemeProvider>
   </React.StrictMode>,
 )
