@@ -5,11 +5,22 @@ const projectRoot = process.cwd()
 const distDir = path.join(projectRoot, 'dist')
 const indexPath = path.join(distDir, 'index.html')
 
-const resolveDistAssetPath = (assetPath) => {
-  if (assetPath.startsWith('/')) {
-    return path.join(distDir, assetPath.slice(1))
+const viteConfigSrc = await fs.readFile(path.join(projectRoot, 'vite.config.ts'), 'utf8')
+const viteBase = viteConfigSrc.match(/base\s*:\s*['"`]([^'"`]+)['"`]/)?.[1] ?? '/'
+
+const stripBase = (assetPath) => {
+  if (viteBase !== '/' && viteBase !== './' && assetPath.startsWith(viteBase)) {
+    return '/' + assetPath.slice(viteBase.length)
   }
-  return path.resolve(distDir, assetPath)
+  return assetPath
+}
+
+const resolveDistAssetPath = (assetPath) => {
+  const stripped = stripBase(assetPath)
+  if (stripped.startsWith('/')) {
+    return path.join(distDir, stripped.slice(1))
+  }
+  return path.resolve(distDir, stripped)
 }
 
 const escapeInlineScript = (content) => content.replace(/<\/script/gi, '<\\/script')
@@ -18,7 +29,8 @@ const normalizeWebDir = (value) => value.replace(/\\/g, '/').replace(/^\.\//, ''
 const isRelativeSpecifier = (specifier) => specifier.startsWith('./') || specifier.startsWith('../')
 const rebaseRelativeSpecifier = (specifier, assetSrc) => {
   if (!isRelativeSpecifier(specifier)) return specifier
-  const assetDir = path.posix.dirname(normalizeWebDir(assetSrc))
+  const strippedSrc = stripBase(assetSrc)
+  const assetDir = path.posix.dirname(normalizeWebDir(strippedSrc))
   if (!assetDir || assetDir === '.') return specifier
   const rebased = path.posix.normalize(path.posix.join(assetDir, specifier))
   return rebased.startsWith('.') ? rebased : `./${rebased}`
