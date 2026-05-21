@@ -20,7 +20,7 @@ export const detailContentGridClass = 'grid items-start gap-6 lg:grid-cols-[minm
 
 export const detailBackButtonClass = 'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50'
 
-export const detailTitleClass = 'page-title-compact'
+export const detailTitleClass = 'detail-page-title'
 
 export const detailSubtitleClass = 'mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400'
 
@@ -82,7 +82,7 @@ export const projectHeroInsightGrid = 'grid gap-3 sm:grid-cols-3 lg:grid-cols-1'
 export const projectHeroInsightCard =
   'rounded-[24px] border border-gray-200/90 bg-white/88 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/82'
 
-export const projectHeroMetric = 'text-[52px] font-semibold leading-none tracking-[-0.07em] text-gray-950 dark:text-gray-50 lg:text-[60px]'
+export const projectHeroMetric = 'project-hero-metric'
 
 export const projectHeroSupportText = 'text-sm leading-6 text-gray-500 dark:text-gray-400'
 
@@ -93,11 +93,11 @@ export const projectSummaryCardClass =
 
 export const projectSummaryHeaderClass = 'flex items-start justify-between gap-3'
 
-export const projectSummaryEyebrowClass = 'text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500'
+export const projectSummaryEyebrowClass = 'detail-meta-label'
 
-export const projectSummaryValueClass = 'text-[34px] font-semibold leading-none tracking-[-0.05em] text-gray-950 dark:text-gray-50'
+export const projectSummaryValueClass = 'summary-value'
 
-export const projectSummaryTitleClass = 'text-[22px] font-semibold leading-[1.15] tracking-[-0.035em] text-gray-950 dark:text-gray-50'
+export const projectSummaryTitleClass = 'project-summary-title'
 
 export const projectSummaryMetaListClass = 'space-y-2 text-sm text-gray-500 dark:text-gray-400'
 

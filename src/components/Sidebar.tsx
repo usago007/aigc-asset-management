@@ -124,14 +124,14 @@ export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }:
         {!collapsed && (
           <div className="min-w-0 flex-1 pr-3">
             <div className="min-w-0 pt-0.5">
-              <div className="truncate text-[24px] font-semibold leading-none tracking-[-0.05em] text-gray-950 dark:text-gray-50">FatMug</div>
-              <p className="mt-3 text-[16px] font-semibold leading-tight tracking-[-0.03em] text-gray-900 dark:text-gray-100">数字资产管理平台</p>
+              <div className="nav-brand-title">FatMug</div>
+              <p className="nav-brand-subtitle">数字资产管理平台</p>
             </div>
           </div>
         )}
         <button
           onClick={onToggle}
-          className={`rounded-full border border-transparent p-2 text-[#8d97ab] transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-100 ${collapsed ? 'mx-auto mt-1' : ''}`}
+          className={`nav-toggle-ink rounded-full border border-transparent p-2 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-100 ${collapsed ? 'mx-auto mt-1' : ''}`}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>

@@ -32,7 +32,7 @@ function StatCard({ label, value, icon: Icon, color, bg }: { label: string; valu
           <Icon size={24} className={color} />
         </div>
         <div>
-          <p className="summary-value">{value}</p>
+          <p className="dashboard-stat-value">{value}</p>
           <p className="summary-label">{label}</p>
         </div>
       </div>
@@ -72,13 +72,13 @@ export default function Overview() {
   const generatingCount = [...imageTasks, ...videoTasks].filter(t => t.status === 'generating' || t.status === 'in_queue' || t.status === 'submitting').length
 
   const stats = [
-    { label: '客户', value: customers.length, icon: Users, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-400/10' },
-    { label: '品牌', value: brands.length, icon: Tags, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-400/10' },
-    { label: '项目', value: projects.length, icon: FolderTree, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-400/10' },
-    { label: '镜头', value: shots.length, icon: Video, color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-400/10' },
-    { label: '资产', value: assets.length, icon: ImageIcon, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-100 dark:bg-pink-400/10' },
-    { label: '待审核', value: pendingReviews, icon: ClipboardCheck, color: 'text-gray-700 dark:text-gray-200', bg: 'bg-gray-100 dark:bg-gray-800' },
-    { label: '生成中', value: generatingCount, icon: Loader2, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100 dark:bg-cyan-400/10' },
+    { label: '客户', value: customers.length, icon: Users, color: 'dashboard-category-icon-blue', bg: 'dashboard-category-bg-blue' },
+    { label: '品牌', value: brands.length, icon: Tags, color: 'dashboard-category-icon-purple', bg: 'dashboard-category-bg-purple' },
+    { label: '项目', value: projects.length, icon: FolderTree, color: 'dashboard-category-icon-green', bg: 'dashboard-category-bg-green' },
+    { label: '镜头', value: shots.length, icon: Video, color: 'dashboard-category-icon-yellow', bg: 'dashboard-category-bg-yellow' },
+    { label: '资产', value: assets.length, icon: ImageIcon, color: 'dashboard-category-icon-pink', bg: 'dashboard-category-bg-pink' },
+    { label: '待审核', value: pendingReviews, icon: ClipboardCheck, color: 'dashboard-category-icon-neutral', bg: 'dashboard-category-bg-neutral' },
+    { label: '生成中', value: generatingCount, icon: Loader2, color: 'dashboard-category-icon-cyan', bg: 'dashboard-category-bg-cyan' },
   ]
 
   const stageCounts: Record<string, number> = { Planning: 0, InProduction: 0, Review: 0, Completed: 0 }
@@ -152,7 +152,7 @@ export default function Overview() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <Clock size={18} className="text-blue-600 dark:text-blue-400" />
+            <Clock size={18} className="dashboard-category-icon-blue" />
             近期活动
           </h2>
           <div className="space-y-3">
@@ -175,7 +175,7 @@ export default function Overview() {
 
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-green-600 dark:text-green-400" />
+            <TrendingUp size={18} className="dashboard-category-icon-green" />
             项目进度
           </h2>
           <div className="space-y-3">

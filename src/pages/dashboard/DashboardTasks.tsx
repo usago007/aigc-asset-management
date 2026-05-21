@@ -3,10 +3,10 @@ import { useAppStore } from '@/store/appStore'
 import { BarChart3, Layers, AlertCircle, UserCheck } from 'lucide-react'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
-function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function MiniStatCard({ label, value, valueClassName = 'dashboard-stat-value' }: { label: string; value: number; valueClassName?: string }) {
   return (
-    <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-      <span className={`text-3xl font-bold ${color}`}>{value}</span>
+    <div className="dashboard-stat-card">
+      <span className={valueClassName}>{value}</span>
       <span className="helper-text mt-1">{label}</span>
     </div>
   )
@@ -90,16 +90,16 @@ export default function DashboardTasks() {
       <PageIntro title="任务概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MiniStatCard label="总任务" value={tasks.length} color="text-gray-900 dark:text-white" />
-        <MiniStatCard label="待处理" value={statusCounts.Pending} color="text-gray-500" />
-        <MiniStatCard label="进行中" value={statusCounts.InProgress} color="text-blue-500" />
-        <MiniStatCard label="已完成" value={statusCounts.Completed} color="text-green-500" />
+        <MiniStatCard label="总任务" value={tasks.length} />
+        <MiniStatCard label="待处理" value={statusCounts.Pending} valueClassName="dashboard-stat-value-status-warning" />
+        <MiniStatCard label="进行中" value={statusCounts.InProgress} valueClassName="dashboard-stat-value-status-info" />
+        <MiniStatCard label="已完成" value={statusCounts.Completed} valueClassName="dashboard-stat-value-status-success" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-blue-600 dark:text-blue-400" />
+            <BarChart3 size={18} className="dashboard-category-icon-neutral" />
             任务状态分布
           </h2>
           <div className="space-y-1">
@@ -117,7 +117,7 @@ export default function DashboardTasks() {
 
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <Layers size={18} className="text-purple-600 dark:text-purple-400" />
+            <Layers size={18} className="dashboard-category-icon-purple" />
             任务类型分布
           </h2>
           <div className="space-y-3">
@@ -183,7 +183,7 @@ export default function DashboardTasks() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="helper-text">总计 <span className="panel-value font-semibold">{person.total}</span></span>
-                  <span className="helper-text">待处理 <span className="panel-value font-semibold text-yellow-500">{person.pending}</span></span>
+                  <span className="helper-text">待处理 <span className="panel-value font-semibold text-amber-500">{person.pending}</span></span>
                   <span className="helper-text">进行中 <span className="panel-value font-semibold text-blue-500">{person.inProgress}</span></span>
                 </div>
               </div>

@@ -352,7 +352,7 @@ export default function ShotDetail() {
           </Button>
           <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
-              <h1 className="page-title-compact">{shot.shotName}</h1>
+              <h1 className="detail-page-title">{shot.shotName}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:ml-6 lg:flex-none lg:justify-end">
               <Button variant="secondary" className="gap-2" onClick={() => navigate(`/projects/projects/${project.id}`)}>
@@ -378,7 +378,7 @@ export default function ShotDetail() {
             <div className="space-y-6 p-6 lg:p-7">
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <h2 className="max-w-4xl text-[30px] font-semibold tracking-[-0.05em] text-gray-950 dark:text-gray-50">
+                  <h2 className="detail-hero-title max-w-4xl">
                     {project.projectName}
                   </h2>
                 </div>
@@ -388,7 +388,7 @@ export default function ShotDetail() {
                       key={item.label}
                       className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/85 px-3 py-1.5 text-sm text-gray-600 shadow-[0_8px_24px_rgba(15,23,42,0.03)] dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-300"
                     >
-                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</span>
+                      <span className="detail-meta-label">{item.label}</span>
                       <span className="font-medium text-gray-900 dark:text-gray-100">{item.value}</span>
                     </div>
                   ))}
@@ -401,20 +401,20 @@ export default function ShotDetail() {
                     key={item.label}
                     className={`grid gap-2 px-5 py-4 md:grid-cols-[140px_minmax(0,1fr)] md:items-center ${index > 0 ? 'border-t border-gray-200/80 dark:border-gray-800' : ''}`}
                   >
-                    <dt className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</dt>
-                    <dd className="text-[15px] font-medium leading-6 text-gray-800 dark:text-gray-200">{item.value}</dd>
+                    <dt className="detail-meta-label">{item.label}</dt>
+                    <dd className="detail-section-value">{item.value}</dd>
                   </div>
                 ))}
               </div>
 
               <div className="grid gap-3 rounded-[22px] border border-dashed border-gray-200/90 bg-white/45 px-5 py-4 md:grid-cols-2 dark:border-gray-800 dark:bg-gray-950/30">
                 <div className="space-y-1">
-                  <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">创建时间</div>
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{formatDate(shot.createdAt)}</div>
+                  <div className="detail-meta-label">创建时间</div>
+                  <div className="detail-section-value">{formatDate(shot.createdAt)}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">更新时间</div>
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{formatDate(shot.updatedAt)}</div>
+                  <div className="detail-meta-label">更新时间</div>
+                  <div className="detail-section-value">{formatDate(shot.updatedAt)}</div>
                 </div>
               </div>
             </div>
@@ -427,15 +427,15 @@ export default function ShotDetail() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`h-2 w-2 rounded-full ${statusToneMap[card.label].dotClassName}`} />
-                          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{card.label}</div>
+                          <div className="detail-meta-label">{card.label}</div>
                         </div>
-                        <div className={`mt-3 text-[24px] font-semibold tracking-[-0.04em] ${statusToneMap[card.label].valueClassName}`}>{card.value}</div>
+                        <div className={`detail-hero-value mt-3 ${statusToneMap[card.label].valueClassName}`}>{card.value}</div>
                       </div>
                       <span className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusToneMap[card.label].pillClassName}`}>
                         {statusToneMap[card.label].pillLabel}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">{card.hint}</p>
+                    <p className="detail-note mt-3">{card.hint}</p>
                   </div>
                 ))}
               </div>

@@ -4,10 +4,10 @@ import { useGenerationStore } from '@/store/generationStore'
 import { Image, Video, Layers, PieChart, Zap, ZapOff } from 'lucide-react'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
-function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function MiniStatCard({ label, value, valueClassName = 'dashboard-stat-value' }: { label: string; value: number; valueClassName?: string }) {
   return (
-    <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-      <span className={`text-3xl font-bold ${color}`}>{value}</span>
+    <div className="dashboard-stat-card">
+      <span className={valueClassName}>{value}</span>
       <span className="helper-text mt-1">{label}</span>
     </div>
   )
@@ -134,21 +134,21 @@ export default function Generation() {
       <PageIntro title="生成概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <MiniStatCard label="图片任务" value={imageTasks.length} color="text-blue-500" />
-        <MiniStatCard label="视频任务" value={videoTasks.length} color="text-purple-500" />
-        <MiniStatCard label="成功率" value={successRate} color="text-green-500" />
-        <MiniStatCard label="生成失败" value={totalFailed} color="text-red-500" />
-        <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <MiniStatCard label="图片任务" value={imageTasks.length} />
+        <MiniStatCard label="视频任务" value={videoTasks.length} />
+        <MiniStatCard label="成功率" value={successRate} valueClassName="dashboard-stat-value-status-success" />
+        <MiniStatCard label="生成失败" value={totalFailed} valueClassName="dashboard-stat-value-status-danger" />
+        <div className="dashboard-stat-card">
           <div className="flex items-center gap-1 mb-1">
-            <Zap size={16} className="text-yellow-500" />
-            <span className="text-3xl font-bold text-yellow-500">{formatTokens(totalTokensUsed)}</span>
+            <Zap size={16} className="dashboard-category-icon-yellow" />
+            <span className="dashboard-stat-value">{formatTokens(totalTokensUsed)}</span>
           </div>
           <span className="helper-text mt-1">总 Token 消耗</span>
         </div>
-        <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="dashboard-stat-card">
           <div className="flex items-center gap-1 mb-1">
-            <ZapOff size={16} className="text-cyan-500" />
-            <span className="text-3xl font-bold text-cyan-500">{formatTokens(avgTokens)}</span>
+            <ZapOff size={16} className="dashboard-category-icon-cyan" />
+            <span className="dashboard-stat-value">{formatTokens(avgTokens)}</span>
           </div>
           <span className="helper-text mt-1">平均 Token 消耗</span>
         </div>
@@ -157,7 +157,7 @@ export default function Generation() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <Image size={18} className="text-blue-600 dark:text-blue-400" />
+            <Image size={18} className="dashboard-category-icon-blue" />
             图片生成任务状态
           </h2>
           <div className="space-y-1">
@@ -179,7 +179,7 @@ export default function Generation() {
 
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <Video size={18} className="text-purple-600 dark:text-purple-400" />
+            <Video size={18} className="dashboard-category-icon-purple" />
             视频生成任务状态
           </h2>
           <div className="space-y-1">
@@ -221,7 +221,7 @@ export default function Generation() {
 
         <PageSection>
           <h2 className="card-title mb-4 flex items-center gap-2">
-            <PieChart size={18} className="text-green-600 dark:text-green-400" />
+            <PieChart size={18} className="dashboard-category-icon-neutral" />
             生成成功率概览
           </h2>
           <div className="flex items-center justify-center py-6">
@@ -243,15 +243,15 @@ export default function Generation() {
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="metric-value text-green-500">{totalGenerated}</p>
+              <p className="dashboard-stat-value-status-success">{totalGenerated}</p>
               <p className="helper-text">已完成</p>
             </div>
             <div>
-              <p className="metric-value text-red-500">{totalFailed}</p>
+              <p className="dashboard-stat-value-status-danger">{totalFailed}</p>
               <p className="helper-text">失败</p>
             </div>
             <div>
-              <p className="metric-value text-yellow-500">{totalPending}</p>
+              <p className="dashboard-stat-value-status-warning">{totalPending}</p>
               <p className="helper-text">待处理</p>
             </div>
           </div>

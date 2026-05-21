@@ -635,7 +635,7 @@ export default function ProjectDetail() {
         </div>
 
         <div>
-          <h1 className="page-title-compact sm:text-[30px]">{project.projectName}</h1>
+          <h1 className="detail-page-title">{project.projectName}</h1>
         </div>
 
         <PageSection className="space-y-4">
@@ -674,7 +674,7 @@ export default function ProjectDetail() {
               </div>
               <div className="mt-4 space-y-4">
                 <div>
-                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">首图</div>
+                  <div className="detail-meta-label">首图</div>
                   <div className={`mt-2 ${projectSummaryMetaListClass}`}>
                     <div className={projectSummaryMetaRowClass}>
                       <span className="field-label">模型</span>
@@ -690,7 +690,7 @@ export default function ProjectDetail() {
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">尾图</div>
+                  <div className="detail-meta-label">尾图</div>
                   <div className={`mt-2 ${projectSummaryMetaListClass}`}>
                     <div className={projectSummaryMetaRowClass}>
                       <span className="field-label">模型</span>
@@ -706,7 +706,7 @@ export default function ProjectDetail() {
                 </div>
 
                 <div>
-                  <div className="text-xs font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">视频</div>
+                  <div className="detail-meta-label">视频</div>
                   <div className={`mt-2 ${projectSummaryMetaListClass}`}>
                     <div className={projectSummaryMetaRowClass}>
                       <span className="field-label">模型</span>
@@ -883,9 +883,9 @@ export default function ProjectDetail() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {traceSummaryItems.map((item) => (
             <div key={item.id} className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-              <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">{item.label}</div>
-              <div className="mt-3 text-[28px] font-semibold tracking-[-0.04em] text-gray-950 dark:text-gray-50">{item.value}</div>
-              <p className="mt-3 text-sm leading-6 text-gray-500 dark:text-gray-400">{item.hint}</p>
+              <div className="detail-meta-label">{item.label}</div>
+              <div className="detail-hero-value mt-3">{item.value}</div>
+              <p className="detail-note mt-3">{item.hint}</p>
             </div>
           ))}
         </div>

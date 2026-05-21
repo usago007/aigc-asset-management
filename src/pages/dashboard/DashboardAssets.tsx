@@ -3,10 +3,10 @@ import { useAppStore } from '@/store/appStore'
 import { Video, PieChart, Activity, FileText, Image } from 'lucide-react'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 
-function MiniStatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function MiniStatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-      <span className={`text-3xl font-bold ${color}`}>{value}</span>
+    <div className="dashboard-stat-card">
+      <span className="dashboard-stat-value">{value}</span>
       <span className="helper-text mt-1">{label}</span>
     </div>
   )
@@ -49,9 +49,9 @@ export default function DashboardAssets() {
   }
 
   const TYPE_COLORS: Record<string, string> = {
-    Image: 'text-blue-600 dark:text-blue-400',
-    Video: 'text-purple-600 dark:text-purple-400',
-    Script: 'text-green-600 dark:text-green-400',
+    Image: 'dashboard-category-icon-blue',
+    Video: 'dashboard-category-icon-purple',
+    Script: 'dashboard-category-icon-green',
   }
 
   return (
@@ -59,15 +59,15 @@ export default function DashboardAssets() {
       <PageIntro title="资产概览" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MiniStatCard label="总资产" value={totalAssets} color="text-gray-900 dark:text-white" />
-        <MiniStatCard label="图片" value={typeCounts.Image} color="text-blue-500" />
-        <MiniStatCard label="视频" value={typeCounts.Video} color="text-purple-500" />
-        <MiniStatCard label="脚本" value={typeCounts.Script} color="text-green-500" />
+        <MiniStatCard label="总资产" value={totalAssets} />
+        <MiniStatCard label="图片" value={typeCounts.Image} />
+        <MiniStatCard label="视频" value={typeCounts.Video} />
+        <MiniStatCard label="脚本" value={typeCounts.Script} />
       </div>
 
       <PageSection>
         <h2 className="card-title mb-4 flex items-center gap-2">
-          <PieChart size={18} className="text-blue-600 dark:text-blue-400" />
+          <PieChart size={18} className="dashboard-category-icon-blue" />
           资产类型分布
         </h2>
         <div className="space-y-3">
