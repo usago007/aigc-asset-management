@@ -1,80 +1,90 @@
 # AIGC Asset Management
 
-一个面向内容生产流程的 AIGC 数字资产管理前端系统，覆盖内容中心、项目中心、系统管理三大模块，并提供镜头级创作工作台、项目镜头编排、图片/视频生成结果追溯等能力。
+> AIGC digital asset management platform for content production workflows — covering content creation, shot-level workbench, project orchestration, and system administration.
 
-## 功能概览
+## Features
 
-- 内容中心：图片创作、视频创作、镜头管理、首图/尾图管理、资产管理
-- 项目中心：客户、品牌、项目、提案、任务、审核与项目详情工作台
-- 系统管理：成员、角色权限、系统日志、系统设置
-- 镜头工作台：在镜头上下文中直接完成图片/视频创作，并选择首图、尾图、最终视频
+- **Shot-Level Workbench** — Create & manage images/videos within a shot context; assign key frames, start/end frames, and final video
+- **Image & Video Generation** — AIGC-powered generation with prompt input, parameter tuning, and result tracing
+- **Shot Orchestration** — Organize shots within projects; track generation status and outcomes
+- **Asset Management** — Browse, filter, and manage generated images, videos, and media assets
+- **Dashboard** — Overview of recent generation tasks, assets, and activity
+- **Project Management** — Customer → Brand → Project → Brief → Task hierarchy with review workflows
+- **System Administration** — Members, roles/permissions, system logs, and settings
+- **Dark Mode** — Full theme support with persistent preference
 
-## 本地运行
+## Pages
+
+| Module | Page | Description |
+|---|---|---|
+| Dashboard | Overview | KPI summary and activity feed |
+| Dashboard | Generation | Recent generation tasks |
+| Dashboard | Assets | Quick asset browser |
+| Dashboard | Tasks | Task overview |
+| Content | Image Generation | AI image creation workspace |
+| Content | Video Generation | AI video creation workspace |
+| Content | Shots | Shot management with grid view |
+| Content | Shot Detail | Shot-level workbench with context |
+| Content | Assets | Full asset library |
+| Projects | Customers | Client management |
+| Projects | Brands | Brand management |
+| Projects | Projects | Project list |
+| Projects | Briefs | Creative brief management |
+| Projects | Tasks | Task tracking |
+| Projects | Reviews | Review & approval workflow |
+| System | Members | Team members |
+| System | Roles | Role-based permissions |
+| System | Settings | Application settings |
+| System | System Logs | Audit trail |
+
+## Tech Stack
+
+| Category | Tech |
+|---|---|
+| Framework | React 18 + TypeScript |
+| Routing | React Router (HashRouter) |
+| Build | Vite 5 |
+| Styling | Tailwind CSS 3 |
+| State | Zustand |
+| UI Components | Radix UI + custom component library |
+| Deployment | GitHub Pages via Actions |
+
+## Project Structure
+
+```
+src/
+├── components/        Shared components (Layout, Sidebar, Header, workspaces, media cards, …)
+│   └── ui/            Radix-based UI primitives (Button, Dialog, Tabs, Select, Toast, …)
+├── pages/
+│   ├── content/       Image/Video generation, Shots, Assets, KeyFrames
+│   ├── dashboard/     Overview, Generation, Assets, Tasks
+│   ├── projects/      Customers, Brands, Projects, Briefs, Tasks, Reviews
+│   └── system/        Members, Roles, Settings, Logs, AI Config
+├── store/             Zustand stores (appStore, generationStore, aiConfigStore)
+├── context/           ThemeContext
+├── constants/         App constants
+├── data/              Mock data
+├── lib/               Utility libraries
+├── services/          Service layer
+├── types/             TypeScript type definitions
+└── utils/             Helper functions
+```
+
+## Getting Started
 
 ```bash
+git clone https://github.com/usago007/aigc-asset-management.git
+cd aigc-asset-management
 npm install
-npm run dev:accept
+npm run dev
 ```
 
-默认开发地址：
-
-```text
-http://127.0.0.1:5173/
-```
-
-这是实时源码入口，适合验收刚改完的文案、样式和交互。若端口被占用，脚本会自动切到下一个可用端口，并打印最终地址。
-
-## 验收入口
-
-日常 UI 验收优先使用开发服务；最终交付前再看构建预览。
-
-### 1. 实时验收
-
-```bash
-npm run dev:accept
-```
-
-想看刚改完的界面，默认走这个入口。它直接读取 `src/`，不会出现“源码改了但页面还是旧的”。
-
-### 2. 构建预览
-
-```bash
-npm run build
-npm run preview:accept
-```
-
-默认会优先尝试：
-
-```text
-http://127.0.0.1:4173/
-```
-
-如果该端口被占用，脚本会自动切到下一个可用端口，并在终端里打印最终地址。后续验收请直接使用它打印出来的 URL。
-
-这个入口读取的是 `dist/` 构建产物，不会自动反映后续源码改动。若 `src/` 晚于 `dist/`，脚本会直接给出提示。
-
-`file:///.../dist/index.html` 继续保留为离线兼容路径，但不再作为首要验收入口。涉及刷新、直达路由和稳定性验证时，统一以本地服务为准。
-
-## 构建
+Build for production:
 
 ```bash
 npm run build
 ```
 
-构建产物输出到 `dist/` 目录。
+## License
 
-构建阶段会额外检查内联后的 HTML、JS、CSS 相对资源引用是否仍可达；若存在刷新后可能白屏的资源路径问题，构建会直接失败。
-
-## 技术栈
-
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- Zustand
-- Radix UI
-
-## 说明
-
-- 当前仓库主要用于前端交互验证与交付。
-- 图片、视频生成链路为前端模拟流程，便于展示镜头级创作与结果管理体验。
+[MIT](./LICENSE)
