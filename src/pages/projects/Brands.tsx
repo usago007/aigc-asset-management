@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import type { Brand } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const includesText = (value: unknown, query: string) => {
   const normalizedQuery = normalizeSearchText(query)
@@ -22,6 +23,7 @@ const includesText = (value: unknown, query: string) => {
 }
 
 export default function Brands() {
+  const confirm = useConfirm()
   const { brands, customers, addBrand, updateBrand, deleteBrand } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Brand | null>(null)
@@ -87,8 +89,8 @@ export default function Brands() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除品牌', description: '删除后将无法恢复该品牌记录。关联项目中的品牌引用可能失去显示信息。', confirmLabel: '删除品牌', tone: 'danger' })) {
       deleteBrand(id)
       showToast('success', '品牌删除成功')
     }
@@ -97,7 +99,9 @@ export default function Brands() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 品牌资产"
         title="品牌管理"
+        description="管理客户旗下品牌、责任人及协作信息，确保创意产出始终绑定正确的品牌上下文。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建品牌</Button>}
       />
 

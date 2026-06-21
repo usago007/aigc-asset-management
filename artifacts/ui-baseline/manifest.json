@@ -1,0 +1,49 @@
+[
+  {
+    "route": "/content/image-generation",
+    "file": "image-generation-light.png",
+    "theme": "light",
+    "viewport": "1280x800",
+    "heading": "图片创作"
+  },
+  {
+    "route": "/projects/projects",
+    "file": "projects-light.png",
+    "theme": "light",
+    "viewport": "1280x800",
+    "heading": "项目列表"
+  },
+  {
+    "route": "/dashboard/overview",
+    "file": "dashboard-overview-light.png",
+    "theme": "light",
+    "viewport": "1280x800",
+    "heading": "看见创意生产的真实脉搏"
+  },
+  {
+    "route": "/system/ai-config",
+    "file": "ai-config-light.png",
+    "theme": "light",
+    "viewport": "1280x800",
+    "heading": "AI 能力配置"
+  },
+  {
+    "route": "/content/image-detail/image-task-1-1-opening/0",
+    "file": "image-detail-light.png",
+    "theme": "light",
+    "viewport": "1280x800",
+    "heading": "图片详情"
+  },
+  {
+    "route": "/dashboard/overview",
+    "file": "dashboard-overview-dark.png",
+    "theme": "dark",
+    "viewport": "1280x800"
+  },
+  {
+    "route": "/projects/projects",
+    "file": "projects-mobile-light.png",
+    "theme": "light",
+    "viewport": "768x800"
+  }
+]

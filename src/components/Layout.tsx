@@ -6,9 +6,11 @@ import ProfileModal from './ProfileModal'
 import type { CurrentUserProfile, NotificationItem } from '@/types'
 import { getCurrentUserProfile, getNotificationCenter, saveCurrentUserProfile, saveNotificationCenter, subscribeShellState } from '@/utils/shellState'
 import { showToast } from '@/utils/toast'
+import { ConfirmProvider } from './ConfirmProvider'
 
 export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false)
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [profile, setProfile] = useState<CurrentUserProfile>(() => getCurrentUserProfile())
@@ -69,15 +71,31 @@ export default function Layout() {
   }, [navigate])
 
   return (
-    <div className="flex h-screen bg-[#f6f5f2] text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <ConfirmProvider>
+    <div className="app-shell">
+      <a href="#main-content" className="skip-link">跳到主要内容</a>
       <Sidebar
+        className="hidden lg:flex"
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         profile={profile}
         onOpenProfile={() => setProfileModalOpen(true)}
       />
+      {mobileNavigationOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="移动端导航">
+          <button className="absolute inset-0 bg-gray-950/35 backdrop-blur-sm" aria-label="关闭导航" onClick={() => setMobileNavigationOpen(false)} />
+          <Sidebar
+            className="relative h-full w-[min(86vw,300px)] shadow-[24px_0_80px_rgba(15,23,42,.18)]"
+            collapsed={false}
+            onToggle={() => setMobileNavigationOpen(false)}
+            profile={profile}
+            onOpenProfile={() => { setMobileNavigationOpen(false); setProfileModalOpen(true) }}
+          />
+        </div>
+      ) : null}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
+          onOpenNavigation={() => setMobileNavigationOpen(true)}
           notifications={notifications}
           unreadCount={unreadCount}
           notificationsEnabled={profile.notificationsEnabled}
@@ -89,7 +107,7 @@ export default function Layout() {
           onNavigateFromNotification={handleNavigateFromNotification}
           onOpenSettings={openSettings}
         />
-        <main className="flex-1 overflow-y-auto px-6 py-8 lg:px-10">
+        <main id="main-content" tabIndex={-1} className="app-main">
           <Outlet />
         </main>
       </div>
@@ -101,5 +119,6 @@ export default function Layout() {
         onOpenSettings={openSettings}
       />
     </div>
+    </ConfirmProvider>
   )
 }

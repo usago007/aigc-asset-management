@@ -167,7 +167,9 @@ export default function AIConfigPanel() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="系统管理 / AI 基础设施"
         title="AI 能力配置"
+        description="按环境管理图片与视频模型端点、请求键和调用策略，保持模拟服务与真实接口契约一致。"
         actions={(
           <NativeSelect
             value={preset}

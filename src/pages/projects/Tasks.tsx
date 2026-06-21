@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Task, TaskStatus } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const statusMap: Record<TaskStatus, { label: string; variant: 'warning' | 'info' | 'success' }> = {
   Pending: { label: '待处理', variant: 'warning' },
@@ -23,6 +24,7 @@ const statusMap: Record<TaskStatus, { label: string; variant: 'warning' | 'info'
 }
 
 export default function Tasks() {
+  const confirm = useConfirm()
   const { tasks, projects, addTask, updateTask, deleteTask } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Task | null>(null)
@@ -100,8 +102,8 @@ export default function Tasks() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除任务', description: '删除后将无法恢复任务状态、负责人和截止日期记录。', confirmLabel: '删除任务', tone: 'danger' })) {
       deleteTask(id)
       showToast('success', '任务删除成功')
     }
@@ -110,7 +112,9 @@ export default function Tasks() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 交付协作"
         title="任务管理"
+        description="分配生成、审核和交付任务，跟踪负责人、状态与截止日期，及时发现执行阻塞。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建任务</Button>}
       />
 

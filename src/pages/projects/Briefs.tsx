@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ActionIconButton } from '@/components/ui/action-icon-button'
 import type { Brief } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const includesText = (value: unknown, query: string) => {
   const normalizedQuery = normalizeSearchText(query)
@@ -23,6 +24,7 @@ const includesText = (value: unknown, query: string) => {
 }
 
 export default function Briefs() {
+  const confirm = useConfirm()
   const { briefs, projects, addBrief, updateBrief, deleteBrief } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Brief | null>(null)
@@ -112,8 +114,8 @@ export default function Briefs() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除提案', description: '删除后将无法恢复提案内容和文件引用。项目本身不会被删除。', confirmLabel: '删除提案', tone: 'danger' })) {
       deleteBrief(id)
       showToast('success', '提案删除成功')
     }
@@ -122,7 +124,9 @@ export default function Briefs() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 创意输入"
         title="提案管理"
+        description="沉淀目标受众、投放平台、交付期限与版本文件，把创意输入转化为可执行约束。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建提案</Button>}
       />
 

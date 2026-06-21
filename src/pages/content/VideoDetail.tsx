@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Clapperboard, Download, Film, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star } from 'lucide-react'
+import { ArrowLeft, Clapperboard, Download, FolderOpen, MoreHorizontal, RefreshCw, Share2, Sparkles, Star } from 'lucide-react'
 import { useGenerationStore } from '@/store/generationStore'
 import { useAppStore } from '@/store/appStore'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
 import FakeVideoFrame from '@/components/FakeVideoFrame'
 import { getMediaDownloadName } from '@/utils/mediaLibrary'
+import { showToast } from '@/utils/toast'
 import {
   detailActionTileClass,
   detailBackButtonClass,
@@ -92,6 +93,21 @@ export default function VideoDetail() {
     anchor.click()
   }, [task])
 
+  const handleShare = useCallback(async () => {
+    if (!task) return
+    const shareData = { title: 'AIGC 视频详情', text: task.prompt, url: window.location.href }
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        showToast('success', '详情链接已复制')
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') showToast('error', '无法分享当前链接')
+    }
+  }, [task])
+
   if (!task) {
     return (
       <PageShell>
@@ -119,8 +135,8 @@ export default function VideoDetail() {
   const actionTiles = [
     { icon: <RefreshCw size={16} />, label: '再次生成', action: () => navigate('/content/video-generation') },
     { icon: <Sparkles size={16} />, label: '重新编辑', action: () => navigate('/content/video-generation') },
-    { icon: <Film size={16} />, label: '补帧', disabled: true, note: '即将开放' },
-    { icon: <Sparkles size={16} />, label: '智能超清', disabled: true, note: '即将开放' },
+    { icon: <Clapperboard size={16} />, label: '技术详情', action: () => navigate(`/content/task/${task.id}`) },
+    { icon: <FolderOpen size={16} />, label: '查看资产库', action: () => navigate('/content/assets') },
   ]
 
   const videoDetailContentGridClass = detailContentGridClass
@@ -191,16 +207,16 @@ export default function VideoDetail() {
                 </div>
               </div>
               <div className={detailHeaderActionsClass}>
-                <button className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl}>
+                <button type="button" aria-label="下载视频" className={detailIconButtonClass} title="下载" onClick={handleDownload} disabled={!task.videoUrl}>
                   <Download size={18} />
                 </button>
-                <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                <button type="button" aria-label={isFavorited ? '取消收藏' : '收藏视频'} className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
                   <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
                 </button>
-                <button className={detailIconButtonClass} title="分享">
+                <button type="button" aria-label="分享视频详情" className={detailIconButtonClass} title="分享" onClick={handleShare}>
                   <Share2 size={18} />
                 </button>
-                <button className={detailIconButtonClass} title="更多操作">
+                <button type="button" aria-label="查看任务技术详情" className={detailIconButtonClass} title="查看任务技术详情" onClick={() => navigate(`/content/task/${task.id}`)}>
                   <MoreHorizontal size={18} />
                 </button>
               </div>
@@ -251,12 +267,12 @@ export default function VideoDetail() {
 
             <div className="grid grid-cols-2 gap-3">
               {actionTiles.map((item) => (
-                <button key={item.label} className={detailActionTileClass} disabled={item.disabled} onClick={item.action}>
+                <button key={item.label} className={detailActionTileClass} onClick={item.action}>
                   <div className="flex items-center gap-2">
                     {item.icon}
                     <span>{item.label}</span>
                   </div>
-                  <span className="helper-text">{item.note || '可直接跳转'}</span>
+                  <span className="helper-text">可直接跳转</span>
                 </button>
               ))}
             </div>

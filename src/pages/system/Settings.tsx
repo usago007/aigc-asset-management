@@ -34,7 +34,9 @@ export default function Settings() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="系统管理 / 偏好"
         title="系统设置"
+        description="配置界面语言、信息密度、主题和通知偏好；所有偏好仅保存在当前浏览器。"
         actions={
           <Button onClick={handleSave} className="gap-2">
             <Save size={16} />

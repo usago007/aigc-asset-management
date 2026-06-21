@@ -151,7 +151,9 @@ export default function Members() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="系统管理 / 组织"
         title="成员管理"
+        description="管理成员身份、部门、角色和账号状态，确保生产协作与访问权限保持一致。"
         actions={(
           <Button className="gap-2" onClick={() => handleOpenModal()}>
             <UserPlus size={16} />

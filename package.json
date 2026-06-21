@@ -7,6 +7,9 @@
     "dev": "vite",
     "dev:accept": "node scripts/serve-dev.mjs",
     "build": "tsc && vite build && node scripts/postbuild-inline.mjs",
+    "verify:ui": "node scripts/verify-ui-contract.mjs",
+    "verify:routes": "node scripts/verify-routes.mjs",
+    "baseline:ui": "UPDATE_UI_BASELINE=1 node scripts/verify-routes.mjs",
     "preview": "vite preview",
     "preview:accept": "node scripts/serve-preview.mjs"
   },

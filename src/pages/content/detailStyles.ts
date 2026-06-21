@@ -24,7 +24,7 @@ export const detailTitleClass = 'detail-page-title'
 
 export const detailSubtitleClass = 'mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400'
 
-export const detailIconButtonClass = 'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50'
+export const detailIconButtonClass = 'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:disabled:hover:bg-gray-900'
 
 export const detailPrimaryActionClass = 'btn-primary gap-2'
 

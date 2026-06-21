@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import type { Customer } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const includesText = (value: unknown, query: string) => {
   const normalizedQuery = normalizeSearchText(query)
@@ -21,6 +22,7 @@ const includesText = (value: unknown, query: string) => {
 }
 
 export default function Customers() {
+  const confirm = useConfirm()
   const { customers, addCustomer, updateCustomer, deleteCustomer } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Customer | null>(null)
@@ -85,8 +87,8 @@ export default function Customers() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除客户', description: '删除后将无法恢复该客户记录。请先确认没有品牌或项目依赖此记录。', confirmLabel: '删除客户', tone: 'danger' })) {
       deleteCustomer(id)
       showToast('success', '客户删除成功')
     }
@@ -95,7 +97,9 @@ export default function Customers() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 商业关系"
         title="客户管理"
+        description="维护客户联系人和协作备注，为品牌、项目与交付记录提供稳定的业务归属。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建客户</Button>}
       />
 

@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Clapperboard, Download, FolderOpe
 import { useAppStore } from '@/store/appStore'
 import { Button } from '@/components/ui/button'
 import { PageShell } from '@/components/PageShell'
+import { showToast } from '@/utils/toast'
 import {
   detailActionTileClass,
   detailBackButtonClass,
@@ -115,15 +116,27 @@ export default function ImageDetail() {
     document.body.removeChild(anchor)
   }
 
+  const handleShare = async () => {
+    const shareData = { title: 'AIGC 图片详情', text: task.prompt, url: window.location.href }
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        showToast('success', '详情链接已复制')
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') showToast('error', '无法分享当前链接')
+    }
+  }
+
   const goToResult = (nextIndex: number) => navigate(`/content/image-detail/${task.id}/${nextIndex}`, { state: navState ?? undefined })
 
   const actionTiles = [
     { icon: <Video size={16} />, label: '生成视频', action: () => navigate('/content/video-generation') },
     { icon: <Sparkles size={16} />, label: '重新编辑', action: () => navigate('/content/image-generation') },
     { icon: <ImageIcon size={16} />, label: '再次生成', action: () => navigate('/content/image-generation') },
-    { icon: <Sparkles size={16} />, label: '超清修复', disabled: true, note: '即将开放' },
-    { icon: <Sparkles size={16} />, label: '局部消除', disabled: true, note: '即将开放' },
-    { icon: <Sparkles size={16} />, label: '扩图延展', disabled: true, note: '即将开放' },
+    { icon: <FolderOpen size={16} />, label: '查看资产库', action: () => navigate('/content/assets') },
   ]
 
   const imageDetailContentGridClass = detailContentGridClass
@@ -157,16 +170,16 @@ export default function ImageDetail() {
                 </div>
               </div>
               <div className={detailHeaderActionsClass}>
-                <button className={detailIconButtonClass} title="下载" onClick={handleDownload}>
+                <button type="button" aria-label="下载图片" className={detailIconButtonClass} title="下载" onClick={handleDownload}>
                   <Download size={18} />
                 </button>
-                <button className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
+                <button type="button" aria-label={isFavorited ? '取消收藏' : '收藏图片'} className={detailIconButtonClass} title="收藏" onClick={() => setIsFavorited(!isFavorited)}>
                   <Star size={18} className={isFavorited ? 'fill-amber-400 text-amber-400' : ''} />
                 </button>
-                <button className={detailIconButtonClass} title="分享">
+                <button type="button" aria-label="分享图片详情" className={detailIconButtonClass} title="分享" onClick={handleShare}>
                   <Share2 size={18} />
                 </button>
-                <button className={detailIconButtonClass} title="更多操作">
+                <button type="button" aria-label="在资产库中查看" className={detailIconButtonClass} title="在资产库中查看" onClick={() => navigate('/content/assets')}>
                   <MoreHorizontal size={18} />
                 </button>
               </div>
@@ -213,10 +226,12 @@ export default function ImageDetail() {
                   {resultImages.map((url, index) => (
                     <button
                       key={`${task.id}-${index}`}
+                      type="button"
+                      aria-label={`查看生成结果 ${index + 1}`}
                       className={`aspect-square overflow-hidden rounded-2xl border transition-colors ${index === currentIndex ? 'border-gray-950 ring-2 ring-gray-900/10 dark:border-white dark:ring-white/10' : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'}`}
                       onClick={() => goToResult(index)}
                     >
-                      <img src={url} alt="" className="h-full w-full object-cover" />
+                      <img src={url} alt={`生成结果 ${index + 1}`} className="h-full w-full object-cover" />
                     </button>
                   ))}
                 </div>
@@ -256,12 +271,12 @@ export default function ImageDetail() {
 
             <div className="grid grid-cols-2 gap-3">
               {actionTiles.map((item) => (
-                <button key={item.label} className={detailActionTileClass} disabled={item.disabled} onClick={item.action}>
+                <button key={item.label} className={detailActionTileClass} onClick={item.action}>
                   <div className="flex items-center gap-2">
                     {item.icon}
                     <span>{item.label}</span>
                   </div>
-                  <span className="helper-text">{item.note || '可直接跳转'}</span>
+                  <span className="helper-text">可直接跳转</span>
                 </button>
               ))}
             </div>

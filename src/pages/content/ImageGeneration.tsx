@@ -5,7 +5,9 @@ export default function ImageGeneration() {
   return (
     <PageShell className="page-shell-workbench">
       <PageIntro
+        eyebrow="内容中心 / AI 创作"
         title="图片创作"
+        description="从提示词、参考图和模型参数出发生成可追溯的视觉资产，并将结果直接沉淀到项目与镜头。"
       />
 
       <PageSection className="workspace-stage p-0">

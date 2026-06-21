@@ -34,6 +34,7 @@ import type {
   Shot,
 } from '@/types'
 import type { ImageGenerationTask, VideoGenerationTask } from '@/types/generation'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const stageMap: Record<ProjectStage, { label: string; variant: 'info' | 'warning' | 'success' }> = {
   Planning: { label: '规划中', variant: 'info' },
@@ -178,6 +179,7 @@ const ShotVideoCard = ({ lookup }: { lookup: VideoLookup }) => {
 }
 
 export default function ProjectDetail() {
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const {
@@ -585,8 +587,8 @@ export default function ProjectDetail() {
     setBriefModalOpen(false)
   }
 
-  const removeBrief = (briefId: string) => {
-    if (!window.confirm('确定要删除这个提案吗？')) return
+  const removeBrief = async (briefId: string) => {
+    if (!await confirm({ title: '删除项目提案', description: '删除后该提案的创意约束和文件引用将无法恢复。', confirmLabel: '删除提案', tone: 'danger' })) return
     deleteBrief(briefId)
   }
 
@@ -602,9 +604,9 @@ export default function ProjectDetail() {
     setLinkModalOpen(false)
   }
 
-  const handleClearSlot = (slotId: string) => {
+  const handleClearSlot = async (slotId: string) => {
     if (!project) return
-    if (!window.confirm('确定要解除这个镜头位的关联吗？')) return
+    if (!await confirm({ title: '解除镜头关联', description: '镜头本身不会被删除，但会从当前项目镜头位移除。', confirmLabel: '解除关联' })) return
     clearProjectShotSlot(project.id, slotId)
   }
 

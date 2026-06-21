@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { KeyFrame, GenerationStatus } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const statusMap: Record<GenerationStatus, { label: string; variant: 'warning' | 'success' | 'destructive' }> = {
   Pending: { label: '进行中', variant: 'warning' },
@@ -23,6 +24,7 @@ const statusMap: Record<GenerationStatus, { label: string; variant: 'warning' | 
 }
 
 export default function KeyFrames() {
+  const confirm = useConfirm()
   const { keyFrames, shots, addKeyFrame, updateKeyFrame, deleteKeyFrame } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<KeyFrame | null>(null)
@@ -98,8 +100,8 @@ export default function KeyFrames() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除关键帧', description: '删除后镜头可能失去首帧或尾帧引用，生成版本不会自动迁移。', confirmLabel: '删除关键帧', tone: 'danger' })) {
       deleteKeyFrame(id)
       showToast('success', '删除成功')
     }
