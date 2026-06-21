@@ -76,7 +76,7 @@ export default function TaskDetail() {
       <div className={detailPageShellClass}>
         <section className={detailHeaderClass}>
           <div className="space-y-3">
-            <button onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
+            <button type="button" aria-label="返回资产库" onClick={() => navigate('/content/assets')} className={detailBackButtonClass}>
               <ArrowLeft size={18} />
             </button>
             <div>

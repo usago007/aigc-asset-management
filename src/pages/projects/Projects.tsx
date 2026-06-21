@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Project, ProjectStage, RiskLevel } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const stageMap: Record<ProjectStage, { label: string; variant: 'info' | 'warning' | 'success' }> = {
   Planning: { label: '规划中', variant: 'info' },
@@ -29,6 +30,7 @@ const riskMap: Record<RiskLevel, { label: string; variant: 'success' | 'warning'
 }
 
 export default function Projects() {
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const { projects, brands, customers, addProject, updateProject, deleteProject } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -133,8 +135,8 @@ export default function Projects() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除项目', description: '删除项目会移除项目主记录。执行前请确认镜头、任务和资产已经完成迁移。', confirmLabel: '删除项目', tone: 'danger' })) {
       deleteProject(id)
       showToast('success', '项目删除成功')
     }
@@ -143,7 +145,9 @@ export default function Projects() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 制作组合"
         title="项目列表"
+        description="集中管理项目阶段、负责人、进度和风险，进入详情后可继续编排镜头与生成任务。"
         actions={(
           <Button onClick={() => handleOpenModal()} className="gap-2">
             <Plus size={16} /> 创建项目

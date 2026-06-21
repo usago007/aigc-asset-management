@@ -7,6 +7,7 @@ import { fileToBase64 } from '@/utils/file'
 import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
 import GenerationResultFeed, { type ResultFeedGroup } from '@/components/GenerationResultFeed'
+import CreationTelemetry from '@/components/CreationTelemetry'
 import type { GenerationMode, VideoGenerationTask } from '@/types/generation'
 
 interface VideoCreationWorkspaceProps {
@@ -257,7 +258,7 @@ export default function VideoCreationWorkspace({
         onClick: () => retryTask(task.id),
       },
       {
-        label: '更多操作',
+        label: '查看详情',
         icon: 'more',
         variant: 'secondary',
         onClick: () => navigate(`/content/video-detail/${task.id}`, { state: resolvedDetailNavState }),
@@ -453,11 +454,17 @@ export default function VideoCreationWorkspace({
 
   return (
     <div className="space-y-6">
+      <CreationTelemetry
+        medium="视频"
+        mode={videoModeLabelMap[mode]}
+        activeCount={activeTasks.length}
+        resultCount={completedTasks.length}
+        contextLabel={shotId ? '已绑定镜头' : projectId ? '已绑定项目' : '全局创作'}
+      />
       <JimengInput
         value={prompt}
         onChange={setPrompt}
         onSubmit={handleSubmit}
-        disabled={activeTasks.length > 0}
         placeholder="描述你想生成的视频内容..."
         videoUploadLabel={mode === 'image-to-video-first-tail' ? '添加首帧' : '添加首帧'}
         mediaHint={mediaHint}
@@ -492,6 +499,8 @@ export default function VideoCreationWorkspace({
           <div className="group relative h-16 w-24 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
             <img src={lastFrame.url} alt="尾帧" className="h-full w-full object-cover" />
             <button
+              type="button"
+              aria-label="移除尾帧参考图"
               className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 opacity-0 shadow-md transition-opacity group-hover:opacity-100 hover:bg-red-500 dark:bg-gray-700"
               onClick={() => { setLastFrame(null); setLastAspectRatio(null) }}
             >
@@ -509,9 +518,12 @@ export default function VideoCreationWorkspace({
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">
-          <h3 className="panel-title">活跃任务 ({activeTasks.length})</h3>
+          <div className="flex items-center justify-between gap-4">
+            <div><p className="eyebrow">LIVE QUEUE</p><h3 className="card-title mt-1">活跃任务</h3></div>
+            <span className="font-mono text-xs text-gray-400">{activeTasks.length} RUNNING</span>
+          </div>
           {activeTasks.map((task) => (
-            <div key={task.id} className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+            <div key={task.id} className="creation-task-row">
               {task.status === 'generating' || task.status === 'in_queue' ? (
                 <Loader2 size={20} className="flex-shrink-0 animate-spin text-gray-500 dark:text-gray-300" />
               ) : (
@@ -525,9 +537,12 @@ export default function VideoCreationWorkspace({
                   </span>
                   {task.progress != null && ` · ${task.progress}%`}
                 </p>
+                {task.progress != null ? <div className="creation-task-progress"><span style={{ transform: `scaleX(${Math.max(0, Math.min(task.progress, 100)) / 100})` }} /></div> : null}
               </div>
               {task.status === 'in_queue' && (
                 <button
+                  type="button"
+                  aria-label="取消排队任务"
                   className="p-1 text-gray-400 transition-colors hover:text-error"
                   onClick={() => cancelTask(task.id)}
                 >

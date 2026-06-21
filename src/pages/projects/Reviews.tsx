@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ActionIconButton } from '@/components/ui/action-icon-button'
 import type { Review, ReviewStatus } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const statusMap: Record<ReviewStatus, { label: string; className: string }> = {
   Pending: { label: '待审核', className: 'badge-warning' },
@@ -33,6 +34,7 @@ const targetTypeMap = {
 } as const
 
 export default function Reviews() {
+  const confirm = useConfirm()
   const { reviews, addReview, updateReview, deleteReview } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [viewingItem, setViewingItem] = useState<Review | null>(null)
@@ -100,8 +102,8 @@ export default function Reviews() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除审核记录', description: '删除后将无法恢复审核结论与评论，可能影响质量决策的追溯。', confirmLabel: '删除审核', tone: 'danger' })) {
       deleteReview(id)
     }
   }
@@ -109,7 +111,9 @@ export default function Reviews() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="项目中心 / 质量门禁"
         title="审核管理"
+        description="统一处理内部与客户审核，保留审核对象、结论和评论，形成可追溯的质量决策链。"
         actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} /> 创建审核</Button>}
       />
 

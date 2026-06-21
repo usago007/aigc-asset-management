@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, Menu, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import NotificationPanel from '@/components/NotificationPanel'
 import type { NotificationItem } from '@/types'
 
 const breadcrumbs: Record<string, string[]> = {
   '/dashboard': ['仪表盘'],
-  '/dashboard/overview': ['仪表盘', '经营总览'],
-  '/dashboard/generation': ['仪表盘', '生成概览'],
-  '/dashboard/assets': ['仪表盘', '资产概览'],
-  '/dashboard/tasks': ['仪表盘', '任务概览'],
+  '/dashboard/overview': ['数据中心', '经营态势'],
+  '/dashboard/generation': ['数据中心', '生成质量'],
+  '/dashboard/assets': ['数据中心', '资产复用'],
+  '/dashboard/tasks': ['数据中心', '交付效能'],
   '/content/keyframes': ['内容中心', '关键帧'],
   '/content/shots': ['内容中心', '镜头管理'],
   '/content/assets': ['内容中心', '资产库'],
@@ -38,6 +38,7 @@ const dynamicRoutes: { prefix: string; crumbs: string[] }[] = [
 ]
 
 interface HeaderProps {
+  onOpenNavigation: () => void
   notifications: NotificationItem[]
   unreadCount: number
   notificationsEnabled: boolean
@@ -51,6 +52,7 @@ interface HeaderProps {
 }
 
 export default function Header({
+  onOpenNavigation,
   notifications,
   unreadCount,
   notificationsEnabled,
@@ -105,20 +107,28 @@ export default function Header({
   }, [notificationPanelOpen, onCloseNotificationPanel])
 
   return (
-    <header className="header-shell px-6 py-4 lg:px-10">
+    <header className="header-shell px-4 py-3 sm:px-6 lg:px-10 lg:py-4">
       <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4">
-        <nav className="flex items-center gap-2 text-sm">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button variant="ghost" size="icon" className="shrink-0 lg:hidden" onClick={onOpenNavigation} aria-label="打开主导航">
+            <Menu size={18} />
+          </Button>
+        <nav className="flex min-w-0 items-center gap-2 overflow-hidden text-sm" aria-label="面包屑">
           {crumbs.map((crumb, index) => (
             <span key={index} className="flex items-center gap-2">
               {index > 0 && <span className="header-divider">/</span>}
-              <span className={index === crumbs.length - 1 ? 'header-crumb-active' : 'header-crumb'}>
+              <span className={`truncate ${index === crumbs.length - 1 ? 'header-crumb-active' : 'header-crumb'}`}>
                 {crumb}
               </span>
             </span>
           ))}
         </nav>
+        </div>
 
         <div className="relative flex items-center gap-3" ref={panelRef}>
+          <div className="hidden items-center gap-2 rounded-xl border border-gray-200/80 bg-white/70 px-3 py-2 text-[11px] font-medium text-gray-500 shadow-sm xl:flex dark:border-gray-800 dark:bg-gray-900/70 dark:text-gray-400">
+            <Sparkles size={13} className="text-emerald-500" /> AI workspace <span className="h-1 w-1 rounded-full bg-emerald-400" /> Ready
+          </div>
           <Button
             variant="secondary"
             size="icon"

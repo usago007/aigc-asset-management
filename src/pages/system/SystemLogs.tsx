@@ -113,7 +113,9 @@ export default function SystemLogs() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="系统管理 / 审计"
         title="全局日志"
+        description="按级别、模块和时间检查运行事件，支持导出审计记录并定位异常上下文。"
         actions={<div className="flex items-center gap-2">
           <Button variant="secondary" className="gap-2" onClick={handleExport}>
             <Download size={14} />

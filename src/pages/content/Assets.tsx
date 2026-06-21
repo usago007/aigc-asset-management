@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
 import type { Asset } from '@/types'
 import { BEAUTY_IMAGES, BEAUTY_VIDEO_POSTERS, isBeautyMediaPath } from '@/utils/mediaLibrary'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const ASSET_PLACEHOLDER_IMAGES = BEAUTY_IMAGES.slice(0, 5)
 
@@ -73,6 +74,7 @@ function AssetThumb({
 }
 
 export default function Assets() {
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const { assets, projects, shots, brands, customers, imageTasks, updateAsset, deleteAsset } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
@@ -226,8 +228,8 @@ export default function Assets() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除资产', description: '删除资产记录后无法恢复其业务关联和血缘信息。原始外部文件可能仍然存在。', confirmLabel: '删除资产', tone: 'danger' })) {
       deleteAsset(id)
       showToast('success', '删除成功')
     }
@@ -317,7 +319,7 @@ export default function Assets() {
 
   return (
     <PageShell>
-      <PageIntro title="资产库" />
+      <PageIntro eyebrow="内容中心 / 资产治理" title="资产库" description="统一检索图片、视频与脚本资产，追踪项目归属、生成来源、模型版本和衍生关系。" />
 
       <PageSection className="space-y-5">
         <div className="flex flex-wrap items-center gap-4">

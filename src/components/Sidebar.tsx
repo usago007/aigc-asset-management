@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutGrid, Folder, Settings, ChevronLeft, ChevronRight, UserRound } from 'lucide-react'
 import type { CurrentUserProfile } from '@/types'
+import { cn } from '@/lib/utils'
 
 interface SidebarProps {
+  className?: string
   collapsed: boolean
   onToggle: () => void
   profile: CurrentUserProfile
@@ -41,7 +43,7 @@ function ContentCenterIcon() {
   )
 }
 
-export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }: SidebarProps) {
+export default function Sidebar({ className, collapsed, onToggle, profile, onOpenProfile }: SidebarProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
@@ -75,10 +77,10 @@ export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }:
       icon: <LayoutGrid size={19} strokeWidth={1.8} />,
       label: '数据中心',
       children: [
-        { path: '/dashboard/overview', label: '经营总览' },
-        { path: '/dashboard/generation', label: '生成概览' },
-        { path: '/dashboard/assets', label: '资产概览' },
-        { path: '/dashboard/tasks', label: '任务概览' },
+        { path: '/dashboard/overview', label: '经营态势' },
+        { path: '/dashboard/generation', label: '生成质量' },
+        { path: '/dashboard/assets', label: '资产复用' },
+        { path: '/dashboard/tasks', label: '交付效能' },
       ]
     },
     {
@@ -119,7 +121,7 @@ export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }:
   )
 
   return (
-    <div className={`nav-shell transition-all duration-300 flex flex-col ${collapsed ? 'w-[88px]' : 'w-64'}`}>
+    <aside className={cn('nav-shell transition-[width] duration-300 flex flex-col shrink-0', collapsed ? 'w-[88px]' : 'w-64', className)} aria-label="主导航">
       <div className={`nav-header flex items-start justify-between ${collapsed ? 'p-3' : 'p-4'}`}>
         {!collapsed && (
           <div className="min-w-0 flex-1 pr-3">
@@ -130,14 +132,16 @@ export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }:
           </div>
         )}
         <button
+          type="button"
           onClick={onToggle}
+          aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
           className={`nav-toggle-ink rounded-full border border-transparent p-2 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-100 ${collapsed ? 'mx-auto mt-1' : ''}`}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
-      <nav className={`flex-1 overflow-y-auto ${collapsed ? 'px-2 py-6' : 'py-4'}`}>
+      <nav aria-label="产品功能" className={`flex-1 overflow-y-auto ${collapsed ? 'px-2 py-6' : 'py-4'}`}>
         {menuItems.map((item) => (
           <div key={item.path}>
             <Link
@@ -190,6 +194,6 @@ export default function Sidebar({ collapsed, onToggle, profile, onOpenProfile }:
           accountPanel
         )}
       </div>
-    </div>
+    </aside>
   )
 }

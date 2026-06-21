@@ -9,6 +9,7 @@ import JimengInput from '@/components/JimengInput'
 import ParamPanel from '@/components/ParamPanel'
 import GenerationResultFeed, { type ResultFeedGroup } from '@/components/GenerationResultFeed'
 import type { ImageGenerationMode, ImageGenerationTask, TaskQueueStatus } from '@/types/generation'
+import CreationTelemetry from '@/components/CreationTelemetry'
 
 interface ImageCreationWorkspaceProps {
   defaultProjectId?: string
@@ -265,7 +266,7 @@ export default function ImageCreationWorkspace({
           onClick: () => retryImageTask(task.id),
         },
         {
-          label: '更多操作',
+          label: '查看详情',
           icon: 'more',
           variant: 'secondary',
           onClick: () => navigate(`/content/image-detail/${task.id}/0`, { state: resolvedDetailNavState }),
@@ -390,11 +391,17 @@ export default function ImageCreationWorkspace({
 
   return (
     <div className="space-y-6">
+      <CreationTelemetry
+        medium="图片"
+        mode={imageModeLabelMap[mode]}
+        activeCount={activeTasks.length}
+        resultCount={completedTasks.length}
+        contextLabel={shotId ? '已绑定镜头' : projectId ? '已绑定项目' : '全局创作'}
+      />
       <JimengInput
         value={prompt}
         onChange={setPrompt}
         onSubmit={handleSubmit}
-        disabled={activeTasks.length > 0}
         placeholder="描述你想生成的图片内容..."
         imageUpload={modeCapability.supportsReferenceImages ? {
           images: uploadedImages.map((image) => ({ url: image.url, base64: image.base64 })),
@@ -404,12 +411,6 @@ export default function ImageCreationWorkspace({
         } : undefined}
         imageUploadLabel={mode === 'image-to-image' ? '添加参考图' : '添加参考图（可选）'}
         mediaHint={mediaHint}
-        leftActions={!modeCapability.supportsReferenceImages ? (
-          <div className="inline-flex items-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-2 helper-text font-medium dark:border-gray-800 dark:bg-gray-900 dark:text-gray-500">
-            <ImageIcon size={16} />
-            当前模式不支持添加参考图
-          </div>
-        ) : undefined}
       />
 
       <div className="surface-subtle space-y-5 p-5">
@@ -511,9 +512,12 @@ export default function ImageCreationWorkspace({
 
       {activeTasks.length > 0 && (
         <div className="card space-y-3">
-          <h3 className="panel-title text-gray-700 dark:text-gray-300">活跃任务 ({activeTasks.length})</h3>
+          <div className="flex items-center justify-between gap-4">
+            <div><p className="eyebrow">LIVE QUEUE</p><h3 className="card-title mt-1">活跃任务</h3></div>
+            <span className="font-mono text-xs text-gray-400">{activeTasks.length} RUNNING</span>
+          </div>
           {activeTasks.map((task) => (
-            <div key={task.id} className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950">
+            <div key={task.id} className="creation-task-row">
               {task.status === 'generating' || task.status === 'in_queue' ? (
                 <Loader2 size={20} className="flex-shrink-0 animate-spin text-gray-500 dark:text-gray-300" />
               ) : (
@@ -527,9 +531,12 @@ export default function ImageCreationWorkspace({
                   </span>
                   {task.progress != null && ` · ${task.progress}%`}
                 </p>
+                {task.progress != null ? <div className="creation-task-progress"><span style={{ transform: `scaleX(${Math.max(0, Math.min(task.progress, 100)) / 100})` }} /></div> : null}
               </div>
               {task.status === 'in_queue' && (
                 <button
+                  type="button"
+                  aria-label="取消排队任务"
                   className="p-1 text-gray-400 transition-colors hover:text-error"
                   onClick={() => cancelImageTask(task.id)}
                 >

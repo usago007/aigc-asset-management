@@ -1,201 +1,61 @@
-import { useState, useEffect } from 'react'
+import { AlertTriangle, GitBranch, ScanLine } from 'lucide-react'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
-import { BarChart3, Clock, AlertTriangle, TrendingUp, FolderTree, FileText, ClipboardCheck, Users, Tags, Video, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { PageIntro, PageSection, PageShell } from '@/components/PageShell'
+import { DashboardFrame, DecisionNote, DistributionRow, EmptyInsight, InsightPanel, Metric } from './DashboardUI'
 
-function getRelativeTime(dateStr: string): string {
-  const now = new Date().getTime()
-  const date = new Date(dateStr).getTime()
-  const diffMs = now - date
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  if (diffMins < 1) return '刚刚'
-  if (diffMins < 60) return `${diffMins}分钟前`
-  if (diffHours < 24) return `${diffHours}小时前`
-  return `${diffDays}天前`
-}
-
-const STAGE_LABELS: Record<string, string> = {
-  Planning: '规划中',
-  InProduction: '制作中',
-  Review: '审核中',
-  Completed: '已完成',
-}
-
-function StatCard({ label, value, icon: Icon, color, bg }: { label: string; value: number; icon: React.ElementType; color: string; bg: string }) {
-  return (
-    <div className="summary-card">
-      <div className="flex items-center gap-4">
-        <div className={`summary-icon ${bg}`}>
-          <Icon size={24} className={color} />
-        </div>
-        <div>
-          <p className="dashboard-stat-value">{value}</p>
-          <p className="summary-label">{label}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ProgressBar({ value, max, label, colorClass }: { value: number; max: number; label: string; colorClass: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0
-  return (
-    <div className="flex items-center gap-3">
-      <span className="panel-value w-16 shrink-0">{label}</span>
-      <div className="flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="helper-text w-10 text-right">{value}</span>
-    </div>
-  )
-}
+const stageLabels: Record<string, string> = { Planning: '规划中', InProduction: '制作中', Review: '审核中', Completed: '已完成' }
 
 export default function Overview() {
-  const { customers, brands, projects, shots, assets, reviews, imageTasks, tasks } = useAppStore()
+  const { projects, tasks, reviews, assets, shots, imageTasks } = useAppStore()
   const { tasks: videoTasks } = useGenerationStore()
-  const [lastUpdated, setLastUpdated] = useState(() => {
-    const now = new Date()
-    return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  })
-
-  useEffect(() => {
-    setLastUpdated(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
-  }, [customers.length, brands.length, projects.length, shots.length, assets.length, reviews.length, imageTasks.length, videoTasks.length])
-
-  const pendingReviews = reviews.filter(r => r.status === 'Pending').length
-  const generatingCount = [...imageTasks, ...videoTasks].filter(t => t.status === 'generating' || t.status === 'in_queue' || t.status === 'submitting').length
-
-  const stats = [
-    { label: '客户', value: customers.length, icon: Users, color: 'dashboard-category-icon-blue', bg: 'dashboard-category-bg-blue' },
-    { label: '品牌', value: brands.length, icon: Tags, color: 'dashboard-category-icon-purple', bg: 'dashboard-category-bg-purple' },
-    { label: '项目', value: projects.length, icon: FolderTree, color: 'dashboard-category-icon-green', bg: 'dashboard-category-bg-green' },
-    { label: '镜头', value: shots.length, icon: Video, color: 'dashboard-category-icon-yellow', bg: 'dashboard-category-bg-yellow' },
-    { label: '资产', value: assets.length, icon: ImageIcon, color: 'dashboard-category-icon-pink', bg: 'dashboard-category-bg-pink' },
-    { label: '待审核', value: pendingReviews, icon: ClipboardCheck, color: 'dashboard-category-icon-neutral', bg: 'dashboard-category-bg-neutral' },
-    { label: '生成中', value: generatingCount, icon: Loader2, color: 'dashboard-category-icon-cyan', bg: 'dashboard-category-bg-cyan' },
-  ]
-
-  const stageCounts: Record<string, number> = { Planning: 0, InProduction: 0, Review: 0, Completed: 0 }
-  projects.forEach(p => { stageCounts[p.stage] = (stageCounts[p.stage] || 0) + 1 })
-  const totalProjects = projects.length
-
-  const highRiskProjects = projects.filter(p => p.riskLevel === 'High')
-
-  type ActivityItem = { time: string; label: string; icon: React.ElementType; color: string }
-  const activities: ActivityItem[] = [
-    ...projects.map(p => ({ time: p.createdAt, label: `项目创建: ${p.projectName}`, icon: FolderTree, color: 'text-green-600 dark:text-green-400' })),
-    ...tasks.map(t => ({ time: t.createdAt, label: `任务创建: ${t.taskName}`, icon: FileText, color: 'text-blue-600 dark:text-blue-400' })),
-    ...reviews.map(r => ({ time: r.createdAt, label: `审核: ${r.reviewer} - ${r.status === 'Approved' ? '通过' : r.status === 'Rejected' ? '拒绝' : '待审核'}`, icon: ClipboardCheck, color: 'text-yellow-600 dark:text-yellow-400' })),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
+  const activeProjects = projects.filter(project => project.stage !== 'Completed').length
+  const highRisk = projects.filter(project => project.riskLevel === 'High')
+  const pendingReviews = reviews.filter(review => review.status === 'Pending').length
+  const activeGeneration = [...imageTasks, ...videoTasks].filter(task => ['submitting', 'in_queue', 'generating'].includes(task.status)).length
+  const averageProgress = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.progress, 0) / projects.length) : 0
+  const linkedAssets = assets.filter(asset => asset.projectId || asset.shotId).length
+  const assetLinkRate = assets.length ? Math.round((linkedAssets / assets.length) * 100) : 0
+  const stageCounts = Object.keys(stageLabels).reduce<Record<string, number>>((result, stage) => {
+    result[stage] = projects.filter(project => project.stage === stage).length
+    return result
+  }, {})
+  const bottleneck = pendingReviews > activeGeneration ? '审核队列是当前主要阻塞点' : activeGeneration ? '生成队列是当前主要阻塞点' : '当前生产链路无显著积压'
 
   return (
-    <PageShell>
-      <PageIntro
-        title="经营总览"
-      />
-
-      <div className="summary-grid xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return <StatCard key={stat.label} {...stat} />
-        })}
+    <DashboardFrame
+      title="看见创意生产的真实脉搏"
+      description="从项目、生成、资产到交付建立同一条业务观测链。所有指标基于当前工作区完整快照，不虚构时间趋势。"
+      signal={bottleneck}
+    >
+      <div className="dashboard-metrics-grid">
+        <Metric label="活跃项目" value={activeProjects} detail={`分母 ${projects.length} 个项目；排除已完成项目`} tone="signal" />
+        <Metric label="平均项目进度" value={averageProgress} unit="%" detail="项目 progress 字段的算术平均值" />
+        <Metric label="待审核节点" value={pendingReviews} detail={`基于 ${reviews.length} 条审核记录的 Pending 状态`} tone={pendingReviews ? 'warning' : 'default'} />
+        <Metric label="高风险项目" value={highRisk.length} detail="风险等级为 High 的项目，需要优先介入" tone={highRisk.length ? 'danger' : 'default'} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <PageSection>
-          <h2 className="card-title mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-gray-700 dark:text-gray-300" />
-            项目阶段分布
-          </h2>
-          <div className="space-y-3">
-            {Object.entries(STAGE_LABELS).map(([stage, label]) => (
-              <ProgressBar
-                key={stage}
-                value={stageCounts[stage] || 0}
-                max={totalProjects}
-                label={label}
-                colorClass={stage === 'Completed' ? 'bg-green-500' : stage === 'InProduction' ? 'bg-yellow-500' : stage === 'Review' ? 'bg-purple-500' : 'bg-blue-500'}
-              />
-            ))}
+      <div className="dashboard-content-grid">
+        <InsightPanel className="xl:col-span-7" eyebrow="FLOW / PROJECT" title="项目在生产链中的位置" description="颗粒度：单个项目；用于判断资源集中在哪个阶段。" icon={GitBranch}>
+          <div className="space-y-1">
+            {Object.entries(stageLabels).map(([stage, label]) => <DistributionRow key={stage} label={label} value={stageCounts[stage]} total={projects.length} note={`${stageCounts[stage]} 个项目`} />)}
           </div>
-        </PageSection>
+        </InsightPanel>
 
-        <PageSection>
-          <h2 className="card-title mb-4 flex items-center gap-2">
-            <AlertTriangle size={18} className="text-red-500" />
-            风险预警
-          </h2>
-          {highRiskProjects.length === 0 ? (
-            <p className="body-muted py-4 text-center">暂无高风险项目</p>
-          ) : (
-            <div className="space-y-3">
-              {highRiskProjects.map(project => (
-                <div key={project.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 last:border-0">
-                  <div>
-                    <p className="panel-value font-medium text-gray-800 dark:text-gray-300">{project.projectName}</p>
-                    <p className="helper-text">{project.projectOwner}</p>
-                  </div>
-                  <span className="badge badge-error">高风险</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </PageSection>
+        <InsightPanel className="xl:col-span-5" eyebrow="SIGNAL / ATTENTION" title="需要现在处理的信号" description="仅展示可触发行动的异常，不把普通统计伪装成洞察。" icon={ScanLine}>
+          <div className="space-y-3">
+            <DecisionNote title={`${pendingReviews} 个审核节点等待处理`} to="/projects/reviews">审核积压会直接延迟资产定版与交付。</DecisionNote>
+            <DecisionNote title={`${activeGeneration} 个生成任务正在流转`} to="/dashboard/generation">覆盖提交、排队和生成中三个队列状态。</DecisionNote>
+            <DecisionNote title={`${assetLinkRate}% 资产已建立业务关联`} to="/dashboard/assets">关联到项目或镜头的资产才具备可追溯和复用价值。</DecisionNote>
+          </div>
+        </InsightPanel>
+
+        <InsightPanel className="xl:col-span-12" eyebrow="RISK / PROJECT" title="项目风险雷达" description="颗粒度：高风险项目；优先查看负责人、当前阶段和实际进度。" icon={AlertTriangle}>
+          {highRisk.length ? <div className="dashboard-data-list">{highRisk.map(project => (
+            <div className="dashboard-data-row" key={project.id}><strong>{project.projectName}</strong><span>{project.projectOwner} · {stageLabels[project.stage]}</span><span className="font-mono">{project.progress}%</span></div>
+          ))}</div> : <EmptyInsight>当前没有高风险项目。仍建议持续观察审核积压与生成失败。</EmptyInsight>}
+          <p className="mt-4 text-xs text-gray-400">数据覆盖：{projects.length} 项目 · {shots.length} 镜头 · {assets.length} 资产 · {tasks.length} 任务</p>
+        </InsightPanel>
       </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <PageSection>
-          <h2 className="card-title mb-4 flex items-center gap-2">
-            <Clock size={18} className="dashboard-category-icon-blue" />
-            近期活动
-          </h2>
-          <div className="space-y-3">
-            {activities.map((activity, idx) => {
-              const Icon = activity.icon
-              return (
-                <div key={idx} className="flex items-start gap-3">
-                  <div className={`p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mt-0.5`}>
-                    <Icon size={14} className={activity.color} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="body-text truncate text-gray-800 dark:text-gray-300">{activity.label}</p>
-                    <p className="helper-text">{getRelativeTime(activity.time)}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </PageSection>
-
-        <PageSection>
-          <h2 className="card-title mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="dashboard-category-icon-green" />
-            项目进度
-          </h2>
-          <div className="space-y-3">
-            {projects.slice(0, 5).map(project => (
-              <div key={project.id}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-800 dark:text-gray-300">{project.projectName}</span>
-                  <span className="text-gray-600 dark:text-gray-500">{project.progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gray-900 transition-all duration-300 dark:bg-white"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </PageSection>
-      </div>
-    </PageShell>
+    </DashboardFrame>
   )
 }

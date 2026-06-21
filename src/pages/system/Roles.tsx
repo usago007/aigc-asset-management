@@ -132,7 +132,9 @@ export default function Roles() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="系统管理 / 权限"
         title="角色权限管理"
+        description="以最小权限原则配置角色能力与数据可见范围，为团队协作建立清晰边界。"
         actions={<Button className="gap-2" onClick={() => handleOpenModal()}><Plus size={16} />新增角色</Button>}
       />
 

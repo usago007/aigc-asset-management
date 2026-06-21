@@ -65,9 +65,9 @@ export default function JimengInput({
   return (
     <div className="relative">
       <div
-        className={`rounded-[24px] border bg-white shadow-[0_16px_44px_rgba(15,23,42,0.06)] transition-colors dark:bg-gray-900 ${
+        className={`rounded-[20px] border bg-white shadow-[0_10px_30px_rgba(15,23,42,0.045)] transition-[border-color,box-shadow] dark:bg-gray-900 ${
           isFocused
-            ? 'border-gray-900 ring-2 ring-gray-900/5 dark:border-white dark:ring-white/10'
+            ? 'border-gray-400 ring-4 ring-gray-950/[0.035] dark:border-gray-600 dark:ring-white/[0.045]'
             : 'border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700'
         }`}
       >
@@ -76,8 +76,10 @@ export default function JimengInput({
           <div className="flex gap-2 p-4 pb-0">
             {imageUpload!.images.map((img, idx) => (
               <div key={idx} className="relative group h-16 w-16 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                <img src={img.url} alt="" className="w-full h-full object-cover" />
+                <img src={img.url} alt={`参考图片 ${idx + 1}`} className="w-full h-full object-cover" />
                 <button
+                  type="button"
+                  aria-label={`移除参考图片 ${idx + 1}`}
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500 dark:bg-gray-700"
                   onClick={() => imageUpload!.onRemove(idx)}
                 >
@@ -103,8 +105,10 @@ export default function JimengInput({
         {/* Single media preview */}
         {hasVideo && (
           <div className="relative group mx-4 mt-3 h-16 w-24 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-            <img src={videoUpload!.video!.url} alt="" className="w-full h-full object-cover" />
+            <img src={videoUpload!.video!.url} alt="视频参考画面" className="w-full h-full object-cover" />
             <button
+              type="button"
+              aria-label="移除参考视频"
               className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500 dark:bg-gray-700"
               onClick={videoUpload!.onRemove}
             >
@@ -117,7 +121,7 @@ export default function JimengInput({
         <div className="relative">
           <textarea
             ref={textareaRef}
-            className="w-full resize-none bg-transparent px-5 pt-5 pb-24 text-sm leading-7 text-gray-950 outline-none placeholder:text-gray-400 dark:text-gray-50"
+            className="min-h-[180px] w-full resize-none border-0 bg-transparent px-5 pb-24 pt-5 text-sm leading-7 text-gray-950 outline-none placeholder:text-gray-400 focus:outline-none focus-visible:!outline-none focus-visible:!ring-0 focus-visible:!ring-offset-0 dark:text-gray-50"
             placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -173,6 +177,8 @@ export default function JimengInput({
               </span>
               {showVoice && (
                 <button
+                  type="button"
+                  aria-label="语音输入"
                   className="group rounded-xl p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
                   title="语音输入"
                   disabled={disabled}
@@ -181,6 +187,8 @@ export default function JimengInput({
                 </button>
               )}
               <button
+                type="button"
+                aria-label="提交生成"
                 className={`rounded-xl p-2 font-medium transition-colors ${
                   hasValue && !disabled
                     ? 'bg-gray-950 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200'

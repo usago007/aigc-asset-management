@@ -5,7 +5,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-lg border border-gray-300 dark:border-gray-700/50">
+  <div className="relative w-full overflow-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b border-gray-200 dark:border-gray-700/50 bg-gray-100/50 dark:bg-gray-800/30", className)} {...props} />
+  <thead ref={ref} className={cn("[&_tr]:border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-950/60", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -57,7 +57,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-gray-200/30 dark:border-gray-700/30 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 data-[state=selected]:bg-gray-100 dark:data-[state=selected]:bg-gray-800",
+      "border-b border-gray-100 dark:border-gray-800 transition-colors hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10 data-[state=selected]:bg-gray-100 dark:data-[state=selected]:bg-gray-800",
       className
     )}
     {...props}
@@ -72,7 +72,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider [&:has([role=checkbox])]:pr-0",
+      "h-12 px-4 text-left align-middle text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.14em] [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}

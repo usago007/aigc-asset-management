@@ -11,7 +11,7 @@ export function PageShell({
   narrow?: boolean
 }) {
   return (
-    <div className={cn('page-shell', narrow && 'page-shell-narrow', className)}>
+    <div className={cn('page-shell page-enter', narrow && 'page-shell-narrow', className)}>
       {children}
     </div>
   )
@@ -29,11 +29,11 @@ export function PageIntro({
   eyebrow?: ReactNode
 }) {
   return (
-    <section className="page-intro">
+    <section className="page-intro" aria-labelledby="page-title">
       <div className="space-y-2">
-        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
+        <p className="eyebrow">{eyebrow ?? 'FATMUG / WORKSPACE'}</p>
         <div>
-          <h1 className="page-title">{title}</h1>
+          <h1 id="page-title" className="page-title">{title}</h1>
           {description ? <p className="page-subtitle">{description}</p> : null}
         </div>
       </div>

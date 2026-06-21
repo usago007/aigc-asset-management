@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import type { Shot } from '@/types'
+import { useConfirm } from '@/components/ConfirmProvider'
 
 const includesText = (value: unknown, query: string) => {
   const normalizedQuery = normalizeSearchText(query)
@@ -21,6 +22,7 @@ const includesText = (value: unknown, query: string) => {
 }
 
 export default function Shots() {
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const { shots, projects, brands, customers, keyFrames, addShot, updateShot, deleteShot } = useAppStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -131,8 +133,8 @@ export default function Shots() {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('确定要删除吗？')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ title: '删除镜头', description: '删除镜头会解除其项目位置，并影响关键帧与生成任务的业务上下文。', confirmLabel: '删除镜头', tone: 'danger' })) {
       deleteShot(id)
       showToast('success', '删除成功')
     }
@@ -151,7 +153,9 @@ export default function Shots() {
   return (
     <PageShell>
       <PageIntro
+        eyebrow="内容中心 / 制作单元"
         title="镜头列表"
+        description="以镜头为最小制作单元，管理关键帧、提示词、模型与最终视频之间的生产关系。"
         actions={<Button onClick={() => handleOpenModal()} className="gap-2"><Plus size={16} /> 创建镜头</Button>}
       />
 

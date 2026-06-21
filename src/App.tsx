@@ -26,6 +26,7 @@ import Settings from './pages/system/Settings'
 import AIConfigPanel from './pages/system/AIConfigPanel'
 import SystemLogs from './pages/system/SystemLogs'
 import Members from './pages/system/Members'
+import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="system/settings" element={<Settings />} />
         <Route path="system/ai-config" element={<AIConfigPanel />} />
         <Route path="system/logs" element={<SystemLogs />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
