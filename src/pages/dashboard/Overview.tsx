@@ -1,4 +1,5 @@
-import { AlertTriangle, GitBranch, ScanLine } from 'lucide-react'
+import { AlertTriangle, ArrowUpRight, GitBranch, ScanLine } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { useGenerationStore } from '@/store/generationStore'
 import { DashboardFrame, DecisionNote, DistributionRow, EmptyInsight, InsightPanel, Metric } from './DashboardUI'
@@ -50,10 +51,25 @@ export default function Overview() {
         </InsightPanel>
 
         <InsightPanel className="xl:col-span-12" eyebrow="RISK / PROJECT" title="项目风险雷达" description="颗粒度：高风险项目；优先查看负责人、当前阶段和实际进度。" icon={AlertTriangle}>
-          {highRisk.length ? <div className="dashboard-data-list">{highRisk.map(project => (
-            <div className="dashboard-data-row" key={project.id}><strong>{project.projectName}</strong><span>{project.projectOwner} · {stageLabels[project.stage]}</span><span className="font-mono">{project.progress}%</span></div>
+          {highRisk.length ? <div className="dashboard-risk-grid">{highRisk.map(project => (
+            <article className="dashboard-risk-card" key={project.id}>
+              <div className="dashboard-risk-card-top">
+                <span className="dashboard-risk-badge">高风险</span>
+                <span className="dashboard-risk-stage">{stageLabels[project.stage]}</span>
+              </div>
+              <h3>{project.projectName}</h3>
+              <div className="dashboard-risk-meta">
+                <span className="dashboard-owner-mark">{project.projectOwner.slice(0, 1)}</span>
+                <span><small>负责人</small>{project.projectOwner}</span>
+                <strong>{project.progress}%</strong>
+              </div>
+              <div className="dashboard-risk-progress"><span style={{ transform: `scaleX(${project.progress / 100})` }} /></div>
+            </article>
           ))}</div> : <EmptyInsight>当前没有高风险项目。仍建议持续观察审核积压与生成失败。</EmptyInsight>}
-          <p className="mt-4 text-xs text-gray-400">数据覆盖：{projects.length} 项目 · {shots.length} 镜头 · {assets.length} 资产 · {tasks.length} 任务</p>
+          <footer className="dashboard-coverage-row">
+            <p>数据覆盖 <strong>{projects.length}</strong> 项目 · <strong>{shots.length}</strong> 镜头 · <strong>{assets.length}</strong> 资产 · <strong>{tasks.length}</strong> 任务</p>
+            <NavLink to="/projects/projects">查看全部项目 <ArrowUpRight size={14} /></NavLink>
+          </footer>
         </InsightPanel>
       </div>
     </DashboardFrame>
