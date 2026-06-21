@@ -1,6 +1,6 @@
 import type { ElementType, ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Activity, ArrowUpRight, HelpCircle, Radio } from 'lucide-react'
+import { Activity, ArrowUpRight, CircleDot, HelpCircle, Radio } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const dashboardTabs = [
@@ -25,14 +25,15 @@ export function DashboardFrame({
     <main className="dashboard-lab">
       <header className="dashboard-lab-hero">
         <div className="dashboard-lab-grid" aria-hidden="true" />
-        <div className="relative z-10 max-w-3xl">
-          <div className="dashboard-live-label"><Radio size={13} /> LIVE DATASET · 当前数据快照</div>
+        <div className="dashboard-hero-copy">
+          <div className="dashboard-live-label"><Radio size={13} /> 实时工作区快照</div>
           <h1 className="dashboard-lab-title">{title}</h1>
           <p className="dashboard-lab-description">{description}</p>
         </div>
         <div className="dashboard-signal-card">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-400"><Activity size={14} /> AI SIGNAL</div>
+          <div className="dashboard-signal-label"><Activity size={14} /> 当前经营信号</div>
           <p>{signal}</p>
+          <span><CircleDot size={12} /> 基于当前工作区数据</span>
         </div>
       </header>
 
