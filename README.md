@@ -1,5 +1,7 @@
 # AIGC Asset Management
 
+**Online Demo:** [https://usago007.github.io/aigc-asset-management/](https://usago007.github.io/aigc-asset-management/)
+
 > AIGC digital asset management platform for content production workflows — covering content creation, shot-level workbench, project orchestration, and system administration.
 
 ## Features
@@ -84,6 +86,15 @@ Build for production:
 ```bash
 npm run build
 ```
+
+## Build & Deployment
+
+This project is deployed to GitHub Pages via GitHub Actions. Every push to `main` triggers an automated build and deployment.
+
+- **Live site:** [https://usago007.github.io/aigc-asset-management/](https://usago007.github.io/aigc-asset-management/)
+- **Workflow:** [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+
+To deploy manually, run the "Deploy to GitHub Pages" workflow from the Actions tab.
 
 ## License
 
